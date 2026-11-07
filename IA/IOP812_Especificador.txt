@@ -1,0 +1,142 @@
+===================================================================
+ESPECIFICADOR DE PROYECTO: IOP812 - OPTIMIZADOR Y BUSCADOR FERRETERO
+===================================================================
+Este documento es la fuente de verdad del proyecto. Cada vez que la IA 
+se desvíe del alcance o las reglas de negocio, se debe reingresar este especificador.
+
+¿QUÉ HACE LA APLICACIÓN?
+Es una aplicación que busca la ferretería que tenga el producto más barato 
+en bolivianos (BOB) de Bolivia y que esté más cerca de la ubicación del usuario, 
+aplicando los algoritmos y modelos matemáticos de Investigación Operativa II.
+
+La idea principal es aplicar todos los métodos enseñados en la materia IOP812.
+
+¿QUÉ FUNCIONALIDADES TIENE LA V1?
+* Registro personal de usuarios mediante Google OAuth.
+* Vista exclusiva para administradores/ferreteros para carga masiva y actualización 
+  de catálogo, precios y stock en tiempo real.
+* Buscador geoespacial y ordenamiento multicriterio AHP (Precio, Distancia, Reputación, Stock).
+* Módulo de gestión de inventarios:
+  - Lote Económico de Pedido (EOQ) y Punto de Reorden (ROP).
+  - EOQ con Faltantes / Déficit permitido.
+  - EOQ con Descuentos por Cantidad (Rangos de precios).
+  - Lote Económico de Producción (EPQ) para productos fabricados en sitio.
+  - EOQ Multiproducto con restricción de almacenamiento (m²).
+* Módulo de Evaluación de Decisiones:
+  - Decisiones bajo incertidumbre (Laplace, Wald MaxiMin/MaxiMax, Hurwicz, Savage).
+  - Decisiones bajo riesgo mediante Árboles de Decisión (VME y VEIP).
+* Módulo de Predicción mediante Cadenas de Markov con Estados Absorbentes para simular 
+  el comportamiento de navegación y probabilidad de conversión de compradores.
+* Estimación de tiempos de espera en mostrador mediante Teoría de Colas (Modelo M/M/1).
+
+¿MÉTODOS DE INVESTIGACIÓN OPERATIVA II APLICADOS?
+1. AHP (Analytic Hierarchy Process): Matriz de comparación por pares, cálculo de vector de pesos W y ratio de consistencia CR.
+2. Modelos de Inventarios Determinísticos:
+   - EOQ Básico: Q* = sqrt((2*D*K)/H)
+   - EPQ (Producción): Q* = sqrt((2*D*K)/(H*(1 - d/p)))
+   - EOQ Faltantes: S* de déficit máximo y Q* ajustado por costo p.
+   - EOQ Descuentos: Optimización por tramos de precios.
+   - ROP (Punto de Reorden): ROP = (d * L) + SS.
+3. Decisiones Bajo Incertidumbre: Criterios Laplace, Wald (Optimista/Pesimista), Hurwicz (con coeficiente alpha) y Savage (Matriz de arrepentimiento).
+4. Decisiones Bajo Riesgo: Valor Medio Esperado VME = sum(P_j * V_j) y Árboles de Decisión.
+5. Cadenas de Markov Absorbentes: Matriz fundamental N = (I - Q)^-1 y Matriz de Absorción B = N * R.
+6. Teoría de Colas (M/M/1): Tasa de llegada lambda, tasa de servicio mu, uso del sistema rho = lambda/mu y tiempo en cola Wq = lambda / (mu * (mu - lambda)).
+
+¿QUÉ DATOS MANEJA Y QUÉ TECNOLOGÍAS QUIERE USAR?
+<BD>
+1. Usuario (
+    id_usuario PK, google_id VARCHAR NULL, email VARCHAR, username VARCHAR, 
+    password_hash VARCHAR NULL, fecha_registro DATETIME
+)
+
+2. Ferreteria (
+    id_ferreteria PK, id_usuario_propietario FK, nombre VARCHAR, direccion VARCHAR, 
+    latitud DECIMAL(10,8), longitud DECIMAL(11,8), reputacion DECIMAL(3,2), 
+    superficie_almacen_m2 DECIMAL(10,2), capacidad_canales_atencion INT
+)
+
+3. Categoria (id_categoria PK, nombre VARCHAR, descripcion TEXT)
+
+4. Marca (id_marca PK, nombre VARCHAR)
+
+5. Producto (
+    id_producto PK, id_ferreteria FK, id_categoria FK, id_marca FK, 
+    nombre VARCHAR, precio_bob DECIMAL(10,2), stock_actual INT, foto_url VARCHAR, 
+    volumen_m3 DECIMAL(8,4), demanda_anual_D INT, tasa_produccion_p INT NULL, 
+    costo_pedido_K DECIMAL(10,2), costo_mantenimiento_H DECIMAL(10,2), 
+    costo_faltante_p DECIMAL(10,2) NULL, tiempo_entrega_dias_L INT, stock_seguridad_SS INT
+)
+
+6. TramoDescuento (
+    id_tramo PK, id_producto FK, cantidad_minima INT, cantidad_maxima INT, 
+    precio_unitario_descuento DECIMAL(10,2)
+)
+
+7. HistorialBusqueda (
+    id_busqueda PK, id_usuario FK, texto_buscado VARCHAR, latitud_usuario DECIMAL(10,8), 
+    longitud_usuario DECIMAL(11,8), fecha_busqueda DATETIME
+)
+
+8. FerreteriaFavorita (id_favorito PK, id_ferreteria FK, id_usuario FK)
+
+9. LogNavegacionMarkov (
+    id_log PK, id_usuario FK, estado_origen VARCHAR, estado_destino VARCHAR, timestamp DATETIME
+) -- Estados: Busqueda, VistaProducto, EnCarrito, CompraRealizada (Absorbente), Abandono (Absorbente)
+
+10. EscenarioIncertidumbre (
+    id_escenario PK, id_producto FK, alternativa VARCHAR, estado_naturaleza VARCHAR, 
+    probabilidad DECIMAL(4,3) NULL, pago_estimado DECIMAL(12,2)
+) -- Para VME, VEIP, Laplace, Wald, Hurwicz, Savage
+
+11. RegistroColaAtencion (
+    id_registro PK, id_ferreteria FK, tasa_llegada_lambda DECIMAL(8,2), 
+    tasa_servicio_mu DECIMAL(8,2), fecha_registro DATETIME
+) -- Para métricas M/M/1
+</BD>
+
+REGLAS DE NEGOCIO DEL SISTEMA:
+1. Ordenamiento AHP: Valida que la matriz de comparación entre Precio, Distancia, Reputación y Stock cumpla CR = CI / RI < 0.10 para asegurar consistencia en la decisión.
+2. Gestión de Inventarios:
+   - Aplica EOQ para productos comprados y EPQ para productos de fabricación propia en ferreterías.
+   - En productos con volumen con descuento, calcula el costo total (CT) en cada tramo para determinar el lote óptimo real.
+   - Notifica punto de reorden en tiempo real según ROP = (d * L) + SS.
+3. Decisiones Financieras / Suministro:
+   - Si no hay probabilidades conocidas, presenta la sugerencia según Laplace, Wald, Hurwicz (alpha=0.7) y Savage.
+   - Con probabilidades estimadas, sugiere la alternativa que maximice el VME.
+4. Cadenas de Markov:
+   - Monitorea transiciones del usuario y calcula la matriz de absorción B para estimar la tasa probable de conversión a venta.
+5. Tiempos de Espera (Colas M/M/1):
+   - Muestra el tiempo estimado de espera en mostrador Wq para recomendar el mejor momento de visita presencial.
+<TECNOLOGIAS>
+* Backend: Python 3.12 con FastAPI
+* Librerías Matemáticas (IO2): NumPy (álgebra lineal, matrices AHP y Markov) y SciPy
+* Base de Datos: PostgreSQL 16 con extensión PostGIS (almacenamiento y consultas geoespaciales ST_DWithin / ST_DistanceSphere)
+* Frontend: HTML5, CSS3, JavaScript Vanilla (Fetch API para consumo de endpoints)
+* Mapas e Interfaz Geoespacial: Leaflet.js + OpenStreetMap (Renderizado de mapa de Bolivia y geolocalización)
+* Autenticación: OAuth2 / Google Sign-In + JWT (JSON Web Tokens)
+</TECNOLOGIAS> 
+
+¿ARQUITECTURA?
+La arquitectura del proyecto será una arquitectura vertical por dominio / Módulos de I.O. (Feature-First / Vertical Slices) 
+app/
+├── modules/
+│   ├── autenticacion/  # OAuth Google, JWT, usuarios
+│   ├── buscador_ahp/   # Buscador Leaflet, PostGIS, algoritmo AHP
+│   ├── inventarios_eoq/# EOQ, EPQ, Faltantes, Descuentos, ROP
+│   ├── decisiones/     # Incertidumbre (Wald, Savage...) y Riesgo (VME/VEIP)
+│   ├── markov/     # Matrices de conversión y estados absorbentes
+│   └── colas_mm1/  # Tiempos de espera y tasas lambda/mu
+├── shared/         # Conexión BD, utilidades comunes de NumPy
+└── main.py
+
+
+Donde cada método (o tema del temario) tiene su propia carpeta dedicada, y dentro de ella habitan los archivos necesarios para hacer funcionar ese método de forma independiente.
+app/modules/markov/
+├── __init__.py        # Indica que es un paquete de Python
+├── routes.py          # Define las rutas/endpoints (ej. POST /api/markov/simular)
+├── engine.py  # Código matemático puro 
+|              👉# (NumPy, cálculo de N = (I-Q)^-1 y B = N*R)
+└── schemas.py  # Validación de los datos JSON de entrada y salida
+
+
+En lugar de tener un solo archivo gigante como app.py o carpetas gigantescas globales, cada carpeta de módulo funciona como una mini-aplicación autónoma.

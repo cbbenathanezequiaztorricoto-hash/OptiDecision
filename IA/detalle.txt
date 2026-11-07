@@ -1,0 +1,373 @@
+El informe de tu auditor es un ejemplo perfecto de control de calidad profesional: identificó la brecha entre el `app.py` legacy (Flask) y la nueva arquitectura modular (FastAPI), además de hallar casos de borde matemáticos y de validación antes de llevar la aplicación a ejecución real.
+
+Tienes razón en tu apreciación de arquitectura: **al usar Vertical Slices, un módulo no rompe la lógica interna de otro**. Sin embargo, la aplicación necesita un archivo orquestador principal (`app/main.py`) que registre los routers HTTP de cada módulo y levante el servidor web sin conflictos de entorno.
+
+---
+
+## 1. Archivo de Dependencias (`requirements.txt`)
+
+Para resolver el error `ModuleNotFoundError: No module named 'fastapi'`, crea el archivo `requirements.txt` en la raíz de tu proyecto. Esto asegurará que el entorno virtual `.venv` cargue los paquetes necesarios:
+
+```text
+fastapi>=0.110.0
+uvicorn>=0.28.0
+pydantic>=2.6.0
+numpy>=1.26.0
+scipy>=1.12.0
+
+```
+
+*Para instalarlos en tu `.venv` activa, ejecuta en tu terminal de VS Code:*
+
+```bash
+pip install -r requirements.txt
+
+```
+
+---
+
+## 2. Ajustes de Casos de Borde en los Módulos
+
+### A. Corrección en `app/modules/markov/schemas.py` (Prevención de `IndexError` y Duplicados)
+
+Agregamos la validación de nombres únicos y correspondencia exacta de dimensiones para evitar colisiones en diccionarios o índices fuera de rango:
+
+```python
+# app/modules/markov/schemas.py
+
+from typing import List, Dict
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+def validar_rango_probabilidades(matriz: List[List[float]], nombre_matriz: str) -> None:
+    if not matriz:
+        raise ValueError(f"La {nombre_matriz} no puede estar vacía.")
+
+    for num_fila, fila in enumerate(matriz):
+        for valor in fila:
+            if valor < 0.0 or valor > 1.0:
+                raise ValueError(
+                    f"En {nombre_matriz} (fila {num_fila}), el valor {valor} no es una probabilidad válida (debe estar entre 0.0 y 1.0)."
+                )
+
+
+class MarkovMatrixInput(BaseModel):
+    estados_transitorios: List[str] = Field(
+        default=["Busqueda", "VistaProducto", "EnCarrito"],
+        description="Nombres de los estados no finales"
+    )
+    estados_absorbentes: List[str] = Field(
+        default=["CompraRealizada", "Abandono"],
+        description="Nombres de los estados finales"
+    )
+    matriz_Q: List[List[float]] = Field(
+        ...,
+        description="Matriz Q (k x k): probabilidades entre estados transitorios"
+    )
+    matriz_R: List[List[float]] = Field(
+        ...,
+        description="Matriz R (k x r): probabilidades hacia estados absorbentes"
+    )
+
+    @field_validator("matriz_Q")
+    @classmethod
+    def validar_matriz_Q(cls, v: List[List[float]]) -> List[List[float]]:
+        validar_rango_probabilidades(v, "matriz_Q")
+        k = len(v)
+        for num_fila, fila in enumerate(v):
+            if len(fila) != k:
+                raise ValueError(f"La matriz Q debe ser cuadrada ({k}x{k}). La fila {num_fila} tiene {len(fila)} elementos.")
+        return v
+
+    @field_validator("matriz_R")
+    @classmethod
+    def validar_matriz_R(cls, v: List[List[float]], info) -> List[List[float]]:
+        validar_rango_probabilidades(v, "matriz_R")
+        matriz_Q = info.data.get("matriz_Q")
+        if matriz_Q and len(v) != len(matriz_Q):
+            raise ValueError(f"La matriz R debe tener {len(matriz_Q)} filas (igual que Q), pero tiene {len(v)}.")
+        return v
+
+    @model_validator(mode="after")
+    def validar_consistencia_global(self) -> "MarkovMatrixInput":
+        # 1. Validar que no existan nombres duplicados
+        if len(set(self.estados_transitorios)) != len(self.estados_transitorios):
+            raise ValueError("Los nombres de los estados transitorios no pueden estar duplicados.")
+        if len(set(self.estados_absorbentes)) != len(self.estados_absorbentes):
+            raise ValueError("Los nombres de los estados absorbentes no pueden estar duplicados.")
+
+        # 2. Validar coincidencia exacta de nombres vs dimensiones (evita IndexError)
+        if len(self.estados_transitorios) != len(self.matriz_Q):
+            raise ValueError(
+                f"La cantidad de estados transitorios ({len(self.estados_transitorios)}) "
+                f"no coincide con las filas de Q ({len(self.matriz_Q)})."
+            )
+        if len(self.matriz_R) > 0 and len(self.estados_absorbentes) != len(self.matriz_R[0]):
+            raise ValueError(
+                f"La cantidad de estados absorbentes ({len(self.estados_absorbentes)}) "
+                f"no coincide con las columnas de R ({len(self.matriz_R[0])})."
+            )
+
+        # 3. Validar suma estocástica por fila (Q + R = 1.0)
+        for i in range(len(self.matriz_Q)):
+            suma_q = sum(self.matriz_Q[i])
+            suma_r = sum(self.matriz_R[i])
+            suma_total = suma_q + suma_r
+            if abs(suma_total - 1.0) > 1e-5:
+                raise ValueError(
+                    f"Error en fila {i} ({self.estados_transitorios[i]}): "
+                    f"La suma Q + R es {suma_total:.4f}, pero DEBE ser 1.0."
+                )
+        return self
+
+
+class MarkovResultadoOutput(BaseModel):
+    matriz_fundamental_N: List[List[float]] = Field(..., description="Matriz N = (I - Q)^-1")
+    matriz_absorcion_B: Dict[str, Dict[str, float]] = Field(..., description="Probabilidad de absorción final")
+    pasos_esperados_t: Dict[str, float] = Field(..., description="Pasos promedio antes de la absorción")
+    interpretacion_humana: List[str] = Field(..., description="Explicación en lenguaje natural")
+
+```
+
+---
+
+### B. Corrección en `app/modules/decisiones/schemas.py` (Validación de Nombres Únicos)
+
+Agregamos la validación para prevenir que claves duplicadas en diccionarios sobrescriban alternativas o escenarios:
+
+```python
+# app/modules/decisiones/schemas.py
+
+from typing import List, Dict, Optional
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class DecisionInput(BaseModel):
+    alternativas: List[str] = Field(
+        default=["Lote Conservador", "Lote Estándar", "Lote Mayorista"],
+        description="Nombres de las decisiones o alternativas a evaluar"
+    )
+    estados_naturaleza: List[str] = Field(
+        default=["Demanda Baja", "Demanda Media", "Demanda Alta"],
+        description="Escenarios o estados de la naturaleza posibles"
+    )
+    matriz_pagos: List[List[float]] = Field(
+        ...,
+        description="Matriz de beneficios/pagos A (filas = alternativas, columnas = estados)"
+    )
+    probabilidades: Optional[List[float]] = Field(
+        default=None,
+        description="Probabilidades P_j de cada estado para decisiones bajo riesgo (opcional)"
+    )
+    alpha_hurwicz: float = Field(
+        default=0.7, ge=0.0, le=1.0, description="Coeficiente de optimismo alpha para Hurwicz"
+    )
+
+    @field_validator("matriz_pagos")
+    @classmethod
+    def validar_dimensiones_matriz(cls, v: List[List[float]], info) -> List[List[float]]:
+        if not v or not v[0]:
+            raise ValueError("La matriz de pagos no puede estar vacía.")
+
+        alternativas = info.data.get("alternativas")
+        estados = info.data.get("estados_naturaleza")
+
+        if alternativas and len(v) != len(alternativas):
+            raise ValueError(
+                f"La matriz de pagos tiene {len(v)} filas, pero se definieron {len(alternativas)} alternativas."
+            )
+
+        if estados:
+            num_cols = len(estados)
+            for i, fila in enumerate(v):
+                if len(fila) != num_cols:
+                    raise ValueError(
+                        f"La fila {i} de la matriz tiene {len(fila)} columnas, pero hay {num_cols} estados de la naturaleza."
+                    )
+        return v
+
+    @model_validator(mode="after")
+    def validar_consistencia_decision(self) -> "DecisionInput":
+        # Evitar claves sobrescritas en diccionarios
+        if len(set(self.alternativas)) != len(self.alternativas):
+            raise ValueError("No puede haber nombres de alternativas duplicadas.")
+        if len(set(self.estados_naturaleza)) != len(self.estados_naturaleza):
+            raise ValueError("No puede haber nombres de estados de la naturaleza duplicados.")
+
+        if self.probabilidades is not None:
+            num_estados = len(self.estados_naturaleza)
+            if len(self.probabilidades) != num_estados:
+                raise ValueError(
+                    f"Se enviaron {len(self.probabilidades)} probabilidades, pero hay {num_estados} estados de la naturaleza."
+                )
+
+            for p in self.probabilidades:
+                if p < 0.0 or p > 1.0:
+                    raise ValueError(f"La probabilidad {p} debe estar entre 0.0 y 1.0.")
+
+            suma_p = sum(self.probabilidades)
+            if abs(suma_p - 1.0) > 1e-4:
+                raise ValueError(f"La suma de las probabilidades debe ser exactamente 1.0 (suma actual: {suma_p:.4f}).")
+
+        return self
+
+
+class CriterioResultado(BaseModel):
+    alternativa_optima: str
+    valor_obtenido: float
+
+
+class RiesgoResultado(BaseModel):
+    vme_por_alternativa: Dict[str, float]
+    decision_optima_vme: str
+    vme_optimo: float
+    ve_con_ip: float
+    veip: float
+
+
+class DecisionOutput(BaseModel):
+    criterios_incertidumbre: Dict[str, CriterioResultado]
+    matriz_savage_arrepentimiento: Dict[str, Dict[str, float]]
+    analisis_riesgo: Optional[RiesgoResultado] = None
+    recomendacion_general: str
+
+```
+
+---
+
+### C. Corrección en `app/modules/inventarios_eoq/schemas.py` (Escala para `costo_faltante_p`)
+
+Aseguramos que el costo de penalización por faltante $p$ también se normalice si el usuario elige una unidad de tiempo mensual o diaria:
+
+```python
+# app/modules/inventarios_eoq/schemas.py
+
+from typing import Optional, Literal
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class EOQParametrosInput(BaseModel):
+    unidad_tiempo: Literal["Años", "Meses", "Días"] = Field(
+        default="Años",
+        description="Unidad de tiempo para la demanda, mantenimiento y penalización"
+    )
+    demanda_D: float = Field(..., gt=0, description="Demanda del producto en la unidad de tiempo elegida")
+    costo_pedido_K: float = Field(..., gt=0, description="Costo fijo por realizar un pedido K (BOB)")
+    costo_mantenimiento_H: float = Field(..., gt=0, description="Costo de mantener una unidad H (BOB)")
+    costo_unitario_C: float = Field(default=0.0, ge=0, description="Costo de adquisición por unidad")
+    tiempo_entrega_dias_L: int = Field(default=5, ge=0, description="Tiempo de espera del proveedor L (días)")
+    dias_laborales_ano: int = Field(default=300, gt=0, description="Días operativos de la ferretería al año")
+    stock_seguridad_SS: int = Field(default=0, ge=0, description="Stock de seguridad requerido")
+    
+    tasa_produccion_P: Optional[float] = Field(default=None, description="Tasa de producción P (para EPQ)")
+    costo_faltante_p: Optional[float] = Field(default=None, description="Costo de faltante p (BOB)")
+
+    # Campos calculados internamente para el motor
+    demanda_anual_D: Optional[float] = None
+    tasa_produccion_anual_P: Optional[float] = None
+    costo_mantenimiento_anual_H: Optional[float] = None
+    costo_faltante_anual_p: Optional[float] = None
+
+    @field_validator("tasa_produccion_P")
+    @classmethod
+    def validar_produccion_mayor_demanda(cls, v: Optional[float], info) -> Optional[float]:
+        if v is not None:
+            demanda = info.data.get("demanda_D")
+            if demanda and v <= demanda:
+                raise ValueError("En el modelo EPQ, la tasa de producción (P) debe ser estrictamente mayor que la demanda (D).")
+        return v
+
+    @model_validator(mode="after")
+    def normalizar_a_escala_anual(self) -> "EOQParametrosInput":
+        factor = 1.0
+        if self.unidad_tiempo == "Meses":
+            factor = 12.0
+        elif self.unidad_tiempo == "Días":
+            factor = float(self.dias_laborales_ano)
+
+        self.demanda_anual_D = self.demanda_D * factor
+        self.costo_mantenimiento_anual_H = self.costo_mantenimiento_H * factor
+        
+        if self.tasa_produccion_P is not None:
+            self.tasa_produccion_anual_P = self.tasa_produccion_P * factor
+
+        if self.costo_faltante_p is not None:
+            self.costo_faltante_anual_p = self.costo_faltante_p * factor
+            
+        return self
+
+
+class EOQResultadoOutput(BaseModel):
+    modelo_aplicado: str
+    lote_optimo_Q: float
+    punto_reorden_ROP: float
+    pedidos_por_ano_N: float
+    tiempo_entre_pedidos_T_dias: float
+    costo_pedido_anual: float
+    costo_mantenimiento_anual: float
+    costo_total_inventario_CT: float
+    deficit_maximo_S: Optional[float] = None
+    inventario_maximo_Imax: Optional[float] = None
+
+```
+
+---
+
+## 3. Integrador Principal (`app/main.py`)
+
+Actualiza el archivo `app/main.py` para utilizar **FastAPI** registrando los 3 módulos que hemos construido. De este modo se habilita la documentación interactiva y se conecta la API completa:
+
+```python
+# app/main.py
+# Orquestador Principal FastAPI de la Aplicación IOP812.
+
+from fastapi import FastAPI
+from app.modules.markov import markov_router
+from app.modules.inventarios_eoq import inventarios_router
+from app.modules.decisiones import decisiones_router
+
+app = FastAPI(
+    title="Sistema de Métodos Numéricos e Investigación Operativa II (IOP812)",
+    description="API Modular para Optimización Ferretera: Cadenas de Markov, Inventarios (EOQ/EPQ) y Teoría de Decisiones",
+    version="1.0.0"
+)
+
+# Registramos los routers de cada módulo independiente (Vertical Slices)
+app.include_router(markov_router)
+app.include_router(inventarios_router)
+app.include_router(decisiones_router)
+
+
+@app.get("/", tags=["Estado del Sistema"])
+def estado_sistema():
+    return {
+        "sistema": "OptiDecision Ferreterías - IOP812",
+        "estado": "Activo y Operativo",
+        "documentacion_swagger": "/docs",
+        "modulos_cargados": [
+            "Cadenas de Markov Absorbentes",
+            "Gestión de Inventarios (EOQ / EPQ / ROP)",
+            "Teoría de Decisiones (Incertidumbre y Riesgo)"
+        ]
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+
+```
+
+---
+
+### Cómo Probar Todo el Sistema Integrado
+
+1. En tu terminal de VS Code, ejecuta:
+```bash
+uvicorn app.main:app --reload
+
+```
+
+
+2. Abre tu navegador e ingresa a: **`[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)`**
+3. Verás la interfaz interactiva de Swagger UI donde podrás probar en vivo y de forma independiente cada endpoint (`/api/markov/simular`, `/api/inventario/calcular`, `/api/decisiones/evaluar`).
