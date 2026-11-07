@@ -1,7 +1,7 @@
 # app/modules/colas_mm1/schemas.py
 # Validaciones para el modelo de colas M/M/1 de la materia IOP812.
 
-from typing import List, Dict
+from typing import Dict
 from pydantic import BaseModel, Field, model_validator
 
 # -------------------------------------------------------------------------
@@ -11,16 +11,16 @@ class ColasMM1Input(BaseModel):
     tasa_llegada_lambda: float = Field(
         ..., 
         gt=0.0, 
-        description="Tasa promedio de llegada de clientes lambda (clientes por hora/minuto)"
+        description="Tasa promedio de llegada de clientes lambda (ej. 5 clientes/hora)"
     )
     tasa_servicio_mu: float = Field(
         ..., 
         gt=0.0, 
-        description="Tasa promedio de atención del servidor mu (clientes por hora/minuto)"
+        description="Tasa promedio de atención mu (ej. 6 clientes/hora)"
     )
     unidad_tiempo: str = Field(
         default="horas", 
-        description="Unidad de tiempo de las tasas (ej. 'horas', 'minutos')"
+        description="Unidad de tiempo ('horas' o 'minutos')"
     )
     # VALIDADOR 1: Comprobar que el sistema sea estable (mu > lambda)
     @model_validator(mode="after")
@@ -28,8 +28,8 @@ class ColasMM1Input(BaseModel):
         #Comparación cantidad_1 (esMayor/esMenor) cantidad_2 para evitar errores de precisión con floats
         if self.tasa_servicio_mu <= self.tasa_llegada_lambda:
             raise ValueError(
-                f"El sistema es inestable (cola infinita). La tasa de servicio mu ({self.tasa_servicio_mu}) "
-                f"debe ser estrictamente mayor que la tasa de llegada lambda ({self.tasa_llegada_lambda})."
+                f"El sistema es inestable (cola infinita). La tasa de atención mu ({self.tasa_servicio_mu}) "
+                f"debe ser estrictamente mayor que la de llegada lambda ({self.tasa_llegada_lambda})."
             )
         return self
 
@@ -37,35 +37,42 @@ class ColasMM1Input(BaseModel):
 # MODELO DE SALIDA: ES UN MOLDE EN EL QUE SE LLENAN LOS RESULTADOS DE CÁLCULO
 # -------------------------------------------------------------------------
 class ColasMM1Output(BaseModel):
-    factor_utilizacion_rho: float = Field(
+    factor_utilizacion_rho_pct: float = Field(
         ..., 
-        description="Uso del sistema rho = lambda / mu (porcentaje de ocupación)"
+        description="Porcentaje de tiempo que el servicio está ocupado"
     )
-    probabilidad_sistema_vacio_P0: float = Field(
+    probabilidad_sistema_vacio_P0_pct: float = Field(
+        ...,
+        description="Probabilidad de llegar y ser atendido INMEDIATAMENTE"
+    )
+    clientes_en_sistema_Ls: float = Field(
         ..., 
-        description="Probabilidad de que el mostrador esté ocioso P0 = 1 - rho"
+        description="Número promedio de clientes dentro de la ferretería"
     )
-    clientes_promedio_sistema_L: float = Field(
+    clientes_en_cola_Lq: float = Field(
         ..., 
-        description="Número esperado de clientes en el sistema L"
+        description="Número promedio de clientes parados en la fila"
     )
-    clientes_promedio_cola_Lq: float = Field(
+    
+    # TIEMPOS DESGLOSADOS (Wq vs Ws)
+    tiempo_espera_cola_Wq_minutos: float = Field(
         ..., 
-        description="Número esperado de clientes esperando en cola Lq"
+        description="Tiempo promedio parado HACIENDO FILA (Wq en minutos)"
     )
-    tiempo_promedio_sistema_W: float = Field(
+    tiempo_atencion_caja_minutos: float = Field(
         ..., 
-        description="Tiempo total promedio gastado en la ferretería W"
+        description="Tiempo promedio que toma el cobro en ventanilla"
     )
-    tiempo_promedio_cola_Wq: float = Field(
+    tiempo_total_sistema_Ws_minutos: float = Field(
         ..., 
-        description="Tiempo promedio esperado haciendo cola Wq"
+        description="Tiempo TOTAL en la ferretería: Fila + Cobro"
     )
+    
     probabilidades_estado_estacionario: Dict[str, float] = Field(
         ..., 
-        description="Probabilidad Pn de tener n clientes en el sistema (n=0..5)"
+        description="Probabilidad de encontrar exactamente n clientes en el mostrador"
     )
     recomendacion_cliente: str = Field(
         ..., 
-        description="Recomendación en lenguaje natural sobre la conveniencia de visitar"
+        description="Recomendación final para la toma de decisión del usuario"
     )
