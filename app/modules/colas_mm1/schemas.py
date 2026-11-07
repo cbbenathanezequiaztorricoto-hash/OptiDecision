@@ -25,7 +25,7 @@ class ColasMM1Input(BaseModel):
     # VALIDADOR 1: Comprobar que el sistema sea estable (mu > lambda)
     @model_validator(mode="after")
     def validar_estabilidad_sistema(self) -> "ColasMM1Input":
-        #Comparación cantidad<cantidad para evitar errores de precisión con floats
+        #Comparación cantidad_1 (esMayor/esMenor) cantidad_2 para evitar errores de precisión con floats
         if self.tasa_servicio_mu <= self.tasa_llegada_lambda:
             raise ValueError(
                 f"El sistema es inestable (cola infinita). La tasa de servicio mu ({self.tasa_servicio_mu}) "
