@@ -379,4 +379,68 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('Error en Modelo EOQ', err.message, 'error');
         }
     });
+    // ---------------------------------------------------------------
+    // 9. CALCULADORA DE TEORÍA DE DECISIONES
+    // ---------------------------------------------------------------
+    const formDecisiones = document.getElementById('formDecisiones');
+    formDecisiones?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                alternativas: [
+                    { nombre: document.getElementById('decAlt1').value, pagos: [parseFloat(document.getElementById('decA1E1').value), parseFloat(document.getElementById('decA1E2').value)] },
+                    { nombre: document.getElementById('decAlt2').value, pagos: [parseFloat(document.getElementById('decA2E1').value), parseFloat(document.getElementById('decA2E2').value)] }
+                ],
+                probabilidades: [parseFloat(document.getElementById('decProbE1').value), 1 - parseFloat(document.getElementById('decProbE1').value)]
+            };
+
+            const res = await fetch('/api/decisiones/evaluar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error('Error en motor de decisiones');
+            const data = await res.json();
+
+            document.getElementById('resDecisionesContainer').innerHTML = `
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-1"><strong>Sugerencia VME:</strong> <span class="text-success fw-bold">${data.mejor_vme_alternativa}</span> (Bs. ${data.vme_maximo})</li>
+                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${data.laplace_alternativa}</li>
+                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${data.savage_alternativa}</li>
+                </ul>
+            `;
+            notificar('Evaluación Completada', 'Los escenarios de decisión fueron calculados.', 'success');
+        } catch (err) {
+            notificar('Error en Decisiones', err.message, 'error');
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // 10. CALCULADORA COLAS M/M/1
+    // ---------------------------------------------------------------
+    const formColas = document.getElementById('formColas');
+    formColas?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const lambda = parseFloat(document.getElementById('colaLambda').value);
+        const mu = parseFloat(document.getElementById('colaMu').value);
+
+        try {
+            const res = await fetch('/api/colas/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tasa_llegada_lambda: lambda, tasa_servicio_mu: mu })
+            });
+
+            if (!res.ok) throw new Error('Servicio saturado (lambda >= mu)');
+            const data = await res.json();
+
+            document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
+            document.getElementById('resColaWq').textContent = `${(data.tiempo_espera_cola_Wq * 60).toFixed(1)} min`;
+
+            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador lista.', 'success');
+        } catch (err) {
+            notificar('Error en Colas', err.message, 'error');
+        }
+    });
 });
