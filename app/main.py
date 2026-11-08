@@ -1,43 +1,61 @@
 # app/main.py
 # Orquestador Principal FastAPI de la Aplicación IOP812.
 
+import os
 from fastapi import FastAPI
-from app.modules.markov import markov_router
-from app.modules.inventarios_eoq import inventarios_router
-from app.modules.decisiones import decisiones_router
-from app.modules.colas_mm1 import colas_router
-from app.modules.buscador_ahp import ahp_router
-from app.modules.autenticacion import auth_router
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+from app.modules.autenticacion.routes import router as auth_router
+from app.modules.buscador_ahp.routes import router as ahp_router
+from app.modules.inventarios_eoq.routes import router as inventarios_router
+from app.modules.decisiones.routes import router as decisiones_router
+from app.modules.markov.routes import router as markov_router
+from app.modules.colas_mm1.routes import router as colas_router
 
 app = FastAPI(
-    title="Sistema de Métodos Numéricos e Investigación Operativa II (IOP812)",
-    description="API Modular para Optimización Ferretera: Cadenas de Markov, Inventarios (EOQ/EPQ) y Teoría de Decisiones",
+    title="OptiDecision Suite - IOP812",
+    description="API Modular para Optimización Ferretera y Análisis Geoespacial AHP",
     version="1.0.0"
 )
 
-# Registramos los routers de cada módulo independiente (Vertical Slices)
-app.include_router(markov_router)
+# Registrar routers de backend (Vertical Slices)
+app.include_router(auth_router)
+app.include_router(ahp_router)
 app.include_router(inventarios_router)
 app.include_router(decisiones_router)
+app.include_router(markov_router)
 app.include_router(colas_router)
-app.include_router(ahp_router)
-app.include_router(auth_router)
 
-@app.get("/", tags=["Estado del Sistema"])
+# Ruta a la carpeta estática del frontend
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+assets_path = os.path.join(frontend_path, "assets")
+
+# Montar assets si la carpeta existe
+if os.path.exists(assets_path):
+    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+
+@app.get("/api/estado", tags=["Estado del Sistema"])
 def estado_sistema():
     return {
-        "sistema": "OptiDecision Ferreterías - IOP812",
-        "estado": "Activo y Operativo",
-        "documentacion_swagger": "/docs",
-        "modulos_cargados": [
-            "Cadenas de Markov Absorbentes",
-            "Gestión de Inventarios (EOQ / EPQ / ROP)",
-            "Teoría de Decisiones (Incertidumbre y Riesgo)",
-            "Colas agregado 7/11/2026 a las 16:15 pm",
-            "Buscador y Ordenamiento Multicriterio AHP agregado 7/11/2026 a las 19:31 pm",
-            "Autenticación y Gestión de Usuarios (OAuth / JWT) agregado 7/11/2026 a las 21:04 pm"
+        "sistema": "OptiDecision Suite - IOP812",
+        "estado": "Activo",
+        "modulos": [
+            "autenticacion",
+            "buscador_ahp",
+            "inventarios_eoq",
+            "decisiones",
+            "markov",
+            "colas_mm1"
         ]
     }
+
+@app.get("/", response_class=FileResponse)
+async def servir_index():
+    index_path = os.path.join(frontend_path, "index.html")
+    if os.path.exists(index_path):
+        return index_path
+    return {"status": "ok", "message": "Backend IOP812 activo. Crea frontend/index.html para cargar la interfaz."}
 
 
 if __name__ == "__main__":
