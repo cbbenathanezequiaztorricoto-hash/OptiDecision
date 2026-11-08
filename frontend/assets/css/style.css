@@ -1,7 +1,6 @@
 /* ===================================================================
    OPTI DECISION SUITE - IOP812 | ESTILOS PRINCIPALES Y RESPONSIVE
    =================================================================== */
-
 /* 1. VARIABLES DE TEMA (DARK MODE POR DEFECTO: SLATE PRO) */
 :root {
     --bg-base: #0F172A;
@@ -17,7 +16,6 @@
     --shadow-color: rgba(0, 0, 0, 0.45);
     --nav-height: 64px;
 }
-
 /* MODO CLARO (CONMUTADO VÍA JavaScript data-theme="light") */
 [data-theme="light"] {
     --bg-base: #F8FAFC;
@@ -32,7 +30,6 @@
     --text-muted: #64748B;
     --shadow-color: rgba(15, 23, 42, 0.12);
 }
-
 /* 2. ESTILOS BASE Y REGLAS GLOBALES */
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -51,7 +48,6 @@ body {
 .fs-7 { font-size: 0.7rem; }
 .tracking-tight { letter-spacing: -0.025em; }
 .tracking-wider { letter-spacing: 0.05em; }
-
 /* 3. BARRA DE NAVEGACIÓN SUPERIOR HÍBRIDA */
 .navbar {
     background-color: var(--card-bg) !important;
@@ -60,8 +56,8 @@ body {
     z-index: 1030;
 }
 
-.navbar-brand span {
-    color: var(--text-main);
+.navbar-brand span { 
+    color: var(--text-main); 
 }
 
 .nav-link {
@@ -73,7 +69,6 @@ body {
 .nav-link:hover, .nav-link.active {
     color: var(--primary) !important;
 }
-
 /* 4. CANVAS LEAFLET Y TARJETAS FLOTANTES (UX TRUFI / GOOGLE MAPS) */
 #mapa-ahp {
     height: calc(100vh - var(--nav-height));
@@ -87,7 +82,6 @@ body {
     z-index: 1;
     background-color: var(--bg-base);
 }
-
 /* TARJETA BUSCADOR FLOTANTE SOBRE EL MAPA */
 .floating-search-card {
     position: absolute;
@@ -101,7 +95,6 @@ body {
     box-shadow: 0 10px 30px var(--shadow-color) !important;
     backdrop-filter: blur(8px);
 }
-
 /* TARJETA FLOTANTE RESULTADO DESTACADO (TOP PICK AHP) */
 .floating-results-card {
     position: absolute;
@@ -117,24 +110,29 @@ body {
 }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
+    from { 
+        opacity: 0; 
+        transform: translateY(15px); 
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
     }
 }
 
-/* 5. FORMULARIOS, MODALES Y TABS DEL PANEL I.O. */
-.form-control, .input-group-text, .accordion-item {
+/* FORMULARIOS Y CONTRASTE VISUAL (PLACEHOLDERS) */
+.form-control, .form-select, .input-group-text, .accordion-item {
     background-color: var(--card-bg) !important;
     border-color: var(--border-color) !important;
     color: var(--text-main) !important;
 }
 
-.form-control:focus {
+.form-control::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.7;
+}
+
+.form-control:focus, .form-select:focus {
     border-color: var(--primary) !important;
     box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25) !important;
 }
@@ -169,7 +167,6 @@ body {
     --bs-table-color: var(--text-main);
     --bs-table-border-color: var(--border-color);
 }
-
 /* 6. ADAPTACIÓN RESPONSIVA (MOBILE-FIRST < 768px) */
 @media (max-width: 767.98px) {
     .floating-search-card {
@@ -190,3 +187,4 @@ body {
         height: calc(100vh - var(--nav-height));
     }
 }
+
