@@ -12,10 +12,10 @@ from dotenv import load_dotenv
 # Cargar las variables declaradas en el archivo .env de la raíz
 load_dotenv()
 
-# Lectura dinámica de variables de entorno con valor de respaldo (fallback) seguro
-SECRET_KEY = os.getenv("SECRET_KEY", "iop812_fallback_secret_key_dev")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24"))
+# Lectura dinámica de variables de entorno
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS"))
 
 
 def encriptar_password(password: str) -> str:
