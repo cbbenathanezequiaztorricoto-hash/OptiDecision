@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiDecision Suite - IOP812 | Buscador Ferretero & Optimización IO</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 1. Bootstrap 5.3 CSS con SRI -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+    <!-- 2. Leaflet.js CSS con SRI -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+
+    <!-- 3. FontAwesome 6 (Iconos Vectoriales) con SRI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- 4. Estilos Personalizados -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <!-- NAV BAR SUPERIOR HÍBRIDA (Bootsnav style adaptado) -->
+    <nav class="navbar navbar-expand-lg sticky-top border-bottom" id="topNav">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#home">
+                <i class="fa-solid fa-compass-drafting text-primary fs-4"></i>
+                <span class="fw-bold fs-5 tracking-tight">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">IOP812</span></span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars text-main"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-2">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#mapa-ahp"><i class="fa-solid fa-map-location-dot me-1"></i> Buscador AHP</a>
+                    </li>
+                    <li class="nav-item d-none" id="navItemDashboard">
+                        <a class="nav-link" href="#modulos-io" data-bs-toggle="modal" data-bs-target="#modalDashboardIO"><i class="fa-solid fa-calculator me-1"></i> Panel I.O. Ferretero</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact"><i class="fa-solid fa-graduation-cap me-1"></i> Créditos</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                    <!-- Toggle Modo Oscuro / Claro -->
+                    <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+
+                    <!-- Estado Auth / Botón Login -->
+                    <div id="authStatusContainer">
+                        <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalLoginAuth">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Acceso Ferretero</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SECCIÓN PRINCIPAL: MAPA INTERACTIVO CON BUSCADOR FLOTANTE (ESTILO TRUFI / GOOGLE MAPS) -->
+    <main id="mapa-ahp" class="position-relative w-100 overflow-hidden">
+        
+        <!-- CANVAS DEL MAPA LEAFLET -->
+        <div id="map"></div>
+
+        <!-- HUD BUSCADOR FLOTANTE UX (Google Maps / Trufi Cochabamba style) -->
+        <div class="floating-search-card shadow-lg rounded-4 p-3 border">
+            <form id="formBuscadorAHP" onsubmit="event.preventDefault();">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="small text-uppercase fw-bold text-muted tracking-wider"><i class="fa-solid fa-magnifying-glass-location text-primary me-1"></i> Búsqueda Rápida</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" id="badgeCRInfo">
+                        <i class="fa-solid fa-circle-check me-1"></i>AHP Consistente (CR &lt; 0.10)
+                    </span>
+                </div>
+
+                <!-- Campo Origen con Botón GPS integrador tipo Trufi -->
+                <div class="input-group mb-2">
+                    <span class="input-group-text bg-body border-end-0 text-primary"><i class="fa-solid fa-location-dot"></i></span>
+                    <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Origen (ej. Cala Cala, Quillacollo, Suticollo)" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
+                    <button class="btn btn-outline-secondary border-start-0" type="button" id="btnGPS" title="Usar mi ubicación GPS actual">
+                        <i class="fa-solid fa-crosshairs text-primary"></i>
+                    </button>
+                </div>
+
+                <!-- Campo Producto Buscado -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-body border-end-0 text-muted"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="inputProducto" placeholder="¿Qué producto buscas? (ej. Cemento, Fierro 1/2&quot;, Yeso)" required>
+                </div>
+
+                <!-- Acordeón Desplegable para Ponderación AHP Multicriterio -->
+                <div class="accordion accordion-flush mb-3 rounded-3 border" id="accordionAHP">
+                    <div class="accordion-item bg-transparent">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2 px-3 small fw-medium text-main" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAHP">
+                                <i class="fa-solid fa-sliders text-primary me-2"></i> Ajustar Criterios AHP (Saaty)
+                            </button>
+                        </h2>
+                        <div id="collapseAHP" class="accordion-collapse collapse" data-bs-parent="#accordionAHP">
+                            <div class="accordion-body p-3">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderPrecio" class="form-label mb-0 text-muted">Precio en BOB</label>
+                                        <span class="fw-bold text-primary" id="valPrecio">40%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderPrecio" min="1" max="9" value="4">
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderDistancia" class="form-label mb-0 text-muted">Distancia Cercana</label>
+                                        <span class="fw-bold text-primary" id="valDistancia">30%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderDistancia" min="1" max="9" value="3">
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderReputacion" class="form-label mb-0 text-muted">Reputación Local</label>
+                                        <span class="fw-bold text-primary" id="valReputacion">20%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderReputacion" min="1" max="9" value="2">
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderStock" class="form-label mb-0 text-muted">Stock Disponible</label>
+                                        <span class="fw-bold text-primary" id="valStock">10%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderStock" min="1" max="9" value="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-100 rounded-3 py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-2" type="submit" id="btnBuscarAHP">
+                    <i class="fa-solid fa-route"></i>
+                    <span>Optimizar y Buscar Ferretería</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- TARJETA FLOTANTE CON RESULTADOS AHP TOP PICK -->
+        <div class="floating-results-card shadow-lg rounded-4 p-3 border d-none" id="cardTopResult">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                <span class="badge bg-warning text-dark font-monospace fw-bold"><i class="fa-solid fa-crown me-1"></i> OPCIÓN ÓPTIMA AHP</span>
+                <button type="button" class="btn-close small" id="btnCloseTopResult" aria-label="Cerrar"></button>
+            </div>
+            <h6 class="fw-bold mb-1 text-main" id="topFerreteriaNombre">Ferretería El Castor</h6>
+            <p class="small text-muted mb-2" id="topFerreteriaDireccion"><i class="fa-solid fa-location-pin me-1"></i> Av. Blanco Galindo Km 3</p>
+            
+            <div class="row g-2 text-center my-2">
+                <div class="col-6">
+                    <div class="p-2 rounded-3 bg-body-tertiary border">
+                        <span class="d-block extra-small text-muted text-uppercase">Precio BOB</span>
+                        <strong class="text-success fs-6" id="topPrecioBOB">Bs. 45.00</strong>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 rounded-3 bg-body-tertiary border">
+                        <span class="d-block extra-small text-muted text-uppercase">Distancia</span>
+                        <strong class="text-primary fs-6" id="topDistanciaKM">1.2 km</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between small text-muted mt-2">
+                <span><i class="fa-solid fa-star text-warning me-1"></i> <span id="topReputacion">4.8</span></span>
+                <span><i class="fa-solid fa-boxes-stacked text-info me-1"></i> Stock: <strong id="topStock">120 un.</strong></span>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE AUTENTICACIÓN (LOGIN JWT / GOOGLE OAUTH) -->
+    <div class="modal fade" id="modalLoginAuth" tabindex="-1" aria-labelledby="modalLoginAuthLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalLoginAuthLabel">Acceso Propietario / Ferretero</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formLogin" onsubmit="event.preventDefault();">
+                        <div class="mb-3">
+                            <label for="inputEmail" class="form-label small fw-medium text-muted">Correo Electrónico</label>
+                            <input type="email" class="form-control rounded-3" id="inputEmail" placeholder="ferretero@ejemplo.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="inputPassword" class="form-label small fw-medium text-muted">Contraseña</label>
+                            <input type="password" class="form-control rounded-3" id="inputPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-medium mb-3">Iniciar Sesión</button>
+                    </form>
+                    
+                    <div class="position-relative text-center my-3">
+                        <hr class="text-muted">
+                        <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
+                    </div>
+
+                    <button class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2">
+                        <i class="fa-brands fa-google text-danger"></i>
+                        <span>Google OAuth2</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DASHBOARD / CALCULADORAS DE INVESTIGACIÓN OPERATIVA II -->
+    <div class="modal fade" id="modalDashboardIO" tabindex="-1" aria-labelledby="modalDashboardIOLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom px-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-sliders text-primary fs-4"></i>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0" id="modalDashboardIOLabel">Panel de Administración & Calculadoras I.O. II</h5>
+                            <span class="small text-muted">Gestión de Catálogo y Algoritmos Avanzados (IOP812)</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <!-- Nav Tabs del Panel -->
+                    <ul class="nav nav-tabs px-4 pt-3 border-bottom" id="tabsDashboard" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-medium" id="tab-crud-tab" data-bs-toggle="tab" data-bs-target="#tab-crud" type="button" role="tab"><i class="fa-solid fa-store me-1"></i> Catálogo Ferretero</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-inventarios-tab" data-bs-toggle="tab" data-bs-target="#tab-inventarios" type="button" role="tab"><i class="fa-solid fa-boxes-packing me-1"></i> Inventarios (EOQ/EPQ)</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-decisiones-tab" data-bs-toggle="tab" data-bs-target="#tab-decisiones" type="button" role="tab"><i class="fa-solid fa-tree me-1"></i> Decisiones (VME/Savage)</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-markov-tab" data-bs-toggle="tab" data-bs-target="#tab-markov" type="button" role="tab"><i class="fa-solid fa-chart-line me-1"></i> Cadenas de Markov</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-colas-tab" data-bs-toggle="tab" data-bs-target="#tab-colas" type="button" role="tab"><i class="fa-solid fa-users-line me-1"></i> Colas M/M/1</button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content p-4" id="tabsDashboardContent">
+                        
+                        <!-- TAB 1: CRUD CATÁLOGO -->
+                        <div class="tab-pane fade show active" id="tab-crud" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-main">Mis Productos e Insumos Registrados</h6>
+                                <button class="btn btn-sm btn-primary rounded-pill"><i class="fa-solid fa-plus me-1"></i> Nuevo Producto</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Precio (BOB)</th>
+                                            <th>Stock Actual</th>
+                                            <th>Demanda Anual (D)</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyCatálogo">
+                                        <tr>
+                                            <td class="fw-medium">Fierro Corrugado 1/2"</td>
+                                            <td class="text-success fw-bold">Bs. 48.00</td>
+                                            <td><span class="badge bg-success">150 un.</span></td>
+                                            <td>1,200 un.</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i></button>
+                                                <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: INVENTARIOS DETERMINÍSTICOS -->
+                        <div class="tab-pane fade" id="tab-inventarios" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Parámetros del Modelo EOQ/EPQ</h6>
+                                    <form id="formEOQ" onsubmit="event.preventDefault();">
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Demanda Anual (D)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqD" value="1200" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Costo por Pedido (K en BOB)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqK" value="50" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Costo Mantenimiento (H en BOB/un/año)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqH" value="5" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Tiempo Entrega (L días)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqL" value="5" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Calcular Lote Óptimo (Q*)</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Resultados Matemáticos</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary">
+                                                <span class="d-block small text-muted">Lote Óptimo (Q*)</span>
+                                                <h4 class="fw-bold text-primary mb-0" id="resQOptimo">155 un.</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary">
+                                                <span class="d-block small text-muted">Punto de Reorden (ROP)</span>
+                                                <h4 class="fw-bold text-warning mb-0" id="resROP">20 un.</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: TEORÍA DE DECISIONES -->
+                        <div class="tab-pane fade" id="tab-decisiones" role="tabpanel">
+                            <h6 class="fw-bold mb-2 text-main">Evaluación bajo Incertidumbre y Riesgo</h6>
+                            <p class="small text-muted">Resuelve escenarios de suministro mediante Laplace, Wald (MaxiMin/MaxiMax), Hurwicz ($\alpha=0.7$), Savage y Valor Medio Esperado (VME).</p>
+                            <div class="alert alert-info small" role="alert">
+                                <i class="fa-solid fa-lightbulb me-1"></i> Selecciona un producto registrado para cargar su matriz de pagos y probabilidades.
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: CADENAS DE MARKOV -->
+                        <div class="tab-pane fade" id="tab-markov" role="tabpanel">
+                            <h6 class="fw-bold mb-2 text-main">Predicción de Conversión (Matriz de Absorción B)</h6>
+                            <p class="small text-muted">Calcula la matriz fundamental $N = (I - Q)^{-1}$ y la probabilidad de absorción $B = N \cdot R$ para predecir compras completadas.</p>
+                        </div>
+
+                        <!-- TAB 5: COLAS M/M/1 -->
+                        <div class="tab-pane fade" id="tab-colas" role="tabpanel">
+                            <h6 class="fw-bold mb-2 text-main">Estimación de Tiempo de Espera en Mostrador (M/M/1)</h6>
+                            <p class="small text-muted">Calcula el tiempo promedio en cola $W_q$ en función de la tasa de llegada ($\lambda$) y servicio ($\mu$).</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA (CRÉDITOS OFICIALES MATERIA IOP812) -->
+    <footer id="contact" class="footer border-top py-4 bg-body-tertiary">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-md-12">
+                    <h6 class="fw-bold text-main mb-1">OPTI DECISION SUITE - IOP812</h6>
+                    <p class="small text-muted mb-2">
+                        Plataforma de Optimización Geoespacial y Multicriterio para el Sector Ferretero en Cochabamba, Bolivia.
+                    </p>
+                    <hr class="my-3 w-50 mx-auto opacity-25">
+                    <p class="small text-main mb-1">
+                        <strong>Docente:</strong> Ing. Myrna Gloria Baena Paniagua[cite: 18]<br>
+                        <strong>Integrantes:</strong> Noelia Sejas | Lucas David Loayza | Favio Valenzuela | Nathan Ezequías Torrico Torrez[cite: 18]
+                    </p>
+                    <p class="extra-small text-muted mt-2 mb-0">
+                        © 2026 Universidad Franz Tamayo (UNIFRANZ) - Todos los derechos reservados.[cite: 18]
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPT DE APLICACIÓN -->
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
