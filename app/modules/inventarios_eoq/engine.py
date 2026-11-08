@@ -54,20 +54,21 @@ def calcular_modelo_inventario(datos: EOQParametrosInput) -> Dict[str, Any]:
 
     # CASO B: Modelo EOQ con Faltantes / Déficit Permitido
     elif datos.costo_faltante_p is not None:
-        p_costo = datos.costo_faltante_p
-        if p_costo <= 0:
+        # En la sección de EOQ con Faltantes de engine.py
+        p_anual = datos.costo_faltante_anual_p if datos.costo_faltante_anual_p is not None else datos.costo_faltante_p
+        if p_anual <= 0:
             raise ValueError("El costo de penalización por faltante (p) debe ser mayor a cero.")
         
         modelo_nombre = "EOQ con Faltantes Permitidos"
         # Q* = sqrt( ((2*D*K)/H) * ((p + H)/p) )
-        lote_optimo_Q = math.sqrt(((2.0 * D * K) / H) * ((p_costo + H) / p_costo))
+        lote_optimo_Q = math.sqrt(((2.0 * D * K) / H) * ((p_anual + H) / p_anual))
         
         # S* = Q* * (H / (p + H))
-        deficit_maximo_S = lote_optimo_Q * (H / (p_costo + H))
+        deficit_maximo_S = lote_optimo_Q * (H / (p_anual + H))
         inventario_maximo_Imax = lote_optimo_Q - deficit_maximo_S
         
         costo_mant_anual = ((inventario_maximo_Imax ** 2) / (2.0 * lote_optimo_Q)) * H
-        costo_faltante_anual = ((deficit_maximo_S ** 2) / (2.0 * lote_optimo_Q)) * p_costo
+        costo_faltante_anual = ((deficit_maximo_S ** 2) / (2.0 * lote_optimo_Q)) * p_anual
 
     # CASO C: Modelo EOQ Básico Clásico
     else:
