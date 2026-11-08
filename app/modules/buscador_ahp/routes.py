@@ -2,7 +2,7 @@
 # Controlador HTTP para el Algoritmo AHP de Selección y Buscador Multicriterio.
 
 from fastapi import APIRouter, HTTPException, status
-from app.modules.buscador_ahp.schemas import AHPMatrizCriteriosInput, AHPResultadoOutput
+from app.modules.buscador_ahp.schemas import AHPMatrizCriteriosInput, AHPResultadoOutput, AHPSearchInput
 from app.modules.buscador_ahp.engine import calcular_proceso_ahp
 
 #Definimos una variable del tipo APIRouter que contendrá todos los endpoints relacionados con el módulo AHP.
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/ahp", tags=["Buscador y Ordenamiento Multicriter
     status_code=status.HTTP_200_OK,
     summary="Calcular vector de prioridades W, ratio de consistencia CR y ranking AHP"
 )
-async def evaluar_criterios_ahp(datos: AHPMatrizCriteriosInput):
+async def evaluar_criterios_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
     """
     Recibe la matriz de comparación por pares entre los criterios (Precio, Distancia, Reputación, Stock)
     y evalúa la consistencia estocástica (CR < 0.10) según la metodología AHP de Saaty.

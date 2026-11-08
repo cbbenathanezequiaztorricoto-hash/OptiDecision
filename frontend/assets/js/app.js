@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------
-    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (POSTGIS EN BD POSTGRESQL)
+    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (CORREGIDO PAI & 422)
     // ---------------------------------------------------------------
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
@@ -216,35 +216,51 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnBuscar = document.getElementById('btnBuscarAHP');
         btnBuscar.disabled = true;
         btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Consultando PostGIS & AHP...`;
+
         // Obtener coordenadas dinámicas según el texto digitado en Origen
         const coordsActuales = await resolverCoordenadasOrigen(origenText);
-        // Petición al backend FastAPI que consulta PostgreSQL/PostGIS y calcula vector AHP en NumPy
+
+        // Payload adaptado con nombres de campo estándar para Pydantic AHPSearchInput
+        const payload = {
+            latitud: coordsActuales.lat,
+            longitud: coordsActuales.lng,
+            latitud_usuario: coordsActuales.lat,   // Alias de compatibilidad
+            longitud_usuario: coordsActuales.lng,  // Alias de compatibilidad
+            producto: productoText,
+            texto_buscado: productoText,          // Alias de compatibilidad
+            pesos: {
+                precio: parseInt(sliders.precio.value, 10),
+                distancia: parseInt(sliders.distancia.value, 10),
+                reputacion: parseInt(sliders.reputacion.value, 10),
+                stock: parseInt(sliders.stock.value, 10)
+            }
+        };
+
         try {
             const response = await fetch('/api/ahp/buscar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    latitud: coordsActuales.lat,
-                    longitud: coordsActuales.lng,
-                    producto: productoText,
-                    pesos: {
-                        precio: parseInt(sliders.precio.value, 10),
-                        distancia: parseInt(sliders.distancia.value, 10),
-                        reputacion: parseInt(sliders.reputacion.value, 10),
-                        stock: parseInt(sliders.stock.value, 10)
-                    }
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errData = await response.json();
-                throw new Error(errData.detail || 'Error en la búsqueda geoespacial');
+                
+                // Formateador de errores de validación Pydantic (evita "[object Object]")
+                let detalleError = 'Error en la búsqueda geoespacial';
+                if (Array.isArray(errData.detail)) {
+                    detalleError = errData.detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join('<br>');
+                } else if (typeof errData.detail === 'string') {
+                    detalleError = errData.detail;
+                }
+
+                throw new Error(detalleError);
             }
 
             const data = await response.json();
             renderizarResultadosAHP(data);
         } catch (error) {
-            notificar('Sin Resultados', `No se pudo completar la consulta AHP: ${error.message}`, 'warning');
+            notificar('Error en Búsqueda AHP', error.message, 'warning');
         } finally {
             btnBuscar.disabled = false;
             btnBuscar.innerHTML = `<i class="fa-solid fa-route"></i> <span>Optimizar y Buscar Ferretería</span>`;

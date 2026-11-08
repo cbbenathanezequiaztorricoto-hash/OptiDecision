@@ -105,3 +105,4 @@ def calcular_proceso_ahp(datos: AHPMatrizCriteriosInput) -> Dict[str, Any]:
         "ranking_alternativas": ranking,
         "mensaje_consistencia": mensaje
     }
+
