@@ -1,19 +1,19 @@
 # app/modules/autenticacion/routes.py
-# Endpoints HTTP para autenticación y perfil de usuario.
+# Endpoints HTTP para registro, login y perfil con persistencia PostgreSQL.
+
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from datetime import datetime
 
+from app.shared.database import obtener_conexion
 from app.modules.autenticacion.schemas import (
     UsuarioRegistroInput,
     UsuarioLoginInput,
-    GoogleAuthInput,
     TokenOutput,
     UsuarioPerfilOutput
 )
 from app.modules.autenticacion.engine import (
-    encriptar_password,
+    generar_salt_y_hash,
     verificar_password,
     crear_access_token,
     decodificar_access_token
@@ -22,98 +22,120 @@ from app.modules.autenticacion.engine import (
 router = APIRouter(prefix="/api/auth", tags=["Autenticación y Usuarios (OAuth / JWT)"])
 security = HTTPBearer()
 
-# Base de datos simulada en memoria para desarrollo preliminar del módulo
-USUARIOS_DB: Dict[str, Dict[str, Any]] = {}
-COUNTER_ID = 1
-
 
 def obtener_usuario_actual(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
-    """Middleware de dependencia para proteger rutas con Bearer Token JWT."""
+    """Middleware de dependencia que valida el JWT contra la base de datos PostgreSQL."""
     token = credentials.credentials
     payload = decodificar_access_token(token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado. Por favor inicie sesión nuevamente."
+            detail="Token de acceso inválido o expirado. Por favor, inicie sesión nuevamente."
         )
+
     email = payload.get("sub")
-    usuario = USUARIOS_DB.get(email)
-    if not usuario:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado en la base de datos."
-        )
-    return usuario
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id_usuario, email, username, google_id, fecha_registro FROM usuarios WHERE email = %s;", (email,))
+            usuario = cur.fetchone()
+            if not usuario:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="El usuario asociado al token ya no existe."
+                )
+            return dict(usuario)
+    finally:
+        conn.close()
 
 
 @router.post(
     "/registro",
     response_model=TokenOutput,
     status_code=status.HTTP_201_CREATED,
-    summary="Registrar nuevo usuario con correo y contraseña"
+    summary="Registrar un usuario en PostgreSQL"
 )
 async def registrar_usuario(datos: UsuarioRegistroInput):
-    global COUNTER_ID
-    if datos.email in USUARIOS_DB:
+    password_hash = generar_salt_y_hash(datos.password)
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            # Comprobar si existe el email
+            cur.execute("SELECT id_usuario FROM usuarios WHERE email = %s;", (datos.email,))
+            if cur.fetchone():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El correo electrónico ya se encuentra registrado."
+                )
+
+            # Insertar nuevo usuario
+            cur.execute(
+                """
+                INSERT INTO usuarios (email, username, password_hash)
+                VALUES (%s, %s, %s)
+                RETURNING id_usuario;
+                """,
+                (datos.email, datos.username, password_hash)
+            )
+            conn.commit()
+
+        token = crear_access_token({"sub": datos.email, "username": datos.username})
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "username": datos.username,
+            "email": datos.email
+        }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El correo electrónico ya se encuentra registrado."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error en base de datos: {str(e)}"
         )
-
-    usuario_nuevo = {
-        "id_usuario": COUNTER_ID,
-        "email": datos.email,
-        "username": datos.username,
-        "password_hash": encriptar_password(datos.password),
-        "google_id": None,
-        "fecha_registro": datetime.now()
-    }
-    USUARIOS_DB[datos.email] = usuario_nuevo
-    COUNTER_ID += 1
-
-    token = crear_access_token({"sub": datos.email, "username": datos.username})
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "username": datos.username,
-        "email": datos.email
-    }
+    finally:
+        conn.close()
 
 
 @router.post(
     "/login",
     response_model=TokenOutput,
     status_code=status.HTTP_200_OK,
-    summary="Iniciar sesión con credenciales tradicionales"
+    summary="Iniciar sesión verificando hash en PostgreSQL"
 )
 async def login_usuario(datos: UsuarioLoginInput):
-    usuario = USUARIOS_DB.get(datos.email)
-    if not usuario or not verificar_password(datos.password, usuario["password_hash"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas. Verifique correo y contraseña."
-        )
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id_usuario, email, username, password_hash FROM usuarios WHERE email = %s;",
+                (datos.email,)
+            )
+            usuario = cur.fetchone()
+            if not usuario or not usuario["password_hash"] or not verificar_password(datos.password, usuario["password_hash"]):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Credenciales incorrectas."
+                )
 
-    token = crear_access_token({"sub": usuario["email"], "username": usuario["username"]})
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "username": usuario["username"],
-        "email": usuario["email"]
-    }
+        token = crear_access_token({"sub": usuario["email"], "username": usuario["username"]})
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "username": usuario["username"],
+            "email": usuario["email"]
+        }
+    finally:
+        conn.close()
 
 
 @router.get(
     "/perfil",
     response_model=UsuarioPerfilOutput,
     status_code=status.HTTP_200_OK,
-    summary="Obtener perfil del usuario autenticado vía JWT"
+    summary="Obtener información del usuario autenticado"
 )
 async def obtener_perfil(usuario_actual: Dict[str, Any] = Depends(obtener_usuario_actual)):
-    return {
-        "id_usuario": usuario_actual["id_usuario"],
-        "email": usuario_actual["email"],
-        "username": usuario_actual["username"],
-        "google_id": usuario_actual["google_id"],
-        "fecha_registro": usuario_actual["fecha_registro"]
-    }
+    return usuario_actual
