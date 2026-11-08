@@ -1,0 +1,117 @@
+===================================================================
+ESPECIFICADOR DE ESTILOS Y UI/UX: IOP812 - OPTI DECISION SUITE
+===================================================================
+Este documento define la identidad visual, el comportamiento de temas,
+la responsividad y la arquitectura UWE de la interfaz de usuario.
+
+<GUIA_VISUAL_Y_COLORES>
+1. PALETA INDUSTRIAL-TECH PRO (Tema por Defecto: Oscuro / Slate):
+   --bg-base:        #0F172A (Slate 900 - Fondo principal)
+   --card-bg:        #1E293B (Slate 800 - Paneles, modales y tarjetas)
+   --border-color:   #334155 (Slate 700 - Bordes sutiles y separadores)
+   --primary:        #0EA5E9 (Cyan / Azul Eléctrico - Acciones primarias y rutas)
+   --primary-hover:  #0284C7 (Cyan Oscuro - Estados hover)
+   --accent-gold:    #F59E0B (Ámbar / Dorado Ferretero - Top Pick AHP y precios destacados)
+   --success:        #10B981 (Esmeralda - Stock disponible, CR AHP consistente)
+   --danger:         #EF4444 (Carmín - Alertas de faltantes / Inconsistencia AHP)
+   --text-main:      #F8FAFC (Slate 50 - Texto principal)
+   --text-muted:     #94A3B8 (Slate 400 - Textos secundarios y leyendas)
+
+2. MODO CLARO (Conmutado via data-theme="light"):
+   --bg-base:        #F8FAFC (Slate 50)
+   --card-bg:        #FFFFFF (Blanco puro)
+   --border-color:   #E2E8F0 (Slate 200)
+   --text-main:      #0F172A (Slate 900)
+   --text-muted:     #64748B (Slate 500)
+</GUIA_VISUAL_Y_COLORES>
+
+<RESPONSIVE_MOBILE_FIRST>
+* Viewport Móvil: En pantallas < 768px, el mapa de Leaflet.js ocupa el 100% del viewport vertical (100vh).
+* Buscador Flotante (Google Maps / Trufi UX): El cuadro de búsqueda de origen/producto flota sobre el mapa en la parte superior con z-index elevado y sombras suaves.
+* Tablas Adaptables: En dispositivos móviles, las tablas de datos (CRUD e Inventarios) cambian dinámicamente a tarjetas desglosables (Responsive Cards) para evitar el desplazamiento horizontal incómodo.
+</RESPONSIVE_MOBILE_FIRST>
+
+<COMPORTAMIENTO_TEMA_TOGGLE>
+* Mecanismo: Elemento HTML con id="themeToggle" que ejecuta JavaScript para alternar el atributo `data-theme` en el tag <html>.
+* Persistencia: Utiliza `localStorage.getItem('iop812-theme')` para recordar la preferencia del usuario entre sesiones.
+</COMPORTAMIENTO_TEMA_TOGGLE>
+
+<designNavegacion_UWE>
++--------------------------------------------------------------------------------------+
+| NOTACIÓN UWE UTILIZADA:                                                              |
+| <<navigationClass>> : Pantalla / Vista HTML / Modal interactivo                      |
+| <<menu>>            : Menú de navegación, barra lateral o grupo de pestañas          |
+| <<processClass>>   : Acción o proceso de negocio ejecutado en el backend FastAPI     |
+| <<query>>           : Búsqueda o filtro de datos enviado a la BD (PostgreSQL/PostGIS)|
+| <<index>>           : Lista o tabla de resultados devuelta a la pantalla             |
+| <<navigationLink>>  : Enlace de navegación entre pantallas                           |
+| <<processLink>>     : Conexión de una pantalla con la ejecución de un proceso        |
++--------------------------------------------------------------------------------------+
+<<navigationClass>>
+                               VistaPublicaCliente
+                              (Google Maps + Trufi UX)
+                                         |
+               +-------------------------+-------------------------+
+               |                                                   |
+      <<menu>> TopNavCliente                              <<menu>> FiltrosAHPBar
+               |                                                   |
+    +----------+----------+                              +---------+---------+
+    |                     |                              |                   |
+<<navigationLink>>  <<navigationLink>>               <<query>>           <<query>>
+   #home                #mapa-ahp               QueryOrigenGeocoding QueryFerreteriasAHP
+                                                         |                   |
+                                                <<processClass>>     <<processClass>>
+                                                ObtenerCoordenadas   EjecutarAHPPostGIS
+                                                         |                   |
+                                                         +---------+---------+
+                                                                   |
+                                                               <<index>>
+                                                        ListaFerreteriasOptimas
+                                                              (Leaflet Map)
+                                                                   |
+                                                          <<navigationLink>>
+                                                          <<navigationClass>>
+                                                            ModalLoginAuth
+                                                                   |
+                                                            <<processLink>>
+                                                           <<processClass>>
+                                                         AutenticarUsuarioJWT
+                                                                   |
+                                                  [Si Token JWT es Válido]
+                                                                   |
+                                                          <<navigationClass>>
+                                                        DashboardFerreteroAdmin
+                                                                   |
+                                                       <<menu>> MenuModulosIO
+                                                                   |
+     +---------------------+---------------------+-----------------+---------------------+
+     |                     |                     |                 |                     |
+<<navigationClass>>   <<navigationClass>>   <<navigationClass>> <<navigationClass>>   <<navigationClass>>
+GestionCatálogoCRUD   ModuloInventarioEOQ   ModuloDecisionesIO  ModuloMarkovPrediccion ModuloColasMM1
+     |                     |                     |                 |                     |
+<<processClass>>      <<processClass>>      <<processClass>>   <<processClass>>      <<processClass>>
+GuardarProductoBD     CalcularLoteOptimo    EvaluarVMEySavage  CalcularMatrizAbsorcion EstimarEsperaWq
+</designNavegacion_UWE>
+
+<reconocimientos>
+<footer id="contact" class="footer bg-black p-top-40 p-bottom-30">
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-md-12">
+                <h5 class="text-white">OPTI DECISION SUITE - IOP812</h5>
+                <p class="text-muted">
+                    Plataforma de Optimización Geoespacial y Multicriterio para el Sector Ferretero en Cochabamba, Bolivia.
+                </p>
+                <hr style="border-color: #333;">
+                <p class="text-white">
+                    <strong>Docente:</strong> Ing. Myrna Gloria Baena Paniagua<br>
+                    <strong>Integrantes:</strong> Noelia Sejas | Lucas David Loayza | Favio Valenzuela | Nathan Ezequías Torrico Torrez
+                </p>
+                <p class="small text-muted m-top-20">
+                    © 2026 Universidad Franz Tamayo (UNIFRANZ) - Todos los derechos reservados.
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+</reconocimientos>
