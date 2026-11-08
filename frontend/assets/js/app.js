@@ -387,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const lambda = parseFloat(document.getElementById('colaLambda').value);
         const mu = parseFloat(document.getElementById('colaMu').value);
+        const unidad = document.getElementById('colaUnidad')?.value || 'horas'; // Captura del select
 
         try {
             const res = await fetch('/api/colas/mm1', {
@@ -395,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     tasa_llegada_lambda: lambda,
                     tasa_servicio_mu: mu,
-                    unidad_tiempo: document.getElementById('colaUnidad')?.value || 'horas' // Coincide de forma explícita con el valor por defecto del esquema
+                    unidad_tiempo: unidad // Envío explícito al backend
                 })
             });
 
@@ -406,11 +407,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
 
-            // Renderizado de métricas retornadas por ColaMM1Output
+            // Renderizado de resultados de la API y métricas retornadas por ColaMM1Output
             document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
-            document.getElementById('resColaWq').textContent = `${(data.tiempo_espera_cola_Wq * 60).toFixed(1)} min`;
+            
+            // Si la unidad seleccionada es 'horas', convertimos Wq a minutos para mejor lectura visual
+            const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
+            document.getElementById('resColaWq').textContent = tiempoMostrar;
 
-            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador calculada por el backend.', 'success');
+            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador procesada.', 'success');
         } catch (err) {
             notificar('Error en Colas', err.message, 'error');
         }
