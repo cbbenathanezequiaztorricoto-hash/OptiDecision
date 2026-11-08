@@ -380,44 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // ---------------------------------------------------------------
-    // 9. CALCULADORA DE TEORÍA DE DECISIONES
-    // ---------------------------------------------------------------
-    const formDecisiones = document.getElementById('formDecisiones');
-    formDecisiones?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            const payload = {
-                alternativas: [
-                    { nombre: document.getElementById('decAlt1').value, pagos: [parseFloat(document.getElementById('decA1E1').value), parseFloat(document.getElementById('decA1E2').value)] },
-                    { nombre: document.getElementById('decAlt2').value, pagos: [parseFloat(document.getElementById('decA2E1').value), parseFloat(document.getElementById('decA2E2').value)] }
-                ],
-                probabilidades: [parseFloat(document.getElementById('decProbE1').value), 1 - parseFloat(document.getElementById('decProbE1').value)]
-            };
-
-            const res = await fetch('/api/decisiones/evaluar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) throw new Error('Error en motor de decisiones');
-            const data = await res.json();
-
-            document.getElementById('resDecisionesContainer').innerHTML = `
-                <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1"><strong>Sugerencia VME:</strong> <span class="text-success fw-bold">${data.mejor_vme_alternativa}</span> (Bs. ${data.vme_maximo})</li>
-                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${data.laplace_alternativa}</li>
-                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${data.savage_alternativa}</li>
-                </ul>
-            `;
-            notificar('Evaluación Completada', 'Los escenarios de decisión fueron calculados.', 'success');
-        } catch (err) {
-            notificar('Error en Decisiones', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 10. CALCULADORA COLAS M/M/1
+    // 9. ESTIMACIÓN DE COLAS M/M/1 (ALINEADO 1:1 CON ColasMM1Input)
     // ---------------------------------------------------------------
     const formColas = document.getElementById('formColas');
     formColas?.addEventListener('submit', async (e) => {
@@ -429,55 +392,138 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/colas/mm1', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasa_llegada_lambda: lambda, tasa_servicio_mu: mu })
+                body: JSON.stringify({
+                    tasa_llegada_lambda: lambda,
+                    tasa_servicio_mu: mu,
+                    unidad_tiempo: document.getElementById('colaUnidad')?.value || 'horas' // Coincide de forma explícita con el valor por defecto del esquema
+                })
             });
 
-            if (!res.ok) throw new Error('Servicio saturado (lambda >= mu)');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Servicio saturado o parámetros inválidos');
+            }
+
             const data = await res.json();
 
+            // Renderizado de métricas retornadas por ColaMM1Output
             document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
             document.getElementById('resColaWq').textContent = `${(data.tiempo_espera_cola_Wq * 60).toFixed(1)} min`;
 
-            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador lista.', 'success');
+            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador calculada por el backend.', 'success');
         } catch (err) {
             notificar('Error en Colas', err.message, 'error');
         }
     });
     // ---------------------------------------------------------------
-    // CALCULADORA CADENAS DE MARKOV (MATRIZ DE ABSORCIÓN B = N * R)
+    // 10. SIMULACIÓN CADENAS DE MARKOV (ALINEADO CON MarkovMatrixInput)
     // ---------------------------------------------------------------
     const formMarkov = document.getElementById('formMarkov');
     formMarkov?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const p12 = parseFloat(document.getElementById('markovP12').value);
-        const p2A1 = parseFloat(document.getElementById('markovP2A1').value);
+        const p12 = parseFloat(document.getElementById('markovP12').value);  // Prob Búsqueda -> Carrito
+        const p2A1 = parseFloat(document.getElementById('markovP2A1').value); // Prob Carrito -> Compra
+
+        // Construcción de la Forma Canónica exigida por Pydantic (MarkovMatrixInput)
+        const payload = {
+            estados_transitorios: ["Busqueda", "EnCarrito"],
+            estados_absorbentes: ["CompraRealizada", "Abandono"],
+            matriz_Q: [
+                [0.0, p12],       // De Búsqueda a Búsqueda (0), De Búsqueda a Carrito (p12)
+                [0.0, 0.0]        // De Carrito a Búsqueda (0), De Carrito a Carrito (0)
+            ],
+            matriz_R: [
+                [0.0, 1 - p12],   // De Búsqueda a Compra (0), De Búsqueda a Abandono (1 - p12)
+                [p2A1, 1 - p2A1]  // De Carrito a Compra (p2A1), De Carrito a Abandono (1 - p2A1)
+            ]
+        };
 
         try {
             const response = await fetch('/api/markov/simular', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prob_busqueda_a_carrito: p12,
-                    prob_carrito_a_compra: p2A1
-                })
+                body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error('Error al procesar la simulación de Markov');
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Error al simular Cadenas de Markov');
+            }
 
             const data = await response.json();
+            
+            // Extracción directa desde la estructura Dict: matriz_absorcion_B["Busqueda"]["CompraRealizada"]
+            const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
+            const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
 
-            // Desplegar matriz de absorción y probabilidad de conversión
             document.getElementById('resMarkovContainer').innerHTML = `
                 <div class="alert alert-success border-0 mb-0">
                     <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
-                    <p class="mb-1 small">Probabilidad de que un comprador que inicia en <strong>Búsqueda</strong> concrete la <strong>Compra</strong>:</p>
-                    <h3 class="fw-bold text-success mb-0">${(data.probabilidad_conversion * 100).toFixed(2)}%</h3>
+                    <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
+                    <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
+                    <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
                 </div>
             `;
 
-            notificar('Simulación Markov Exitosa', 'Matriz de absorción calculada correctamente.', 'success');
+            notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas por el motor NumPy.', 'success');
         } catch (err) {
             notificar('Error en Markov', err.message, 'error');
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // 11. EVALUACIÓN TEORÍA DE DECISIONES (ALINEADO CON DecisionesInput)
+    // ---------------------------------------------------------------
+    const formDecisiones = document.getElementById('formDecisiones');
+    formDecisiones?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const alt1 = document.getElementById('decAlt1').value;
+            const a1e1 = parseFloat(document.getElementById('decA1E1').value);
+            const a1e2 = parseFloat(document.getElementById('decA1E2').value);
+
+            const alt2 = document.getElementById('decAlt2').value;
+            const a2e1 = parseFloat(document.getElementById('decA2E1').value);
+            const a2e2 = parseFloat(document.getElementById('decA2E2').value);
+
+            const p1 = parseFloat(document.getElementById('decProbE1').value);
+            const p2 = 1 - p1;
+
+            const payload = {
+                alternativas: [alt1, alt2],
+                estados_naturaleza: ["Alta Demanda", "Baja Demanda"],
+                matriz_pagos: [
+                    [a1e1, a1e2],
+                    [a2e1, a2e2]
+                ],
+                probabilidades: [p1, p2],
+                coeficiente_alpha: 0.7
+            };
+
+            const res = await fetch('/api/decisiones/evaluar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Error en evaluación de decisiones');
+            }
+
+            const data = await res.json();
+
+            document.getElementById('resDecisionesContainer').innerHTML = `
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${data.sugerencia_riesgo_vme || data.mejor_vme_alternativa || 'Calculado'}</span></li>
+                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${data.criterio_laplace || data.laplace_alternativa || 'N/A'}</li>
+                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${data.criterio_wald_pesimista || 'N/A'}</li>
+                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${data.criterio_savage || data.savage_alternativa || 'N/A'}</li>
+                </ul>
+            `;
+            notificar('Evaluación Completada', 'Los criterios de decisión fueron procesados exitosamente.', 'success');
+        } catch (err) {
+            notificar('Error en Decisiones', err.message, 'error');
         }
     });
     // ---------------------------------------------------------------

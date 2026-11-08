@@ -416,6 +416,13 @@
                                             <label class="form-label small text-muted">Tasa de Servicio ($\mu$ clientes/hora)</label>
                                             <input type="number" step="0.1" class="form-control form-control-sm" id="colaMu" value="10.0" required>
                                         </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Unidad de Tiempo</label>
+                                            <select id="colaUnidad" class="form-select form-select-sm">
+                                                <option value="horas" selected>Horas</option>
+                                                <option value="minutos">Minutos</option>
+                                            </select>
+                                        </div>
                                         <button type="submit" class="btn btn-sm btn-primary w-100">Estimar Tiempos de Espera</button>
                                     </form>
                                 </div>

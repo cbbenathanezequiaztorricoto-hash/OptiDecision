@@ -5,7 +5,7 @@ from typing import Dict
 from pydantic import BaseModel, Field, model_validator
 
 # -------------------------------------------------------------------------
-# MODELO DE ENTRADA: COLA MODELO M/M/1
+# MOLDE DE ENTRADA: COLA MODELO M/M/1
 # -------------------------------------------------------------------------
 class ColasMM1Input(BaseModel):
     tasa_llegada_lambda: float = Field(
