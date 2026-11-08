@@ -4,6 +4,42 @@ ESPECIFICADOR DE ESTILOS Y UI/UX: IOP812 - OPTI DECISION SUITE
 Este documento define la identidad visual, el comportamiento de temas,
 la responsividad y la arquitectura UWE de la interfaz de usuario.
 
+NOTA IMPORTANTE:
+El siguiente TXT debe ser leído sin saltarse nada ni obviar absolutamente nada
+tampoco saltarse delimitadores XML por precaución de romper algo.
+
+¿TENDRÁ EMOJIS EL FRONTEND?
+Ninguno, el proyecto Opti busca seriedad porque estamos por la plata no por la patria.
+
+¿QUÉ LIBRERÍAS ESTAMOS USANDO?
+🌟Leaflet.js (v1.9.4)
+Es la librería estándar open-source para mapas interactivos ligeros (~40 KB). 
+Se integra nativamente con los azulejos (tiles) gratuitos de OpenStreetMap.   
+
+🌟Bootstrap (v5.3)
+Proporciona el sistema de rejilla (grid flexbox), el comportamiento mobile-first, 
+la gestión de modales de autenticación y los componentes base de la plantilla Made.   
+
+🌟FontAwesome (v6.5)
+Aporta la iconografía vectorial para herramientas ferreteras 
+(martillos, llaves, pines de ubicación, stock, candados) sin sobrecargar 
+la red cargando imágenes .png individuales.
+
+¿CÓMO DISEÑAMOS EL FRONTEND? ¿CUÁL ES SU ARQUITECTURA?
+Es la clásica.
+├── frontend/
+│   ├── assets/
+│   │   ├── css/               # Bootstrap 5, Leaflet.css, style.css, responsive.css
+│   │   ├── js/                # Leaflet.js, app.js (Fetch API), theme.js
+│   │   └── images/            # Marcadores de mapa, logos
+│   └── index.html             # Interfaz Híbrida (Google Maps + Plantilla Made)
+Nos basamos en una <GUIA_VISUAL_Y_COLORES>, un diseño UWE <designNavegacion_UWE>,
+buscamos un <RESPONSIVE_MOBILE_FIRST> y <COMPORTAMIENTO_TEMA_TOGGLE>.
+
+Además damos su reconocimiento a la ingeniera Myrna por sus algoritmos usando <reconocimientos>
+y material de estudio como diapositivas.
+Por otro la estado el estado actual del HTML es <index_html> casi todos los delimitadores XML son [Variables]
+también se encuentra el <app_js> y <style_css> actual en el proyecto
 <GUIA_VISUAL_Y_COLORES>
 1. PALETA INDUSTRIAL-TECH PRO (Tema por Defecto: Oscuro / Slate):
    --bg-base:        #0F172A (Slate 900 - Fondo principal)
@@ -115,3 +151,1283 @@ GuardarProductoBD     CalcularLoteOptimo    EvaluarVMEySavage  CalcularMatrizAbs
     </div>
 </footer>
 </reconocimientos>
+
+<index_html>
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiDecision Suite - IOP812 | Buscador Ferretero & Optimización IO</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 1. Bootstrap 5.3 CSS con SRI -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+    <!-- 2. Leaflet.js CSS con SRI -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+
+    <!-- 3. FontAwesome 6 (Iconos Vectoriales) con SRI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- 4. SweetAlert2 CSS (en el <head>) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.5/dist/sweetalert2.min.css" integrity="sha256-h2G5+h45c5A23Z5d4R5f5e8s3G3v3K3+K3v3K3v3K3v=" crossorigin="anonymous">
+
+    <!-- 5. Estilos Personalizados -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <!-- NAV BAR SUPERIOR HÍBRIDA (Bootsnav style adaptado) -->
+    <nav class="navbar navbar-expand-lg sticky-top border-bottom" id="topNav">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#home">
+                <i class="fa-solid fa-compass-drafting text-primary fs-4"></i>
+                <span class="fw-bold fs-5 tracking-tight">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">IOP812</span></span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars text-main"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-2">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#mapa-ahp"><i class="fa-solid fa-map-location-dot me-1"></i> Buscador AHP</a>
+                    </li>
+                    <li class="nav-item d-none" id="navItemDashboard">
+                        <a class="nav-link" href="#modulos-io" data-bs-toggle="modal" data-bs-target="#modalDashboardIO"><i class="fa-solid fa-calculator me-1"></i> Panel I.O. Ferretero</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact"><i class="fa-solid fa-graduation-cap me-1"></i> Créditos</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                    <!-- Toggle Modo Oscuro / Claro -->
+                    <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+
+                    <!-- Estado Auth / Botón Login -->
+                    <div id="authStatusContainer">
+                        <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalLoginAuth">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Acceso Ferretero</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SECCIÓN PRINCIPAL: MAPA INTERACTIVO CON BUSCADOR FLOTANTE (ESTILO TRUFI / GOOGLE MAPS) -->
+    <main id="mapa-ahp" class="position-relative w-100 overflow-hidden">
+        
+        <!-- CANVAS DEL MAPA LEAFLET -->
+        <div id="map"></div>
+
+        <!-- HUD BUSCADOR FLOTANTE UX (Google Maps / Trufi Cochabamba style) -->
+        <div class="floating-search-card shadow-lg rounded-4 p-3 border">
+            <form id="formBuscadorAHP" onsubmit="event.preventDefault();">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="small text-uppercase fw-bold text-muted tracking-wider"><i class="fa-solid fa-magnifying-glass-location text-primary me-1"></i> Búsqueda Rápida</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" id="badgeCRInfo">
+                        <i class="fa-solid fa-circle-check me-1"></i>AHP Consistente (CR &lt; 0.10)
+                    </span>
+                </div>
+
+                <!-- Campo Origen con Botón GPS integrador tipo Trufi -->
+                <div class="input-group mb-2">
+                    <span class="input-group-text bg-body border-end-0 text-primary"><i class="fa-solid fa-location-dot"></i></span>
+                    <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Origen (ej. Cala Cala, Quillacollo, Suticollo)" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
+                    <button class="btn btn-outline-secondary border-start-0" type="button" id="btnGPS" title="Usar mi ubicación GPS actual">
+                        <i class="fa-solid fa-crosshairs text-primary"></i>
+                    </button>
+                </div>
+
+                <!-- Campo Producto Buscado -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-body border-end-0 text-muted"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="inputProducto" placeholder="¿Qué producto buscas? (ej. Cemento, Fierro 1/2&quot;, Yeso)" required>
+                </div>
+
+                <!-- Acordeón Desplegable para Ponderación AHP Multicriterio -->
+                <div class="accordion accordion-flush mb-3 rounded-3 border" id="accordionAHP">
+                    <div class="accordion-item bg-transparent">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2 px-3 small fw-medium text-main" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAHP">
+                                <i class="fa-solid fa-sliders text-primary me-2"></i> Ajustar Criterios AHP (Saaty)
+                            </button>
+                        </h2>
+                        <div id="collapseAHP" class="accordion-collapse collapse" data-bs-parent="#accordionAHP">
+                            <div class="accordion-body p-3">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderPrecio" class="form-label mb-0 text-muted">Precio en BOB</label>
+                                        <span class="fw-bold text-primary" id="valPrecio">40%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderPrecio" min="1" max="9" value="4">
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderDistancia" class="form-label mb-0 text-muted">Distancia Cercana</label>
+                                        <span class="fw-bold text-primary" id="valDistancia">30%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderDistancia" min="1" max="9" value="3">
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderReputacion" class="form-label mb-0 text-muted">Reputación Local</label>
+                                        <span class="fw-bold text-primary" id="valReputacion">20%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderReputacion" min="1" max="9" value="2">
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <label for="sliderStock" class="form-label mb-0 text-muted">Stock Disponible</label>
+                                        <span class="fw-bold text-primary" id="valStock">10%</span>
+                                    </div>
+                                    <input type="range" class="form-range" id="sliderStock" min="1" max="9" value="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-100 rounded-3 py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-2" type="submit" id="btnBuscarAHP">
+                    <i class="fa-solid fa-route"></i>
+                    <span>Optimizar y Buscar Ferretería</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- TARJETA FLOTANTE CON RESULTADOS AHP TOP PICK -->
+        <div class="floating-results-card shadow-lg rounded-4 p-3 border d-none" id="cardTopResult">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                <span class="badge bg-warning text-dark font-monospace fw-bold"><i class="fa-solid fa-crown me-1"></i> OPCIÓN ÓPTIMA AHP</span>
+                <button type="button" class="btn-close small" id="btnCloseTopResult" aria-label="Cerrar"></button>
+            </div>
+            <h6 class="fw-bold mb-1 text-main" id="topFerreteriaNombre">Ferretería El Castor</h6>
+            <p class="small text-muted mb-2" id="topFerreteriaDireccion"><i class="fa-solid fa-location-pin me-1"></i> Av. Blanco Galindo Km 3</p>
+            
+            <div class="row g-2 text-center my-2">
+                <div class="col-6">
+                    <div class="p-2 rounded-3 bg-body-tertiary border">
+                        <span class="d-block extra-small text-muted text-uppercase">Precio BOB</span>
+                        <strong class="text-success fs-6" id="topPrecioBOB">Bs. 45.00</strong>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 rounded-3 bg-body-tertiary border">
+                        <span class="d-block extra-small text-muted text-uppercase">Distancia</span>
+                        <strong class="text-primary fs-6" id="topDistanciaKM">1.2 km</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between small text-muted mt-2">
+                <span><i class="fa-solid fa-star text-warning me-1"></i> <span id="topReputacion">4.8</span></span>
+                <span><i class="fa-solid fa-boxes-stacked text-info me-1"></i> Stock: <strong id="topStock">120 un.</strong></span>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE AUTENTICACIÓN (LOGIN JWT / GOOGLE OAUTH) -->
+    <div class="modal fade" id="modalLoginAuth" tabindex="-1" aria-labelledby="modalLoginAuthLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalLoginAuthLabel">Acceso Propietario / Ferretero</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formLogin" onsubmit="event.preventDefault();">
+                        <div class="mb-3">
+                            <label for="inputEmail" class="form-label small fw-medium text-muted">Correo Electrónico</label>
+                            <input type="email" class="form-control rounded-3" id="inputEmail" placeholder="ferretero@ejemplo.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="inputPassword" class="form-label small fw-medium text-muted">Contraseña</label>
+                            <input type="password" class="form-control rounded-3" id="inputPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-medium mb-3">Iniciar Sesión</button>
+                    </form>
+                    
+                    <div class="position-relative text-center my-3">
+                        <hr class="text-muted">
+                        <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
+                    </div>
+
+                    <button class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2">
+                        <i class="fa-brands fa-google text-danger"></i>
+                        <span>Google OAuth2</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DASHBOARD / CALCULADORAS DE INVESTIGACIÓN OPERATIVA II -->
+    <div class="modal fade" id="modalDashboardIO" tabindex="-1" aria-labelledby="modalDashboardIOLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom px-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-sliders text-primary fs-4"></i>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0" id="modalDashboardIOLabel">Panel de Administración & Calculadoras I.O. II</h5>
+                            <span class="small text-muted">Gestión de Catálogo y Algoritmos Avanzados (IOP812)</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <!-- Nav Tabs del Panel -->
+                    <ul class="nav nav-tabs px-4 pt-3 border-bottom" id="tabsDashboard" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-medium" id="tab-crud-tab" data-bs-toggle="tab" data-bs-target="#tab-crud" type="button" role="tab"><i class="fa-solid fa-store me-1"></i> Catálogo Ferretero</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-inventarios-tab" data-bs-toggle="tab" data-bs-target="#tab-inventarios" type="button" role="tab"><i class="fa-solid fa-boxes-packing me-1"></i> Inventarios (EOQ/EPQ)</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-decisiones-tab" data-bs-toggle="tab" data-bs-target="#tab-decisiones" type="button" role="tab"><i class="fa-solid fa-tree me-1"></i> Decisiones (VME/Savage)</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-markov-tab" data-bs-toggle="tab" data-bs-target="#tab-markov" type="button" role="tab"><i class="fa-solid fa-chart-line me-1"></i> Cadenas de Markov</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-medium" id="tab-colas-tab" data-bs-toggle="tab" data-bs-target="#tab-colas" type="button" role="tab"><i class="fa-solid fa-users-line me-1"></i> Colas M/M/1</button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content p-4" id="tabsDashboardContent">
+                        
+                        <!-- TAB 1: CRUD CATÁLOGO -->
+                        <div class="tab-pane fade show active" id="tab-crud" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-main">Mis Productos e Insumos Registrados</h6>
+                                <button class="btn btn-sm btn-primary rounded-pill"><i class="fa-solid fa-plus me-1"></i> Nuevo Producto</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Precio (BOB)</th>
+                                            <th>Stock Actual</th>
+                                            <th>Demanda Anual (D)</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyCatálogo">
+                                        <tr>
+                                            <td class="fw-medium">Fierro Corrugado 1/2"</td>
+                                            <td class="text-success fw-bold">Bs. 48.00</td>
+                                            <td><span class="badge bg-success">150 un.</span></td>
+                                            <td>1,200 un.</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i></button>
+                                                <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: INVENTARIOS DETERMINÍSTICOS -->
+                        <div class="tab-pane fade" id="tab-inventarios" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Parámetros del Modelo EOQ/EPQ</h6>
+                                    <form id="formEOQ" onsubmit="event.preventDefault();">
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Demanda Anual (D)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqD" value="1200" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Costo por Pedido (K en BOB)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqK" value="50" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Costo Mantenimiento (H en BOB/un/año)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqH" value="5" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Tiempo Entrega (L días)</label>
+                                            <input type="number" class="form-control form-control-sm" id="eoqL" value="5" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Calcular Lote Óptimo (Q*)</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Resultados Matemáticos</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary">
+                                                <span class="d-block small text-muted">Lote Óptimo (Q*)</span>
+                                                <h4 class="fw-bold text-primary mb-0" id="resQOptimo">155 un.</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary">
+                                                <span class="d-block small text-muted">Punto de Reorden (ROP)</span>
+                                                <h4 class="fw-bold text-warning mb-0" id="resROP">20 un.</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- TAB 3: TEORÍA DE DECISIONES -->
+                        <div class="tab-pane fade" id="tab-decisiones" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Matriz de Decisiones & Probabilidades</h6>
+                                    <form id="formDecisiones" onsubmit="event.preventDefault();">
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Nombre de Alternativa A1</label>
+                                            <input type="text" class="form-control form-control-sm" id="decAlt1" value="Comprar Lote Grande" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Pagos (Estado 1 / Estado 2) en BOB</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control" id="decA1E1" value="15000" placeholder="Alta Demanda">
+                                                <input type="number" class="form-control" id="decA1E2" value="-2000" placeholder="Baja Demanda">
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Nombre de Alternativa A2</label>
+                                            <input type="text" class="form-control form-control-sm" id="decAlt2" value="Comprar Lote Pequeño" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Pagos (Estado 1 / Estado 2) en BOB</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control" id="decA2E1" value="6000" placeholder="Alta Demanda">
+                                                <input type="number" class="form-control" id="decA2E2" value="2000" placeholder="Baja Demanda">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Probabilidad Estado 1 ($P_1$)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="decProbE1" value="0.60" min="0" max="1">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">Evaluar Incertidumbre & Riesgo (VME)</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Resultados de Criterios I.O.</h6>
+                                    <div id="resDecisionesContainer" class="p-3 border rounded-3 bg-body-tertiary">
+                                        <p class="small text-muted mb-0">Ingresa la matriz y haz clic en Evaluar para consultar los criterios Laplace, Wald, Hurwicz, Savage y VME.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: CADENAS DE MARKOV -->
+                        <div class="tab-pane fade" id="tab-markov" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Simulación de Matriz de Absorción</h6>
+                                    <form id="formMarkov" onsubmit="event.preventDefault();">
+                                        <p class="small text-muted">Estados Transitorios: <strong>Búsqueda (S1)</strong> y <strong>Carrito (S2)</strong>.<br>Estados Absorbentes: <strong>Compra (A1)</strong> y <strong>Abandono (A2)</strong>.</p>
+                                        <div class="mb-2">
+                                            <label class="form-label extra-small text-muted">Prob. Búsqueda $\rightarrow$ Carrito</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="markovP12" value="0.40">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label extra-small text-muted">Prob. Carrito $\rightarrow$ Compra (Absorción)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="markovP2A1" value="0.70">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Calcular Matriz Absorción $B = N \cdot R$</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Tasa Probable de Conversión</h6>
+                                    <div id="resMarkovContainer" class="p-3 border rounded-3 bg-body-tertiary">
+                                        <p class="small text-muted mb-0">La simulación desplegará la probabilidad final de conversión a venta desde la fase de búsqueda.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 5: COLAS M/M/1 -->
+                        <div class="tab-pane fade" id="tab-colas" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Parámetros Mostrador M/M/1</h6>
+                                    <form id="formColas" onsubmit="event.preventDefault();">
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Tasa de Llegada ($\lambda$ clientes/hora)</label>
+                                            <input type="number" step="0.1" class="form-control form-control-sm" id="colaLambda" value="8.0" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Tasa de Servicio ($\mu$ clientes/hora)</label>
+                                            <input type="number" step="0.1" class="form-control form-control-sm" id="colaMu" value="10.0" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Unidad de Tiempo</label>
+                                            <select id="colaUnidad" class="form-select form-select-sm">
+                                                <option value="horas" selected>Horas</option>
+                                                <option value="minutos">Minutos</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">Estimar Tiempos de Espera</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Métricas del Sistema</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary text-center">
+                                                <span class="d-block extra-small text-muted">Uso del Sistema ($\rho$)</span>
+                                                <h4 class="fw-bold text-info mb-0" id="resColaRho">0%</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary text-center">
+                                                <span class="d-block extra-small text-muted">Tiempo en Cola ($W_q$)</span>
+                                                <h4 class="fw-bold text-warning mb-0" id="resColaWq">0 min</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA (CRÉDITOS OFICIALES MATERIA IOP812) -->
+    <footer id="contact" class="footer border-top py-4 bg-body-tertiary">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-md-12">
+                    <h6 class="fw-bold text-main mb-1">OPTI DECISION SUITE - IOP812</h6>
+                    <p class="small text-muted mb-2">
+                        Plataforma de Optimización Geoespacial y Multicriterio para el Sector Ferretero en Cochabamba, Bolivia.
+                    </p>
+                    <hr class="my-3 w-50 mx-auto opacity-25">
+                    <p class="small text-main mb-1">
+                        <strong>Docente:</strong> Ing. Myrna Gloria Baena Paniagua[cite: 18]<br>
+                        <strong>Integrantes:</strong> Noelia Sejas | Lucas David Loayza | Favio Valenzuela | Nathan Ezequías Torrico Torrez[cite: 18]
+                    </p>
+                    <p class="extra-small text-muted mt-2 mb-0">
+                        © 2026 Universidad Franz Tamayo (UNIFRANZ) - Todos los derechos reservados.[cite: 18]
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPT DE APLICACIÓN -->
+     <!-- SweetAlert2 JS (antes de /assets/js/app.js al final del <body>) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.5/dist/sweetalert2.all.min.js" integrity="sha256-4+d+q5m0d5k5v5K5+K5v5K5v5K5v5K5v5K5v5K5v5K5=" crossorigin="anonymous"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
+</index_html>
+<app_js>
+/* ===================================================================
+   OPTI DECISION SUITE - IOP812 | FRONTEND APP (SWEETALERT2 INTEGRATED) (CONSUMO PURO DE API)
+   =================================================================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ---------------------------------------------------------------
+    // 1. ESTADO Y VARIABLES GLOBALES
+    // ---------------------------------------------------------------
+    const COCHABAMBA_DEFAULT = [-17.3895, -66.1568]; // Plaza 14 de Septiembre
+    let map = null;
+    let markersLayer = null;
+    let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
+
+    // Helper reutilizable para notificaciones con diseño Industrial-Tech
+    const notificar = (titulo, texto, icono = 'info') => {
+        const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
+        return Swal.fire({
+            title: titulo,
+            text: texto,
+            icon: icono,
+            background: esOscuro ? '#1E293B' : '#FFFFFF',
+            color: esOscuro ? '#F8FAFC' : '#0F172A',
+            confirmButtonColor: icono === 'error' ? '#EF4444' : '#0EA5E9',
+            customClass: {
+                popup: 'rounded-4 border border-secondary-subtle shadow-lg'
+            }
+        });
+    };
+
+    // ---------------------------------------------------------------
+    // 2. GESTIÓN DE TEMA OSCURO / CLARO
+    // ---------------------------------------------------------------
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    const aplicarTema = (tema) => {
+        document.documentElement.setAttribute('data-theme', tema);
+        localStorage.setItem('iop812-theme', tema);
+        //Aquí preguntamos ¿El tema es light? Si es así, cambiamos el icono a sol, de lo contrario a luna
+        if (themeIcon) {
+            themeIcon.className = tema === 'light' ? 'fa-solid fa-sun text-warning' : 'fa-solid fa-moon text-light';
+        }
+    };
+    // Cargar tema guardado o por defecto (dark)
+    aplicarTema(localStorage.getItem('iop812-theme') || 'dark');
+
+    themeToggleBtn?.addEventListener('click', () => {
+        const temaActual = document.documentElement.getAttribute('data-theme');
+        aplicarTema(temaActual === 'dark' ? 'light' : 'dark');
+    });
+
+    // ---------------------------------------------------------------
+    // 3. INICIALIZACIÓN DE LEAFLET
+    // ---------------------------------------------------------------
+    const inicializarMapa = () => {
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) return;
+        
+        map = L.map('map', {
+            center: COCHABAMBA_DEFAULT,
+            zoom: 14,
+            zoomControl: false
+        });
+        // Posicionar control de zoom en la esquina inferior derecha
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        // Capa base de azulejos OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors | IOP812'
+        }).addTo(map);
+        // Marcador inicial de ubicación del usuario (Azul)
+        markersLayer = L.layerGroup().addTo(map);
+        // Auto-centrado dinámico inteligente al cargar la aplicación 
+        intentoAutoGeolocalizacion();
+    };
+
+    const actualizarMarcadorUsuario = (lat, lng, titulo) => {
+        ubicacionUsuario = { lat, lng };
+        // Eliminar marcador previo del usuario si existe
+        markersLayer.eachLayer(layer => {
+            if (layer.options.isUserMarker) {
+                markersLayer.removeLayer(layer);
+            }
+        });
+
+        const userIcon = L.divIcon({
+            className: 'user-marker-icon',
+            html: `<div style="background-color: #0EA5E9; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 0 12px rgba(14,165,233,0.9);"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        return L.marker([lat, lng], { icon: userIcon, isUserMarker: true })
+            .addTo(markersLayer)
+            .bindPopup(`<strong>${titulo}</strong>`);
+    };
+
+    const intentoAutoGeolocalizacion = () => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    map.setView([latitude, longitude], 15);
+                    actualizarMarcadorUsuario(latitude, longitude, "Tu ubicación GPS actual").openPopup();
+                    const inputOrigen = document.getElementById('inputOrigen');
+                    if (inputOrigen) inputOrigen.value = `Ubicación GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+                },
+                () => {
+                    // Fallback silencioso a Cochabamba centro
+                    actualizarMarcadorUsuario(COCHABAMBA_DEFAULT[0], COCHABAMBA_DEFAULT[1], "Origen: Plaza 14 de Septiembre, Cochabamba");
+                },
+                { timeout: 5000 }
+            );
+        } else {
+            actualizarMarcadorUsuario(COCHABAMBA_DEFAULT[0], COCHABAMBA_DEFAULT[1], "Origen: Plaza 14 de Septiembre, Cochabamba");
+        }
+    };
+
+    inicializarMapa();
+
+    // ---------------------------------------------------------------
+    // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
+    // ---------------------------------------------------------------
+    const btnGPS = document.getElementById('btnGPS');
+    const inputOrigen = document.getElementById('inputOrigen');
+
+    btnGPS?.addEventListener('click', () => {
+        btnGPS.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary"></i>`;
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                map.flyTo([latitude, longitude], 15);
+                actualizarMarcadorUsuario(latitude, longitude, "Tu ubicación GPS actual").openPopup();
+                inputOrigen.value = `Ubicación GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+                btnGPS.innerHTML = `<i class="fa-solid fa-crosshairs text-primary"></i>`;
+            },
+            (err) => {
+                notificar('Error de Geolocalización', 'No se pudo obtener la posición GPS: ' + err.message, 'error');
+                btnGPS.innerHTML = `<i class="fa-solid fa-crosshairs text-primary"></i>`;
+            }
+        );
+    });
+    // Convertir dirección digitada a Coordenadas mediante Geocoding dinámico
+    const resolverCoordenadasOrigen = async (textoOrigen) => {
+        if (textoOrigen.includes("GPS")) return ubicacionUsuario;
+
+        try {
+            const query = encodeURIComponent(`${textoOrigen}, Cochabamba, Bolivia`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+            const data = await res.json();
+
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                map.flyTo([lat, lon], 14);
+                actualizarMarcadorUsuario(lat, lon, `Origen: ${data[0].display_name.split(',')[0]}`);
+                return { lat, lng: lon };
+            }
+        } catch (e) {
+            console.warn("Geocoding Nominatim no disponible.");
+        }
+        return ubicacionUsuario;
+    };
+
+    // ---------------------------------------------------------------
+    // 5. SLIDERS AHP (Ponderación Saaty 1-9)(Actualización Visual de UI)
+    // ---------------------------------------------------------------
+    const sliders = {
+        precio: document.getElementById('sliderPrecio'),
+        distancia: document.getElementById('sliderDistancia'),
+        reputacion: document.getElementById('sliderReputacion'),
+        stock: document.getElementById('sliderStock')
+    };
+
+    const labels = {
+        precio: document.getElementById('valPrecio'),
+        distancia: document.getElementById('valDistancia'),
+        reputacion: document.getElementById('valReputacion'),
+        stock: document.getElementById('valStock')
+    };
+
+    const actualizarPorcentajesAHP = () => {
+        const valP = parseInt(sliders.precio?.value || 4, 10);
+        const valD = parseInt(sliders.distancia?.value || 3, 10);
+        const valR = parseInt(sliders.reputacion?.value || 2, 10);
+        const valS = parseInt(sliders.stock?.value || 1, 10);
+        const suma = valP + valD + valR + valS;
+        // Actualizar etiquetas de porcentaje en la UI
+        if (labels.precio) labels.precio.textContent = `${Math.round((valP / suma) * 100)}%`;
+        if (labels.distancia) labels.distancia.textContent = `${Math.round((valD / suma) * 100)}%`;
+        if (labels.reputacion) labels.reputacion.textContent = `${Math.round((valR / suma) * 100)}%`;
+        if (labels.stock) labels.stock.textContent = `${Math.round((valS / suma) * 100)}%`;
+    };
+
+    Object.values(sliders).forEach(slider => {
+        slider?.addEventListener('input', actualizarPorcentajesAHP);
+    });
+
+    // ---------------------------------------------------------------
+    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (POSTGIS EN BD POSTGRESQL)
+    // ---------------------------------------------------------------
+    const formBuscador = document.getElementById('formBuscadorAHP');
+    const cardTopResult = document.getElementById('cardTopResult');
+    const btnCloseTopResult = document.getElementById('btnCloseTopResult');
+
+    btnCloseTopResult?.addEventListener('click', () => {
+        cardTopResult?.classList.add('d-none');
+    });
+
+    formBuscador?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const productoText = document.getElementById('inputProducto').value.trim();
+        const origenText = document.getElementById('inputOrigen').value.trim();
+        if (!productoText) return;
+
+        const btnBuscar = document.getElementById('btnBuscarAHP');
+        btnBuscar.disabled = true;
+        btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Consultando PostGIS & AHP...`;
+        // Obtener coordenadas dinámicas según el texto digitado en Origen
+        const coordsActuales = await resolverCoordenadasOrigen(origenText);
+        // Petición al backend FastAPI que consulta PostgreSQL/PostGIS y calcula vector AHP en NumPy
+        try {
+            const response = await fetch('/api/ahp/buscar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    latitud: coordsActuales.lat,
+                    longitud: coordsActuales.lng,
+                    producto: productoText,
+                    pesos: {
+                        precio: parseInt(sliders.precio.value, 10),
+                        distancia: parseInt(sliders.distancia.value, 10),
+                        reputacion: parseInt(sliders.reputacion.value, 10),
+                        stock: parseInt(sliders.stock.value, 10)
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Error en la búsqueda geoespacial');
+            }
+
+            const data = await response.json();
+            renderizarResultadosAHP(data);
+        } catch (error) {
+            notificar('Sin Resultados', `No se pudo completar la consulta AHP: ${error.message}`, 'warning');
+        } finally {
+            btnBuscar.disabled = false;
+            btnBuscar.innerHTML = `<i class="fa-solid fa-route"></i> <span>Optimizar y Buscar Ferretería</span>`;
+        }
+    });
+
+    const renderizarResultadosAHP = (data) => {
+        markersLayer.clearLayers();
+        actualizarMarcadorUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng, "Tu Origen de Búsqueda");
+
+        if (!data.ferreterias || data.ferreterias.length === 0) {
+            notificar('Búsqueda Desierta', 'No existen ferreterías registradas en la base de datos con ese producto.', 'info');
+            return;
+        }
+
+        const top = data.ferreterias[0];
+
+        // Renderizar Tarjeta Top Pick
+        document.getElementById('topFerreteriaNombre').textContent = top.nombre;
+        document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
+        document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
+        document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
+        document.getElementById('topReputacion').textContent = top.reputacion;
+        document.getElementById('topStock').textContent = `${top.stock} un.`;
+        cardTopResult?.classList.remove('d-none');
+
+        const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
+
+        data.ferreterias.forEach((f, idx) => {
+            const color = idx === 0 ? '#F59E0B' : '#0EA5E9';
+            const markerIcon = L.divIcon({
+                className: 'ferreteria-marker',
+                html: `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><i class="fa-solid fa-store"></i></div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+
+            const marker = L.marker([f.latitud, f.longitud], { icon: markerIcon })
+                .addTo(markersLayer)
+                .bindPopup(`
+                    <div style="color: #0F172A;">
+                        <strong style="color: ${color};">${f.nombre}</strong><br>
+                        <small>${f.direccion}</small><br>
+                        <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.
+                    </div>
+                `);
+
+            if (idx === 0) marker.openPopup();
+            puntosBounds.push([f.latitud, f.longitud]);
+        });
+
+        map.fitBounds(puntosBounds, { padding: [50, 50] });
+    };
+
+    // ---------------------------------------------------------------
+    // 7. AUTENTICACIÓN JWT Y PANEL FERRETERO/ADMINISTRADOR
+    // ---------------------------------------------------------------
+    const formLogin = document.getElementById('formLogin');
+    const navItemDashboard = document.getElementById('navItemDashboard');
+
+    const verificarSesion = () => {
+        if (localStorage.getItem('iop812-token')) {
+            navItemDashboard?.classList.remove('d-none');
+        }
+    };
+    verificarSesion();
+
+    formLogin?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('inputEmail').value;
+        const password = document.getElementById('inputPassword').value;
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) throw new Error('Credenciales incorrectas');
+
+            const data = await res.json();
+            localStorage.setItem('iop812-token', data.access_token);
+            
+            notificar('¡Acceso Correcto!', 'Sesión iniciada como administrador ferretero.', 'success');
+
+            const modalElement = document.getElementById('modalLoginAuth');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            modalInstance?.hide();
+
+            verificarSesion();
+        } catch (err) {
+            notificar('Error de Autenticación', err.message, 'error');
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // 8. CALCULADORA INVENTARIOS EOQ (REAL API FASTAPI /api/inventario/calcular)
+    // ---------------------------------------------------------------
+    const formEOQ = document.getElementById('formEOQ');
+    formEOQ?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const D = parseFloat(document.getElementById('eoqD').value);
+        const K = parseFloat(document.getElementById('eoqK').value);
+        const H = parseFloat(document.getElementById('eoqH').value);
+        const L_dias = parseFloat(document.getElementById('eoqL').value);
+
+        try {
+            // El cálculo de Q* y ROP se envía al motor matemático en Python (engine.py)
+            const response = await fetch('/api/inventario/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    unidad_tiempo: 'Años',
+                    demanda_D: D,
+                    costo_pedido_K: K,
+                    costo_mantenimiento_H: H,
+                    tiempo_entrega_dias_L: L_dias
+                })
+            });
+
+            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ en Python');
+
+            const data = await response.json();
+
+            // Asignación directa de campos del contrato backend (lote_optimo_Q y punto_reorden_ROP)
+            document.getElementById('resQOptimo').textContent = `${data.lote_optimo_Q} un.`;
+            document.getElementById('resROP').textContent = `${data.punto_reorden_ROP} un.`;
+
+            notificar('Cálculo Exitoso', 'Los valores de EOQ y ROP han sido actualizados por el motor numérico.', 'success');
+        } catch (err) {
+            notificar('Error en Modelo EOQ', err.message, 'error');
+        }
+    });
+    // ---------------------------------------------------------------
+    // 9. ESTIMACIÓN DE COLAS M/M/1 (ALINEADO 1:1 CON ColasMM1Input)
+    // ---------------------------------------------------------------
+    const formColas = document.getElementById('formColas');
+    formColas?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const lambda = parseFloat(document.getElementById('colaLambda').value);
+        const mu = parseFloat(document.getElementById('colaMu').value);
+        const unidad = document.getElementById('colaUnidad')?.value || 'horas'; // Captura del select
+
+        try {
+            const res = await fetch('/api/colas/mm1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tasa_llegada_lambda: lambda,
+                    tasa_servicio_mu: mu,
+                    unidad_tiempo: unidad // Envío explícito al backend
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Servicio saturado o parámetros inválidos');
+            }
+
+            const data = await res.json();
+
+            // Renderizado de resultados de la API y métricas retornadas por ColaMM1Output
+            document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
+            
+            // Si la unidad seleccionada es 'horas', convertimos Wq a minutos para mejor lectura visual
+            const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
+            document.getElementById('resColaWq').textContent = tiempoMostrar;
+
+            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador procesada.', 'success');
+        } catch (err) {
+            notificar('Error en Colas', err.message, 'error');
+        }
+    });
+    // ---------------------------------------------------------------
+    // 10. SIMULACIÓN CADENAS DE MARKOV (ALINEADO CON MarkovMatrixInput)
+    // ---------------------------------------------------------------
+    const formMarkov = document.getElementById('formMarkov');
+    formMarkov?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const p12 = parseFloat(document.getElementById('markovP12').value);  // Prob Búsqueda -> Carrito
+        const p2A1 = parseFloat(document.getElementById('markovP2A1').value); // Prob Carrito -> Compra
+
+        // Construcción de la Forma Canónica exigida por Pydantic (MarkovMatrixInput)
+        const payload = {
+            estados_transitorios: ["Busqueda", "EnCarrito"],
+            estados_absorbentes: ["CompraRealizada", "Abandono"],
+            matriz_Q: [
+                [0.0, p12],       // De Búsqueda a Búsqueda (0), De Búsqueda a Carrito (p12)
+                [0.0, 0.0]        // De Carrito a Búsqueda (0), De Carrito a Carrito (0)
+            ],
+            matriz_R: [
+                [0.0, 1 - p12],   // De Búsqueda a Compra (0), De Búsqueda a Abandono (1 - p12)
+                [p2A1, 1 - p2A1]  // De Carrito a Compra (p2A1), De Carrito a Abandono (1 - p2A1)
+            ]
+        };
+
+        try {
+            const response = await fetch('/api/markov/simular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Error al simular Cadenas de Markov');
+            }
+
+            const data = await response.json();
+            
+            // Extracción directa desde la estructura Dict: matriz_absorcion_B["Busqueda"]["CompraRealizada"]
+            const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
+            const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
+
+            document.getElementById('resMarkovContainer').innerHTML = `
+                <div class="alert alert-success border-0 mb-0">
+                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
+                    <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
+                    <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
+                    <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
+                </div>
+            `;
+
+            notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas por el motor NumPy.', 'success');
+        } catch (err) {
+            notificar('Error en Markov', err.message, 'error');
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // 11. EVALUACIÓN TEORÍA DE DECISIONES (ALINEADO CON DecisionesInput)
+    // ---------------------------------------------------------------
+    const formDecisiones = document.getElementById('formDecisiones');
+    formDecisiones?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const alt1 = document.getElementById('decAlt1').value;
+            const a1e1 = parseFloat(document.getElementById('decA1E1').value);
+            const a1e2 = parseFloat(document.getElementById('decA1E2').value);
+
+            const alt2 = document.getElementById('decAlt2').value;
+            const a2e1 = parseFloat(document.getElementById('decA2E1').value);
+            const a2e2 = parseFloat(document.getElementById('decA2E2').value);
+
+            const p1 = parseFloat(document.getElementById('decProbE1').value);
+            const p2 = 1 - p1;
+
+            const payload = {
+                alternativas: [alt1, alt2],
+                estados_naturaleza: ["Alta Demanda", "Baja Demanda"],
+                matriz_pagos: [
+                    [a1e1, a1e2],
+                    [a2e1, a2e2]
+                ],
+                probabilidades: [p1, p2],
+                coeficiente_alpha: 0.7
+            };
+
+            const res = await fetch('/api/decisiones/evaluar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Error en evaluación de decisiones');
+            }
+
+            const data = await res.json();
+
+            document.getElementById('resDecisionesContainer').innerHTML = `
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${data.sugerencia_riesgo_vme || data.mejor_vme_alternativa || 'Calculado'}</span></li>
+                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${data.criterio_laplace || data.laplace_alternativa || 'N/A'}</li>
+                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${data.criterio_wald_pesimista || 'N/A'}</li>
+                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${data.criterio_savage || data.savage_alternativa || 'N/A'}</li>
+                </ul>
+            `;
+            notificar('Evaluación Completada', 'Los criterios de decisión fueron procesados exitosamente.', 'success');
+        } catch (err) {
+            notificar('Error en Decisiones', err.message, 'error');
+        }
+    });
+    // ---------------------------------------------------------------
+    // TAB 1: CARGA DINÁMICA DEL CATÁLOGO (POSTGRESQL / BD)
+    // ---------------------------------------------------------------
+    const cargarProductosCRUD = async () => {
+        const tbody = document.getElementById('tbodyCatálogo');
+        if (!tbody) return;
+
+        try {
+            const token = localStorage.getItem('iop812-token');
+            const res = await fetch('/api/productos', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                if (res.status === 401) return; // Sesión no iniciada; mantiene estado por defecto
+                throw new Error(`Error en servidor (${res.status})`);
+            }
+
+            const productos = await res.json();
+            if (productos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-3">No hay productos registrados en el catálogo.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = productos.map(p => `
+                <tr>
+                    <td class="fw-medium">${p.nombre}</td>
+                    <td class="text-success fw-bold">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</td>
+                    <td><span class="badge ${p.stock_actual > 20 ? 'bg-success' : 'bg-danger'}">${p.stock_actual} un.</span></td>
+                    <td>${p.demanda_anual_D} un.</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="window.editarProducto(${p.id_producto})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="window.eliminarProducto(${p.id_producto})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.warn('Fallo al obtener el catálogo de productos:', e);
+        }
+    };
+
+    // Exponer handlers globales para las acciones de los botones de la tabla
+    window.editarProducto = (id) => {
+        notificar('Editar Producto', `Abriendo edición para el producto ID: ${id}`, 'info');
+    };
+
+    window.eliminarProducto = async (id) => {
+        const confirmacion = await Swal.fire({
+            title: '¿Eliminar producto?',
+            text: 'Esta acción no se puede deshacer en la base de datos.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#334155',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (confirmacion.isConfirmed) {
+            notificar('Producto Eliminado', `El producto ID ${id} fue removido.`, 'success');
+            cargarProductosCRUD(); // Recargar tabla
+        }
+    };
+
+    // Invocar la carga al hacer clic en la pestaña del catálogo
+    document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
+});
+
+</app_js>
+<style_css>
+/* ===================================================================
+   OPTI DECISION SUITE - IOP812 | ESTILOS PRINCIPALES Y RESPONSIVE
+   =================================================================== */
+
+/* 1. VARIABLES DE TEMA (DARK MODE POR DEFECTO: SLATE PRO) */
+:root {
+    --bg-base: #0F172A;
+    --card-bg: #1E293B;
+    --border-color: #334155;
+    --primary: #0EA5E9;
+    --primary-hover: #0284C7;
+    --accent-gold: #F59E0B;
+    --success: #10B981;
+    --danger: #EF4444;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --shadow-color: rgba(0, 0, 0, 0.45);
+    --nav-height: 64px;
+}
+
+/* MODO CLARO (CONMUTADO VÍA JavaScript data-theme="light") */
+[data-theme="light"] {
+    --bg-base: #F8FAFC;
+    --card-bg: #FFFFFF;
+    --border-color: #E2E8F0;
+    --primary: #0284C7;
+    --primary-hover: #0369A1;
+    --accent-gold: #D97706;
+    --success: #059669;
+    --danger: #DC2626;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --shadow-color: rgba(15, 23, 42, 0.12);
+}
+
+/* 2. ESTILOS BASE Y REGLAS GLOBALES */
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.text-main { color: var(--text-main) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.extra-small { font-size: 0.75rem; }
+.fs-7 { font-size: 0.7rem; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+
+/* 3. BARRA DE NAVEGACIÓN SUPERIOR HÍBRIDA */
+.navbar {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    height: var(--nav-height);
+    z-index: 1030;
+}
+
+.navbar-brand span {
+    color: var(--text-main);
+}
+
+.nav-link {
+    color: var(--text-muted) !important;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary) !important;
+}
+
+/* 4. CANVAS LEAFLET Y TARJETAS FLOTANTES (UX TRUFI / GOOGLE MAPS) */
+#mapa-ahp {
+    height: calc(100vh - var(--nav-height));
+    position: relative;
+    width: 100%;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+    background-color: var(--bg-base);
+}
+
+/* TARJETA BUSCADOR FLOTANTE SOBRE EL MAPA */
+.floating-search-card {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    background-color: var(--card-bg);
+    border-color: var(--border-color) !important;
+    box-shadow: 0 10px 30px var(--shadow-color) !important;
+    backdrop-filter: blur(8px);
+}
+
+/* TARJETA FLOTANTE RESULTADO DESTACADO (TOP PICK AHP) */
+.floating-results-card {
+    position: absolute;
+    bottom: 30px;
+    right: 20px;
+    z-index: 1000;
+    width: 340px;
+    max-width: calc(100vw - 40px);
+    background-color: var(--card-bg);
+    border-color: var(--border-color) !important;
+    box-shadow: 0 10px 30px var(--shadow-color) !important;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 5. FORMULARIOS, MODALES Y TABS DEL PANEL I.O. */
+.form-control, .input-group-text, .accordion-item {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+.form-control:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25) !important;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--primary);
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+.modal-header, .modal-footer, .nav-tabs {
+    border-color: var(--border-color) !important;
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-muted);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: transparent;
+    color: var(--primary) !important;
+    border-color: var(--border-color) var(--border-color) var(--card-bg) !important;
+    border-bottom: 2px solid var(--primary) !important;
+}
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-color);
+}
+
+/* 6. ADAPTACIÓN RESPONSIVA (MOBILE-FIRST < 768px) */
+@media (max-width: 767.98px) {
+    .floating-search-card {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100vw - 20px);
+    }
+
+    .floating-results-card {
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100vw - 20px);
+    }
+
+    #mapa-ahp {
+        height: calc(100vh - var(--nav-height));
+    }
+}
+</style_css>

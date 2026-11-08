@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const inicializarMapa = () => {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
-
+        
         map = L.map('map', {
             center: COCHABAMBA_DEFAULT,
             zoom: 14,

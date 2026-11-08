@@ -34,7 +34,7 @@ class ColasMM1Input(BaseModel):
         return self
 
 # -------------------------------------------------------------------------
-# MODELO DE SALIDA: ES UN MOLDE EN EL QUE SE LLENAN LOS RESULTADOS DE CÁLCULO
+# MOLDE DE SALIDA: ES UN MOLDE EN EL QUE SE LLENAN LOS RESULTADOS DE CÁLCULO
 # -------------------------------------------------------------------------
 class ColasMM1Output(BaseModel):
     factor_utilizacion_rho_pct: float = Field(
