@@ -331,28 +331,113 @@
                                 </div>
                             </div>
                         </div>
-
                         <!-- TAB 3: TEORÍA DE DECISIONES -->
                         <div class="tab-pane fade" id="tab-decisiones" role="tabpanel">
-                            <h6 class="fw-bold mb-2 text-main">Evaluación bajo Incertidumbre y Riesgo</h6>
-                            <p class="small text-muted">Resuelve escenarios de suministro mediante Laplace, Wald (MaxiMin/MaxiMax), Hurwicz ($\alpha=0.7$), Savage y Valor Medio Esperado (VME).</p>
-                            <div class="alert alert-info small" role="alert">
-                                <i class="fa-solid fa-lightbulb me-1"></i> Selecciona un producto registrado para cargar su matriz de pagos y probabilidades.
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Matriz de Decisiones & Probabilidades</h6>
+                                    <form id="formDecisiones" onsubmit="event.preventDefault();">
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Nombre de Alternativa A1</label>
+                                            <input type="text" class="form-control form-control-sm" id="decAlt1" value="Comprar Lote Grande" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Pagos (Estado 1 / Estado 2) en BOB</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control" id="decA1E1" value="15000" placeholder="Alta Demanda">
+                                                <input type="number" class="form-control" id="decA1E2" value="-2000" placeholder="Baja Demanda">
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Nombre de Alternativa A2</label>
+                                            <input type="text" class="form-control form-control-sm" id="decAlt2" value="Comprar Lote Pequeño" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Pagos (Estado 1 / Estado 2) en BOB</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" class="form-control" id="decA2E1" value="6000" placeholder="Alta Demanda">
+                                                <input type="number" class="form-control" id="decA2E2" value="2000" placeholder="Baja Demanda">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Probabilidad Estado 1 ($P_1$)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="decProbE1" value="0.60" min="0" max="1">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">Evaluar Incertidumbre & Riesgo (VME)</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Resultados de Criterios I.O.</h6>
+                                    <div id="resDecisionesContainer" class="p-3 border rounded-3 bg-body-tertiary">
+                                        <p class="small text-muted mb-0">Ingresa la matriz y haz clic en Evaluar para consultar los criterios Laplace, Wald, Hurwicz, Savage y VME.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- TAB 4: CADENAS DE MARKOV -->
                         <div class="tab-pane fade" id="tab-markov" role="tabpanel">
-                            <h6 class="fw-bold mb-2 text-main">Predicción de Conversión (Matriz de Absorción B)</h6>
-                            <p class="small text-muted">Calcula la matriz fundamental $N = (I - Q)^{-1}$ y la probabilidad de absorción $B = N \cdot R$ para predecir compras completadas.</p>
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Simulación de Matriz de Absorción</h6>
+                                    <form id="formMarkov" onsubmit="event.preventDefault();">
+                                        <p class="small text-muted">Estados Transitorios: <strong>Búsqueda (S1)</strong> y <strong>Carrito (S2)</strong>.<br>Estados Absorbentes: <strong>Compra (A1)</strong> y <strong>Abandono (A2)</strong>.</p>
+                                        <div class="mb-2">
+                                            <label class="form-label extra-small text-muted">Prob. Búsqueda $\rightarrow$ Carrito</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="markovP12" value="0.40">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label extra-small text-muted">Prob. Carrito $\rightarrow$ Compra (Absorción)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="markovP2A1" value="0.70">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Calcular Matriz Absorción $B = N \cdot R$</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Tasa Probable de Conversión</h6>
+                                    <div id="resMarkovContainer" class="p-3 border rounded-3 bg-body-tertiary">
+                                        <p class="small text-muted mb-0">La simulación desplegará la probabilidad final de conversión a venta desde la fase de búsqueda.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB 5: COLAS M/M/1 -->
                         <div class="tab-pane fade" id="tab-colas" role="tabpanel">
-                            <h6 class="fw-bold mb-2 text-main">Estimación de Tiempo de Espera en Mostrador (M/M/1)</h6>
-                            <p class="small text-muted">Calcula el tiempo promedio en cola $W_q$ en función de la tasa de llegada ($\lambda$) y servicio ($\mu$).</p>
+                            <div class="row g-3">
+                                <div class="col-md-5 border-end pe-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Parámetros Mostrador M/M/1</h6>
+                                    <form id="formColas" onsubmit="event.preventDefault();">
+                                        <div class="mb-2">
+                                            <label class="form-label small text-muted">Tasa de Llegada ($\lambda$ clientes/hora)</label>
+                                            <input type="number" step="0.1" class="form-control form-control-sm" id="colaLambda" value="8.0" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Tasa de Servicio ($\mu$ clientes/hora)</label>
+                                            <input type="number" step="0.1" class="form-control form-control-sm" id="colaMu" value="10.0" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">Estimar Tiempos de Espera</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-7 ps-md-4">
+                                    <h6 class="fw-bold mb-3 text-main">Métricas del Sistema</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary text-center">
+                                                <span class="d-block extra-small text-muted">Uso del Sistema ($\rho$)</span>
+                                                <h4 class="fw-bold text-info mb-0" id="resColaRho">0%</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded-3 bg-body-tertiary text-center">
+                                                <span class="d-block extra-small text-muted">Tiempo en Cola ($W_q$)</span>
+                                                <h4 class="fw-bold text-warning mb-0" id="resColaWq">0 min</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
                     </div>
                 </div>
             </div>

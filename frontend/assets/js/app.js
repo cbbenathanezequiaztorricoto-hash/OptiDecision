@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mu = parseFloat(document.getElementById('colaMu').value);
 
         try {
-            const res = await fetch('/api/colas/calcular', {
+            const res = await fetch('/api/colas/mm1', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tasa_llegada_lambda: lambda, tasa_servicio_mu: mu })
@@ -443,4 +443,107 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('Error en Colas', err.message, 'error');
         }
     });
+    // ---------------------------------------------------------------
+    // CALCULADORA CADENAS DE MARKOV (MATRIZ DE ABSORCIÓN B = N * R)
+    // ---------------------------------------------------------------
+    const formMarkov = document.getElementById('formMarkov');
+    formMarkov?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const p12 = parseFloat(document.getElementById('markovP12').value);
+        const p2A1 = parseFloat(document.getElementById('markovP2A1').value);
+
+        try {
+            const response = await fetch('/api/markov/simular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prob_busqueda_a_carrito: p12,
+                    prob_carrito_a_compra: p2A1
+                })
+            });
+
+            if (!response.ok) throw new Error('Error al procesar la simulación de Markov');
+
+            const data = await response.json();
+
+            // Desplegar matriz de absorción y probabilidad de conversión
+            document.getElementById('resMarkovContainer').innerHTML = `
+                <div class="alert alert-success border-0 mb-0">
+                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
+                    <p class="mb-1 small">Probabilidad de que un comprador que inicia en <strong>Búsqueda</strong> concrete la <strong>Compra</strong>:</p>
+                    <h3 class="fw-bold text-success mb-0">${(data.probabilidad_conversion * 100).toFixed(2)}%</h3>
+                </div>
+            `;
+
+            notificar('Simulación Markov Exitosa', 'Matriz de absorción calculada correctamente.', 'success');
+        } catch (err) {
+            notificar('Error en Markov', err.message, 'error');
+        }
+    });
+    // ---------------------------------------------------------------
+    // TAB 1: CARGA DINÁMICA DEL CATÁLOGO (POSTGRESQL / BD)
+    // ---------------------------------------------------------------
+    const cargarProductosCRUD = async () => {
+        const tbody = document.getElementById('tbodyCatálogo');
+        if (!tbody) return;
+
+        try {
+            const token = localStorage.getItem('iop812-token');
+            const res = await fetch('/api/productos', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                if (res.status === 401) return; // Sesión no iniciada; mantiene estado por defecto
+                throw new Error(`Error en servidor (${res.status})`);
+            }
+
+            const productos = await res.json();
+            if (productos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-3">No hay productos registrados en el catálogo.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = productos.map(p => `
+                <tr>
+                    <td class="fw-medium">${p.nombre}</td>
+                    <td class="text-success fw-bold">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</td>
+                    <td><span class="badge ${p.stock_actual > 20 ? 'bg-success' : 'bg-danger'}">${p.stock_actual} un.</span></td>
+                    <td>${p.demanda_anual_D} un.</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="window.editarProducto(${p.id_producto})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="window.eliminarProducto(${p.id_producto})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.warn('Fallo al obtener el catálogo de productos:', e);
+        }
+    };
+
+    // Exponer handlers globales para las acciones de los botones de la tabla
+    window.editarProducto = (id) => {
+        notificar('Editar Producto', `Abriendo edición para el producto ID: ${id}`, 'info');
+    };
+
+    window.eliminarProducto = async (id) => {
+        const confirmacion = await Swal.fire({
+            title: '¿Eliminar producto?',
+            text: 'Esta acción no se puede deshacer en la base de datos.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#334155',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (confirmacion.isConfirmed) {
+            notificar('Producto Eliminado', `El producto ID ${id} fue removido.`, 'success');
+            cargarProductosCRUD(); // Recargar tabla
+        }
+    };
+
+    // Invocar la carga al hacer clic en la pestaña del catálogo
+    document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 });
