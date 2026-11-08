@@ -24,7 +24,7 @@ class DecisionInput(BaseModel):
         default=None,
         description="Probabilidades Pj de cada estado para decisiones bajo riesgo (opcional)"
     )
-    alpha_hurwicz: float = Field(
+    coeficiente_alpha: float = Field(
         default=0.7, 
         ge=0.0, 
         le=1.0, 

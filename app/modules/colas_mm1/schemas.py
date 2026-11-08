@@ -37,7 +37,7 @@ class ColasMM1Input(BaseModel):
 # MOLDE DE SALIDA: ES UN MOLDE EN EL QUE SE LLENAN LOS RESULTADOS DE CÁLCULO
 # -------------------------------------------------------------------------
 class ColasMM1Output(BaseModel):
-    factor_utilizacion_rho_pct: float = Field(
+    factor_uso_rho: float = Field(
         ..., 
         description="Porcentaje de tiempo que el servicio está ocupado"
     )
@@ -55,7 +55,7 @@ class ColasMM1Output(BaseModel):
     )
     
     # TIEMPOS DESGLOSADOS (Wq vs Ws)
-    tiempo_espera_cola_Wq_minutos: float = Field(
+    tiempo_espera_cola_Wq: float = Field(
         ..., 
         description="Tiempo promedio parado HACIENDO FILA (Wq en minutos)"
     )
