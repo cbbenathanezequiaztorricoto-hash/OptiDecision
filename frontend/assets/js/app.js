@@ -1,5 +1,5 @@
 /* ===================================================================
-   OPTI DECISION SUITE - IOP812 | LÓGICA FRONTEND (CONSUMO PURO DE API)
+   OPTI DECISION SUITE - IOP812 | FRONTEND APP (SWEETALERT2 INTEGRATED) (CONSUMO PURO DE API)
    =================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,6 +10,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let map = null;
     let markersLayer = null;
     let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
+
+    // Helper reutilizable para notificaciones con diseño Industrial-Tech
+    const notificar = (titulo, texto, icono = 'info') => {
+        const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
+        return Swal.fire({
+            title: titulo,
+            text: texto,
+            icon: icono,
+            background: esOscuro ? '#1E293B' : '#FFFFFF',
+            color: esOscuro ? '#F8FAFC' : '#0F172A',
+            confirmButtonColor: icono === 'error' ? '#EF4444' : '#0EA5E9',
+            customClass: {
+                popup: 'rounded-4 border border-secondary-subtle shadow-lg'
+            }
+        });
+    };
 
     // ---------------------------------------------------------------
     // 2. GESTIÓN DE TEMA OSCURO / CLARO
@@ -54,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).addTo(map);
         // Marcador inicial de ubicación del usuario (Azul)
         markersLayer = L.layerGroup().addTo(map);
-        // Auto-centrado dinámico inteligente al cargar la aplicación  
+        // Auto-centrado dinámico inteligente al cargar la aplicación 
         intentoAutoGeolocalizacion();
     };
 
@@ -119,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnGPS.innerHTML = `<i class="fa-solid fa-crosshairs text-primary"></i>`;
             },
             (err) => {
-                alert('No se pudo obtener el GPS: ' + err.message);
+                notificar('Error de Geolocalización', 'No se pudo obtener la posición GPS: ' + err.message, 'error');
                 btnGPS.innerHTML = `<i class="fa-solid fa-crosshairs text-primary"></i>`;
             }
         );
@@ -147,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ---------------------------------------------------------------
-    // 5. SLIDERS AHP (Actualización Visual de UI)
+    // 5. SLIDERS AHP (Ponderación Saaty 1-9)(Actualización Visual de UI)
     // ---------------------------------------------------------------
     const sliders = {
         precio: document.getElementById('sliderPrecio'),
@@ -181,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------
-    // 6. BÚSQUEDA AHP DE FERRETERÍAS (CONSULTA 100% POSTGIS EN BD)
+    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (POSTGIS EN BD POSTGRESQL)
     // ---------------------------------------------------------------
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
@@ -202,9 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Consultando PostGIS & AHP...`;
         // Obtener coordenadas dinámicas según el texto digitado en Origen
         const coordsActuales = await resolverCoordenadasOrigen(origenText);
-
+        // Petición al backend FastAPI que consulta PostgreSQL/PostGIS y calcula vector AHP en NumPy
         try {
-            // Petición al backend FastAPI que consulta PostgreSQL/PostGIS y calcula vector AHP en NumPy
             const response = await fetch('/api/ahp/buscar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -223,13 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errData = await response.json();
-                throw new Error(errData.detail || 'Error al realizar la consulta geoespacial');
+                throw new Error(errData.detail || 'Error en la búsqueda geoespacial');
             }
 
             const data = await response.json();
             renderizarResultadosAHP(data);
         } catch (error) {
-            alert(`No se pudo completar la búsqueda en base de datos: ${error.message}`);
+            notificar('Sin Resultados', `No se pudo completar la consulta AHP: ${error.message}`, 'warning');
         } finally {
             btnBuscar.disabled = false;
             btnBuscar.innerHTML = `<i class="fa-solid fa-route"></i> <span>Optimizar y Buscar Ferretería</span>`;
@@ -241,13 +256,13 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizarMarcadorUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng, "Tu Origen de Búsqueda");
 
         if (!data.ferreterias || data.ferreterias.length === 0) {
-            alert('No se encontraron ferreterías registradas en la base de datos con ese producto.');
+            notificar('Búsqueda Desierta', 'No existen ferreterías registradas en la base de datos con ese producto.', 'info');
             return;
         }
 
         const top = data.ferreterias[0];
 
-        // Tarjeta Top Pick AHP
+        // Renderizar Tarjeta Top Pick
         document.getElementById('topFerreteriaNombre').textContent = top.nombre;
         document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
         document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
@@ -285,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ---------------------------------------------------------------
-    // 7. AUTENTICACIÓN JWT Y PANEL ADMINISTRADOR
+    // 7. AUTENTICACIÓN JWT Y PANEL FERRETERO/ADMINISTRADOR
     // ---------------------------------------------------------------
     const formLogin = document.getElementById('formLogin');
     const navItemDashboard = document.getElementById('navItemDashboard');
@@ -313,7 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
             localStorage.setItem('iop812-token', data.access_token);
-            alert('¡Sesión iniciada con éxito!');
+            
+            notificar('¡Acceso Correcto!', 'Sesión iniciada como administrador ferretero.', 'success');
 
             const modalElement = document.getElementById('modalLoginAuth');
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -321,12 +337,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             verificarSesion();
         } catch (err) {
-            alert('Error de autenticación: ' + err.message);
+            notificar('Error de Autenticación', err.message, 'error');
         }
     });
 
     // ---------------------------------------------------------------
-    // 8. CALCULADORA DE INVENTARIOS (CONSUMO API BACKEND FASTAPI)
+    // 8. CALCULADORA INVENTARIOS EOQ (REAL API FASTAPI /api/inventario/calcular)
     // ---------------------------------------------------------------
     const formEOQ = document.getElementById('formEOQ');
     formEOQ?.addEventListener('submit', async (e) => {
@@ -350,15 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
 
-            if (!response.ok) throw new Error('Error al procesar modelo EOQ en backend');
+            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ en Python');
 
             const data = await response.json();
-            
-            // Renderizamos los valores calculados rigurosamente por el backend
+
+            // Asignación directa de campos del contrato backend (lote_optimo_Q y punto_reorden_ROP)
             document.getElementById('resQOptimo').textContent = `${data.lote_optimo_Q} un.`;
             document.getElementById('resROP').textContent = `${data.punto_reorden_ROP} un.`;
+
+            notificar('Cálculo Exitoso', 'Los valores de EOQ y ROP han sido actualizados por el motor numérico.', 'success');
         } catch (err) {
-            alert(`Error en la calculadora de inventarios: ${err.message}`);
+            notificar('Error en Modelo EOQ', err.message, 'error');
         }
     });
 });
