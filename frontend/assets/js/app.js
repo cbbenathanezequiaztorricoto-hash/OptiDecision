@@ -171,7 +171,17 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Bootstrap Collapse no disponible. No se puede alternar el panel AHP.");
         }
     });
-  
+    // ---------------------------------------------------------------
+    // EVENTO BOTÓN GOOGLE OAUTH2
+    // ---------------------------------------------------------------
+    const btnGoogleAuth = document.getElementById('btnGoogleAuth');
+    btnGoogleAuth?.addEventListener('click', () => {
+        notificar(
+            'Google Sign-In',
+            'Iniciando pasarela Google OAuth2... Redirigiendo a la selección de cuenta.',
+            'info'
+        );
+    });
     // ---------------------------------------------------------------
     // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
     // ---------------------------------------------------------------
