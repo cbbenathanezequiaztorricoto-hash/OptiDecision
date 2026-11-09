@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnSubmitAuth) btnSubmitAuth.textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
         if (authModePrompt) authModePrompt.textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
         if (btnToggleAuthMode) btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
-        if (modalLoginTitle) modalLoginTitle.textContent = isRegisterMode ? 'Crear cuenta ferretera' : 'Acceso Propietario / Ferretero';
+        if (modalLoginTitle) modalLoginTitle.textContent = isRegisterMode ? 'Crear cuenta ferretera' : '¡Bienvenido a la familia Opti!';
     };
 
     btnToggleAuthMode?.addEventListener('click', () => {

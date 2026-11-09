@@ -26,8 +26,8 @@ class UsuarioLoginInput(BaseModel):
 
 
 class GoogleAuthInput(BaseModel):
-    credential: str  # ID Token de Google enviado por el SDK
-    id_token: str = Field(..., description="Token de identidad provisto por Google Sign-In SDK")
+    credential: Optional[str] = Field(default=None, description="ID Token enviado por Google Identity Services")
+    id_token: Optional[str] = Field(default=None, description="Alias de compatibilidad para el token de Google")
 
 
 class TokenOutput(BaseModel):

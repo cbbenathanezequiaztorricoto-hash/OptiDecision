@@ -32,6 +32,7 @@ if not raw_expire:
     raise ValueError("Error de configuración: La variable 'ACCESS_TOKEN_EXPIRE_HOURS' es requerida en el archivo .env")
 
 ACCESS_TOKEN_EXPIRE_HOURS = int(raw_expire)
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com")
 
 
 def generar_salt_y_hash(password: str) -> str:
@@ -72,19 +73,17 @@ def decodificar_access_token(token: str) -> Optional[Dict[str, Any]]:
         logger.warning("El token de acceso no es válido: %s", exc)
         return None
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com")
 
-def verificar_token_google(credential_token: str):
+def verificar_token_google(credential_token: str) -> Optional[Dict[str, Any]]:
     """Verifica la firma del ID Token recibido de Google Identity Services."""
     try:
-        # Si aún no tienes un CLIENT_ID real configurado, la validación se puede ajustar
-        id_info = id_token.verify_oauth2_token(
-            credential_token, 
-            requests.Request(), 
-            GOOGLE_CLIENT_ID
-        )
+        request_adapter = requests.Request()
+        if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID != "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com":
+            id_info = id_token.verify_oauth2_token(credential_token, request_adapter, GOOGLE_CLIENT_ID)
+        else:
+            # Si no hay Client ID real en .env, valida la firma con los certificados públicos de Google
+            id_info = id_token.verify_oauth2_token(credential_token, request_adapter)
         return id_info
     except Exception as e:
-        print(f"Error verificando token de Google: {e}")
+        logger.warning("Error verificando token de Google: %s", e)
         return None
-    
