@@ -387,7 +387,53 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCerrarSesion = document.getElementById('btnCerrarSesion');
     const modalLoginTitle = document.getElementById('modalLoginAuthLabel');
     let isRegisterMode = false;
+    // ---------------------------------------------------------------
+    // EVENTO Y MANEJO DE GOOGLE OAUTH2 (/api/auth/google)
+    // ---------------------------------------------------------------
+    const btnGoogleAuth = document.getElementById('btnGoogleAuth');
 
+    btnGoogleAuth?.addEventListener('click', async () => {
+        // Si usas Google Identity Services (GIS), este botón puede disparar la solicitud de credenciales
+        if (typeof google !== 'undefined' && google.accounts?.id) {
+            google.accounts.id.prompt();
+            return;
+        }
+
+        notificar(
+            'Google Sign-In',
+            'Iniciando pasarela de autenticación con Google...',
+            'info'
+        );
+    });
+
+    // Callback global para procesar el token retornado por Google y enviarlo a FastAPI
+    window.handleGoogleCredentialResponse = async (response) => {
+        try {
+            const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Fallo en la verificación del token de Google');
+            }
+
+            // Almacenar token de sesión propio del sistema
+            localStorage.setItem('iop812-token', data.access_token);
+            actualizarInterfazSesion(true);
+
+            const modalElement = document.getElementById('modalLoginAuth');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+            }
+
+            notificar('¡Acceso Correcto!', `Bienvenido ${data.username}, iniciaste sesión con Google.`, 'success');
+        } catch (err) {
+            notificar('Error en Google Auth', err.message, 'error');
+        }
+    };
     const actualizarInterfazSesion = (autenticado) => {
         btnAbrirLogin?.classList.toggle('d-none', autenticado);
         btnCerrarSesion?.classList.toggle('d-none', !autenticado);
