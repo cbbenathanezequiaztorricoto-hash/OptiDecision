@@ -1769,44 +1769,31 @@ if __name__ == "__main__":
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <!-- NAV BAR SUPERIOR HÍBRIDA -->
-    <nav class="navbar navbar-expand-lg sticky-top border-bottom" id="topNav">
+    <!-- NAV BAR SUPERIOR HÍBRIDA (HAMBURGUESA UNIVERSAL PC Y MÓVIL) -->
+    <nav class="navbar sticky-top border-bottom" id="topNav">
         <div class="container-fluid px-3 px-lg-4">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="#mapa-ahp">
-                <!-- Logo desde assets -->
-                <img src="/assets/images/favicon.ico" alt="OptiDecision Logo" width="32" height="32" class="rounded">
-                <span class="fw-bold fs-5 tracking-tight">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">IOP812</span></span>
-            </a>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Botón Hamburguesa que abre el Menú Lateral Estilo Google Maps -->
+                <button class="btn btn-outline-secondary border-0 fs-5" type="button" data-bs-toggle="offcanvas" data-bs-target="#drawerGoogleMaps" aria-controls="drawerGoogleMaps" title="Menú Principal & Historial">
+                    <i class="fa-solid fa-bars text-main"></i>
+                </button>
+                <a class="navbar-brand d-flex align-items-center gap-2 m-0" href="#mapa-ahp">
+                    <img src="/assets/images/favicon.ico" alt="OptiDecision Logo" width="32" height="32" class="rounded">
+                    <span class="fw-bold fs-5 tracking-tight">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">IOP812</span></span>
+                </a>
+            </div>
 
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <i class="fa-solid fa-bars text-main"></i>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-2">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#mapa-ahp"><i class="fa-solid fa-map-location-dot me-1"></i> Buscador AHP</a>
-                    </li>
-                    <li class="nav-item d-none" id="navItemDashboard">
-                        <a class="nav-link" id="btnAbrirDashboard"><i class="fa-solid fa-calculator me-1"></i> Panel I.O. Ferretero</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="btnAbrirCreditos"><i class="fa-solid fa-graduation-cap me-1"></i> Créditos</a>
-                    </li>
-                </ul>
-
-                <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
-                    <!-- Toggle Modo Oscuro / Claro -->
-                    <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
-                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Toggle Modo Oscuro / Claro -->
+                <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+                <!-- Botón Acceso Ferretero -->
+                <div id="authStatusContainer">
+                    <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" id="btnAbrirLogin">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span class="d-none d-sm-inline">Acceso Ferretero</span>
                     </button>
-                    <!-- Estado Auth / Botón Login / Logout -->
-                    <div id="authStatusContainer">
-                        <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" id="btnAbrirLogin">
-                            <i class="fa-solid fa-right-to-bracket"></i>
-                            <span>Acceso Ferretero</span>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -2220,12 +2207,66 @@ if __name__ == "__main__":
             </div>
         </div>
     </div>
+<!-- PANEL LATERAL TIPO GOOGLE MAPS (HISTORIAL Y FAVORITOS) -->
+    <div class="offcanvas offcanvas-start bg-body text-main" tabindex="-1" id="drawerGoogleMaps" aria-labelledby="drawerGoogleMapsLabel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold" id="drawerGoogleMapsLabel">
+                <i class="fa-solid fa-compass text-primary me-2"></i>OptiDecision Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <!-- Nav Tabs para Historial y Favoritos -->
+            <ul class="nav nav-tabs nav-justified border-bottom" id="tabsDrawer" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active small py-2 fw-medium" id="tab-historial-tab" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab">
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Historial
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link small py-2 fw-medium" id="tab-favoritos-tab" data-bs-toggle="tab" data-bs-target="#tab-favoritos" type="button" role="tab">
+                        <i class="fa-solid fa-bookmark me-1"></i> Favoritos
+                    </button>
+                </li>
+            </ul>
 
+            <div class="tab-content p-3" id="tabsDrawerContent">
+                <!-- TAB 1: HISTORIAL DE BÚSQUEDAS -->
+                <div class="tab-pane fade show active" id="tab-historial" role="tabpanel">
+                    <h6 class="extra-small text-uppercase fw-bold text-muted mb-3">Búsquedas Recientes</h6>
+                    <div class="list-group list-group-flush border rounded-3" id="listaHistorial">
+                        <div class="list-group-item bg-transparent text-muted small py-3 text-center">
+                            <i class="fa-solid fa-magnifying-glass mb-1 d-block fs-5"></i>
+                            Las búsquedas guardadas en `historial_busquedas` se mostrarán aquí.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: FERRETERÍAS FAVORITAS -->
+                <div class="tab-pane fade" id="tab-favoritos" role="tabpanel">
+                    <h6 class="extra-small text-uppercase fw-bold text-muted mb-3">Mis Ferreterías Guardadas</h6>
+                    <div class="list-group list-group-flush border rounded-3" id="listaFavoritos">
+                        <div class="list-group-item bg-transparent text-muted small py-3 text-center">
+                            <i class="fa-solid fa-star mb-1 d-block fs-5 text-warning"></i>
+                            Las ferreterías de `ferreterias_favoritas` aparecerán en este panel.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accesos Rápidos adicionales del Menú -->
+            <div class="p-3 border-top mt-auto">
+                <button class="btn btn-outline-secondary w-100 rounded-3 text-start small" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCreditos')).show()">
+                    <i class="fa-solid fa-graduation-cap me-2"></i> Créditos Académicos
+                </button>
+            </div>
+        </div>
+    </div>
     <!-- JS Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/app.js?v=1.0.1"></script>
 </body>
 </html>
 
@@ -2581,47 +2622,45 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     inicializarMapa();
-// ---------------------------------------------------------------
-    // VINCULACIÓN EXPLÍCITA DE MODALES Y ACCIONES DE NAVEGACIÓN
+    // ---------------------------------------------------------------
+    // VINCULACIÓN SEGURA DE MODALES Y NAVEGACIÓN
     // ---------------------------------------------------------------
     const btnAbrirLogin = document.getElementById('btnAbrirLogin');
     const btnAbrirCreditos = document.getElementById('btnAbrirCreditos');
     const btnAbrirDashboard = document.getElementById('btnAbrirDashboard');
 
+    // Usar getOrCreateInstance evita errores de invocación nula en Bootstrap 5
     btnAbrirLogin?.addEventListener('click', () => {
         const el = document.getElementById('modalLoginAuth');
-        if (el) {
-            const modal = bootstrap.Modal.getInstance(el);
-            modal.show();
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
         }
     });
 
     btnAbrirCreditos?.addEventListener('click', () => {
         const el = document.getElementById('modalCreditos');
-        if (el) {
-            const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
-            modal.show();
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
         }
     });
 
     btnAbrirDashboard?.addEventListener('click', () => {
         const el = document.getElementById('modalDashboardIO');
-        if (el) {
-            const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
-            modal.show();
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
         }
     });
 
     // ---------------------------------------------------------------
-    // DESPLEGABLE GARANTIZADO DE CRITERIOS AHP (SAATY)
+    // DESPLEGABLE ACORDEÓN AHP (SAATY)
     // ---------------------------------------------------------------
     const btnToggleAHP = document.getElementById('btnToggleAHP');
     const collapseAHP = document.getElementById('collapseAHP');
 
     btnToggleAHP?.addEventListener('click', (e) => {
         e.preventDefault();
-        if (collapseAHP) {
-            const bsCollapse = bootstrap.Collapse.getInstance(collapseAHP) || new bootstrap.Collapse(collapseAHP, { toggle: false });
+        if (collapseAHP && typeof bootstrap !== 'undefined') {
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false });
             bsCollapse.toggle();
         }
     });
@@ -3140,6 +3179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 });
+
 ]]>
 </archivo>
 
