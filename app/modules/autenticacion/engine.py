@@ -9,6 +9,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 logger = logging.getLogger(__name__)
 
@@ -70,3 +72,19 @@ def decodificar_access_token(token: str) -> Optional[Dict[str, Any]]:
         logger.warning("El token de acceso no es válido: %s", exc)
         return None
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com")
+
+def verificar_token_google(credential_token: str):
+    """Verifica la firma del ID Token recibido de Google Identity Services."""
+    try:
+        # Si aún no tienes un CLIENT_ID real configurado, la validación se puede ajustar
+        id_info = id_token.verify_oauth2_token(
+            credential_token, 
+            requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
+        return id_info
+    except Exception as e:
+        print(f"Error verificando token de Google: {e}")
+        return None
+    

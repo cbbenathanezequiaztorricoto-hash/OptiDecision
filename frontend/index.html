@@ -52,7 +52,10 @@
                 <div id="authStatusContainer">
                     <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" id="btnAbrirLogin">
                         <i class="fa-solid fa-right-to-bracket"></i>
-                        <span class="d-none d-sm-inline">Acceso Ferretero</span>
+                        <span class="d-none d-sm-inline">Acceso</span>
+                    </button>
+                    <button class="btn btn-outline-secondary rounded-pill px-3 fw-medium d-none" id="btnCerrarSesion" type="button">
+                        Cerrar sesión
                     </button>
                 </div>
             </div>
@@ -173,31 +176,41 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold" id="modalLoginAuthLabel">Acceso Propietario / Ferretero</h5>
+                    <h5 class="modal-title fw-bold" id="modalLoginAuthLabel">¡Bienvenido a la familia Opti!</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <!-- Se carga el formulario para autenticación -->
                     <form id="formLogin" onsubmit="event.preventDefault();">
+                        <div class="mb-3 d-none" id="usernameGroup">
+                            <label for="inputUsername" class="form-label small fw-medium text-muted">Nombre de usuario</label>
+                            <input type="text" class="form-control rounded-3" id="inputUsername" minlength="3" maxlength="50" autocomplete="username">
+                        </div>
                         <div class="mb-3">
                             <label for="inputEmail" class="form-label small fw-medium text-muted">Correo Electrónico</label>
-                            <input type="email" class="form-control rounded-3" id="inputEmail" placeholder="ferretero@ejemplo.com" required>
+                            <input type="email" class="form-control rounded-3" id="inputEmail" placeholder="ferretero@ejemplo.com" autocomplete="email" required>
                         </div>
                         <div class="mb-3">
                             <label for="inputPassword" class="form-label small fw-medium text-muted">Contraseña</label>
-                            <input type="password" class="form-control rounded-3" id="inputPassword" required>
+                            <input type="password" class="form-control rounded-3" id="inputPassword" autocomplete="current-password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-medium mb-3">Iniciar Sesión</button>
-                    </form>
-                    
-                    <div class="position-relative text-center my-3">
-                        <hr class="text-muted">
-                        <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
-                    </div>
+                        <button type="submit" id="btnSubmitAuth" class="btn btn-primary w-100 rounded-3 py-2 fw-medium mb-3">Iniciar Sesión</button>
+                        <!-- Separador visual 'O ingresa con' -->
+                        <div class="position-relative text-center my-3">
+                            <hr class="text-muted">
+                            <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
+                        </div>
 
-                    <button class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2" id="btnGoogleAuth">
-                        <i class="fa-brands fa-google text-danger"></i>
-                        <span>Google OAuth2</span>
-                    </button>
+                        <!-- Botón Google OAuth2 -->
+                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2" id="btnGoogleAuth">
+                            <i class="fa-brands fa-google text-danger"></i>
+                            <span>Iniciar sesión con Google</span>
+                        </button>
+                                            </form>
+                    <p class="text-center small mb-0">
+                        <span id="authModePrompt">¿No tienes cuenta?</span>
+                        <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="btnToggleAuthMode">Crear cuenta</button>
+                    </p>
                 </div>
             </div>
         </div>
@@ -522,7 +535,7 @@
                 </button>
                 <!-- Créditos Académicos -->
                 <button class="btn btn-outline-secondary w-100 rounded-3 text-start small" id="btnAbrirCreditos">
-                    <i class="fa-solid fa-graduation-cap me-2"></i> Créditos Académicos
+                    <i class="fa-solid fa-graduation-cap me-2"></i> Acerca de Opti
                 </button>
             </div>
         </div>

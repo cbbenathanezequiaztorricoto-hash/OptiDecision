@@ -26,6 +26,7 @@ class UsuarioLoginInput(BaseModel):
 
 
 class GoogleAuthInput(BaseModel):
+    credential: str  # ID Token de Google enviado por el SDK
     id_token: str = Field(..., description="Token de identidad provisto por Google Sign-In SDK")
 
 

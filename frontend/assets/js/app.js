@@ -172,17 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // ---------------------------------------------------------------
-    // EVENTO BOTÓN GOOGLE OAUTH2
-    // ---------------------------------------------------------------
-    const btnGoogleAuth = document.getElementById('btnGoogleAuth');
-    btnGoogleAuth?.addEventListener('click', () => {
-        notificar(
-            'Google Sign-In',
-            'Iniciando pasarela Google OAuth2... Redirigiendo a la selección de cuenta.',
-            'info'
-        );
-    });
-    // ---------------------------------------------------------------
     // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
     // ---------------------------------------------------------------
     const btnGPS = document.getElementById('btnGPS');
@@ -390,40 +379,112 @@ document.addEventListener('DOMContentLoaded', () => {
     // 7. AUTENTICACIÓN JWT Y SESIÓN
     // ---------------------------------------------------------------
     const formLogin = document.getElementById('formLogin');
+    const btnToggleAuthMode = document.getElementById('btnToggleAuthMode');
+    const usernameGroup = document.getElementById('usernameGroup');
+    const inputUsername = document.getElementById('inputUsername');
+    const btnSubmitAuth = document.getElementById('btnSubmitAuth');
+    const authModePrompt = document.getElementById('authModePrompt');
+    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+    const modalLoginTitle = document.getElementById('modalLoginAuthLabel');
+    let isRegisterMode = false;
 
-    const verificarSesion = () => {
-        if (localStorage.getItem('iop812-token')) {
-            btnAbrirDashboard?.classList.remove('d-none');
+    const actualizarInterfazSesion = (autenticado) => {
+        btnAbrirLogin?.classList.toggle('d-none', autenticado);
+        btnCerrarSesion?.classList.toggle('d-none', !autenticado);
+        btnAbrirDashboard?.classList.toggle('d-none', !autenticado);
+    };
+
+    const obtenerPerfil = async (token) => {
+        const res = await fetch('/api/auth/perfil', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            const error = new Error(data.detail || `No se pudo validar la sesión (${res.status})`);
+            error.status = res.status;
+            throw error;
+        }
+        return data;
+    };
+
+    const restaurarSesion = async () => {
+        const token = localStorage.getItem('iop812-token');
+        if (!token) return;
+
+        try {
+            await obtenerPerfil(token);
+            actualizarInterfazSesion(true);
+        } catch (err) {
+            if (err.status === 401 || err.status === 403 || err.status === 404) {
+                localStorage.removeItem('iop812-token');
+                actualizarInterfazSesion(false);
+                return;
+            }
+            notificar('No se pudo validar la sesión', err.message, 'error');
         }
     };
-    verificarSesion();
+    restaurarSesion();
+
+    const aplicarModoAutenticacion = (registro) => {
+        isRegisterMode = registro;
+        usernameGroup?.classList.toggle('d-none', !isRegisterMode);
+        if (inputUsername) inputUsername.required = isRegisterMode;
+        const passwordInput = document.getElementById('inputPassword');
+        passwordInput?.setAttribute('autocomplete', isRegisterMode ? 'new-password' : 'current-password');
+        if (btnSubmitAuth) btnSubmitAuth.textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
+        if (authModePrompt) authModePrompt.textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+        if (btnToggleAuthMode) btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
+        if (modalLoginTitle) modalLoginTitle.textContent = isRegisterMode ? 'Crear cuenta ferretera' : 'Acceso Propietario / Ferretero';
+    };
+
+    btnToggleAuthMode?.addEventListener('click', () => {
+        aplicarModoAutenticacion(!isRegisterMode);
+    });
+
+    btnCerrarSesion?.addEventListener('click', () => {
+        localStorage.removeItem('iop812-token');
+        actualizarInterfazSesion(false);
+        notificar('Sesión cerrada', 'Has cerrado tu sesión correctamente.', 'success');
+    });
 
     formLogin?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('inputEmail')?.value;
         const password = document.getElementById('inputPassword')?.value;
+        const username = inputUsername?.value;
+        const endpoint = isRegisterMode ? '/api/auth/registro' : '/api/auth/login';
+        const payload = isRegisterMode ? { email, username, password } : { email, password };
 
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify(payload)
             });
-
-            if (!res.ok) throw new Error('Credenciales incorrectas');
-
             const data = await res.json();
+            if (!res.ok) {
+                const detail = Array.isArray(data.detail)
+                    ? data.detail.map((item) => item.msg).join(', ')
+                    : data.detail;
+                throw new Error(detail || `La solicitud de autenticación falló (${res.status})`);
+            }
+
+            const registroCompletado = isRegisterMode;
+            await obtenerPerfil(data.access_token);
             localStorage.setItem('iop812-token', data.access_token);
-            
-            notificar('¡Acceso Correcto!', 'Sesión iniciada como administrador ferretero.', 'success');
+            actualizarInterfazSesion(true);
 
             const modalElement = document.getElementById('modalLoginAuth');
             if (modalElement && typeof bootstrap !== 'undefined') {
-                const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-                modalInstance.hide();
+                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
             }
-
-            verificarSesion();
+            formLogin.reset();
+            aplicarModoAutenticacion(false);
+            notificar(
+                registroCompletado ? 'Cuenta creada' : '¡Acceso correcto!',
+                registroCompletado ? 'Tu cuenta se creó y ya iniciaste sesión.' : 'Has iniciado sesión correctamente.',
+                'success'
+            );
         } catch (err) {
             notificar('Error de Autenticación', err.message, 'error');
         }
