@@ -131,17 +131,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Usar getOrCreateInstance evita errores de invocación nula en Bootstrap 5
     btnAbrirLogin?.addEventListener('click', () => {
-        const el = document.getElementById('modalLoginAuth');
-        if (el && typeof bootstrap !== 'undefined') {
-            bootstrap.Modal.getOrCreateInstance(el).show();
-        }
+         const el = document.getElementById('modalLoginAuth');
+         if (el && typeof bootstrap !== 'undefined') {
+             bootstrap.Modal.getOrCreateInstance(el).show();
+         } else {
+            alert("No se puede abrir");
+            console.log('Modal encontrado:', !!el);
+            console.log('Bootstrap disponible:', typeof bootstrap !== 'undefined');
+         }
     });
 
     btnAbrirCreditos?.addEventListener('click', () => {
-        const el = document.getElementById('modalCreditos');
-        if (el && typeof bootstrap !== 'undefined') {
-            bootstrap.Modal.getOrCreateInstance(el).show();
-        }
+         const el = document.getElementById('modalCreditos');
+         if (el && typeof bootstrap !== 'undefined') {
+             bootstrap.Modal.getOrCreateInstance(el).show();
+         } else {
+            alert("Bootstrap Modal no disponible. No se puede abrir Créditos Académicos.");
+         }
     });
 
     btnAbrirDashboard?.addEventListener('click', () => {
@@ -156,14 +162,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------------------------------------------------------------
     const btnToggleAHP = document.getElementById('btnToggleAHP');
     const collapseAHP = document.getElementById('collapseAHP');
-
     btnToggleAHP?.addEventListener('click', (e) => {
         e.preventDefault();
         if (collapseAHP && typeof bootstrap !== 'undefined') {
             const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false });
             bsCollapse.toggle();
+        } else {
+            alert("Bootstrap Collapse no disponible. No se puede alternar el panel AHP.");
         }
     });
+  
     // ---------------------------------------------------------------
     // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
     // ---------------------------------------------------------------
@@ -372,11 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 7. AUTENTICACIÓN JWT Y SESIÓN
     // ---------------------------------------------------------------
     const formLogin = document.getElementById('formLogin');
-    const navItemDashboard = document.getElementById('navItemDashboard');
 
     const verificarSesion = () => {
         if (localStorage.getItem('iop812-token')) {
-            navItemDashboard?.classList.remove('d-none');
+            btnAbrirDashboard?.classList.remove('d-none');
         }
     };
     verificarSesion();

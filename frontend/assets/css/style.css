@@ -215,3 +215,44 @@ body {
         height: calc(100vh - var(--nav-height));
     }
 }
+/* ===================================================================
+   CORRECCIÓN DE CONTRASTE: MODALES, OFFCANVAS Y FONDOS TERTIARY
+   =================================================================== */
+
+/* Menú Lateral (Offcanvas) compatible con Dark Mode */
+.offcanvas {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    border-right-color: var(--border-color) !important;
+}
+
+.offcanvas-header, .offcanvas-footer {
+    border-color: var(--border-color) !important;
+}
+
+.offcanvas-title {
+    color: var(--text-main) !important;
+}
+
+/* Fix para el recuadro blanco en Créditos y contenedores terciarios */
+.bg-body-tertiary {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .bg-body-tertiary {
+    background-color: #F1F5F9 !important;
+    color: #0F172A !important;
+}
+
+/* Fix para el texto 'O ingresa con' en el Modal de Login */
+.modal-body .bg-body {
+    background-color: var(--card-bg) !important;
+    color: var(--text-muted) !important;
+}
+
+/* Botón de cierre (X) visible en dark mode */
+[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
