@@ -1,6 +1,6 @@
 # app/modules/autenticacion/routes.py
 # Endpoints HTTP para registro, login, Google OAuth2 y perfil con persistencia PostgreSQL.
-
+import os
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -24,6 +24,11 @@ from app.modules.autenticacion.engine import (
 router = APIRouter(prefix="/api/auth", tags=["Autenticación y Usuarios (OAuth / JWT)"])
 security = HTTPBearer()
 
+
+
+@router.get("/config", summary="Obtener configuración pública de autenticación")
+async def obtener_config_publica():
+    return {"google_client_id": os.getenv("GOOGLE_CLIENT_ID", "")}
 
 def obtener_usuario_actual(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """Middleware de dependencia que valida el JWT contra la base de datos PostgreSQL."""

@@ -13,6 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helper para notificaciones con SweetAlert2
     const notificar = (titulo, texto, icono = 'info') => {
+        // Quitar el foco de cualquier elemento activo para evitar advertencias aria-hidden
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+        }
+
         const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
         return Swal.fire({
             title: titulo,
@@ -391,20 +396,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // EVENTO Y MANEJO DE GOOGLE OAUTH2 (/api/auth/google)
     // ---------------------------------------------------------------
     const btnGoogleAuth = document.getElementById('btnGoogleAuth');
+    let googleClientId = '';
 
-    btnGoogleAuth?.addEventListener('click', async () => {
-        // Si usas Google Identity Services (GIS), este botón puede disparar la solicitud de credenciales
-        if (typeof google !== 'undefined' && google.accounts?.id) {
-            google.accounts.id.prompt();
-            return;
+    const inicializarGoogleAuth = async () => {
+        try {
+            const res = await fetch('/api/auth/config');
+            if (res.ok) {
+                const config = await res.json();
+                googleClientId = config.google_client_id;
+                if (googleClientId && typeof google !== 'undefined' && google.accounts?.id) {
+                    google.accounts.id.initialize({
+                        client_id: googleClientId,
+                        callback: window.handleGoogleCredentialResponse
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Error al cargar config de Google Auth:', e);
+        }
+    };
+    inicializarGoogleAuth();
+
+btnGoogleAuth?.addEventListener('click', () => {
+        // Quitar el foco del botón para no bloquear la accesibilidad ARIA
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
         }
 
-        notificar(
-            'Google Sign-In',
-            'Iniciando pasarela de autenticación con Google...',
-            'info'
-        );
+        // Ocultar modal de login de Bootstrap
+        const modalEl = document.getElementById('modalLoginAuth');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        }
+
+        if (typeof google !== 'undefined' && google.accounts?.id && googleClientId) {
+            google.accounts.id.prompt();
+        } else {
+            notificar(
+                'Google Auth',
+                'Verifica que GOOGLE_CLIENT_ID esté guardado en tu archivo .env.',
+                'warning'
+            );
+        }
     });
+
 
     // Callback global para procesar el token retornado por Google y enviarlo a FastAPI
     window.handleGoogleCredentialResponse = async (response) => {

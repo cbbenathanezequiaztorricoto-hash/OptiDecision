@@ -2565,6 +2565,7 @@ if __name__ == "__main__":
     <script src="assets/js/app.js"></script>
 </body>
 </html>
+
 ]]>
 </archivo>
 
@@ -2848,6 +2849,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helper para notificaciones con SweetAlert2
     const notificar = (titulo, texto, icono = 'info') => {
+        // Quitar el foco de cualquier elemento activo para evitar advertencias aria-hidden
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+        }
+
         const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
         return Swal.fire({
             title: titulo,
@@ -3222,7 +3228,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCerrarSesion = document.getElementById('btnCerrarSesion');
     const modalLoginTitle = document.getElementById('modalLoginAuthLabel');
     let isRegisterMode = false;
+    // ---------------------------------------------------------------
+    // EVENTO Y MANEJO DE GOOGLE OAUTH2 (/api/auth/google)
+    // ---------------------------------------------------------------
+    const btnGoogleAuth = document.getElementById('btnGoogleAuth');
 
+    btnGoogleAuth?.addEventListener('click', async () => {
+        // 1. Ocultar el modal de login primero
+        const modalEl = document.getElementById('modalLoginAuth');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        }
+
+        // 2. Si el SDK oficial de Google está cargado, abrir la pasarela
+        if (typeof google !== 'undefined' && google.accounts?.id) {
+            google.accounts.id.prompt();
+            return;
+        }
+
+        // 3. Notificación alternativa si no hay CLIENT_ID configurado
+        notificar(
+            'Google Sign-In',
+            'Iniciando pasarela de autenticación con Google... Revisa la consola o configura tu GOOGLE_CLIENT_ID.',
+            'info'
+        );
+    });
+
+    // Callback global para procesar el token retornado por Google y enviarlo a FastAPI
+    window.handleGoogleCredentialResponse = async (response) => {
+        try {
+            const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Fallo en la verificación del token de Google');
+            }
+
+            // Almacenar token de sesión propio del sistema
+            localStorage.setItem('iop812-token', data.access_token);
+            actualizarInterfazSesion(true);
+
+            const modalElement = document.getElementById('modalLoginAuth');
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+            }
+
+            notificar('¡Acceso Correcto!', `Bienvenido ${data.username}, iniciaste sesión con Google.`, 'success');
+        } catch (err) {
+            notificar('Error en Google Auth', err.message, 'error');
+        }
+    };
     const actualizarInterfazSesion = (autenticado) => {
         btnAbrirLogin?.classList.toggle('d-none', autenticado);
         btnCerrarSesion?.classList.toggle('d-none', !autenticado);
@@ -3592,6 +3651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 });
+
 ]]>
 </archivo>
 
