@@ -122,7 +122,48 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     inicializarMapa();
+    // ---------------------------------------------------------------
+    // VINCULACIÓN SEGURA DE MODALES Y NAVEGACIÓN
+    // ---------------------------------------------------------------
+    const btnAbrirLogin = document.getElementById('btnAbrirLogin');
+    const btnAbrirCreditos = document.getElementById('btnAbrirCreditos');
+    const btnAbrirDashboard = document.getElementById('btnAbrirDashboard');
 
+    // Usar getOrCreateInstance evita errores de invocación nula en Bootstrap 5
+    btnAbrirLogin?.addEventListener('click', () => {
+        const el = document.getElementById('modalLoginAuth');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    });
+
+    btnAbrirCreditos?.addEventListener('click', () => {
+        const el = document.getElementById('modalCreditos');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    });
+
+    btnAbrirDashboard?.addEventListener('click', () => {
+        const el = document.getElementById('modalDashboardIO');
+        if (el && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // DESPLEGABLE ACORDEÓN AHP (SAATY)
+    // ---------------------------------------------------------------
+    const btnToggleAHP = document.getElementById('btnToggleAHP');
+    const collapseAHP = document.getElementById('collapseAHP');
+
+    btnToggleAHP?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (collapseAHP && typeof bootstrap !== 'undefined') {
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false });
+            bsCollapse.toggle();
+        }
+    });
     // ---------------------------------------------------------------
     // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
     // ---------------------------------------------------------------
@@ -634,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cargarProductosCRUD();
         }
     };
-
+ 
+    
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 });

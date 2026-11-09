@@ -1739,7 +1739,6 @@ if __name__ == "__main__":
 <archivo ruta="frontend/index.html">
 <![CDATA[
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
@@ -2582,7 +2581,50 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     inicializarMapa();
+// ---------------------------------------------------------------
+    // VINCULACIÓN EXPLÍCITA DE MODALES Y ACCIONES DE NAVEGACIÓN
+    // ---------------------------------------------------------------
+    const btnAbrirLogin = document.getElementById('btnAbrirLogin');
+    const btnAbrirCreditos = document.getElementById('btnAbrirCreditos');
+    const btnAbrirDashboard = document.getElementById('btnAbrirDashboard');
 
+    btnAbrirLogin?.addEventListener('click', () => {
+        const el = document.getElementById('modalLoginAuth');
+        if (el) {
+            const modal = bootstrap.Modal.getInstance(el);
+            modal.show();
+        }
+    });
+
+    btnAbrirCreditos?.addEventListener('click', () => {
+        const el = document.getElementById('modalCreditos');
+        if (el) {
+            const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+            modal.show();
+        }
+    });
+
+    btnAbrirDashboard?.addEventListener('click', () => {
+        const el = document.getElementById('modalDashboardIO');
+        if (el) {
+            const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+            modal.show();
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // DESPLEGABLE GARANTIZADO DE CRITERIOS AHP (SAATY)
+    // ---------------------------------------------------------------
+    const btnToggleAHP = document.getElementById('btnToggleAHP');
+    const collapseAHP = document.getElementById('collapseAHP');
+
+    btnToggleAHP?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (collapseAHP) {
+            const bsCollapse = bootstrap.Collapse.getInstance(collapseAHP) || new bootstrap.Collapse(collapseAHP, { toggle: false });
+            bsCollapse.toggle();
+        }
+    });
     // ---------------------------------------------------------------
     // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
     // ---------------------------------------------------------------
@@ -3094,7 +3136,8 @@ document.addEventListener('DOMContentLoaded', () => {
             cargarProductosCRUD();
         }
     };
-
+ 
+    
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 });
 ]]>
