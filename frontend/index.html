@@ -13,13 +13,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- 1. Bootstrap 5.3 CSS con SRI -->
+    <!-- 1. Bootstrap 5.3 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
-    <!-- 2. Leaflet.js CSS con SRI -->
+    <!-- 2. Leaflet.js CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
 
-    <!-- 3. FontAwesome 6 (Iconos Vectoriales) con SRI -->
+    <!-- 3. FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <!-- 4. SweetAlert2 CSS -->
@@ -32,10 +32,9 @@
     <!-- NAV BAR SUPERIOR HÍBRIDA -->
     <nav class="navbar navbar-expand-lg sticky-top border-bottom" id="topNav">
         <div class="container-fluid px-3 px-lg-4">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="#home">
-                <!-- Logo -->
-                 <!-- <iframe src="/assets/images/favicon.ico" width="32" height="32" style="border:0;" title="OptiDecision Logo"></iframe> -->
-                <i class="fa-solid fa-compass-drafting text-primary fs-4"></i>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#mapa-ahp">
+                <!-- Logo desde assets -->
+                <img src="/assets/images/favicon.ico" alt="OptiDecision Logo" width="32" height="32" class="rounded">
                 <span class="fw-bold fs-5 tracking-tight">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">IOP812</span></span>
             </a>
 
@@ -49,10 +48,10 @@
                         <a class="nav-link active" href="#mapa-ahp"><i class="fa-solid fa-map-location-dot me-1"></i> Buscador AHP</a>
                     </li>
                     <li class="nav-item d-none" id="navItemDashboard">
-                        <a class="nav-link" href="#modulos-io" data-bs-toggle="modal" data-bs-target="#modalDashboardIO"><i class="fa-solid fa-calculator me-1"></i> Panel I.O. Ferretero</a>
+                        <a class="nav-link" id="btnAbrirDashboard"><i class="fa-solid fa-calculator me-1"></i> Panel I.O. Ferretero</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#creditos" data-bs-toggle="modal" data-bs-target="#modalCreditos"><i class="fa-solid fa-graduation-cap me-1"></i> Créditos</a>
+                        <a class="nav-link" id="btnAbrirCreditos"><i class="fa-solid fa-graduation-cap me-1"></i> Créditos</a>
                     </li>
                 </ul>
 
@@ -61,9 +60,9 @@
                     <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
                         <i class="fa-solid fa-moon" id="themeIcon"></i>
                     </button>
-                    <!-- Estado Auth / Botón Login -->
+                    <!-- Estado Auth / Botón Login / Logout -->
                     <div id="authStatusContainer">
-                        <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalLoginAuth">
+                        <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" id="btnAbrirLogin">
                             <i class="fa-solid fa-right-to-bracket"></i>
                             <span>Acceso Ferretero</span>
                         </button>
@@ -88,7 +87,7 @@
                         <i class="fa-solid fa-circle-check me-1"></i>AHP Consistente (CR &lt; 0.10)
                     </span>
                 </div>
-                <!-- Campo Origen con Botón GPS integrador tipo Trufi -->
+                <!-- Campo Origen -->
                 <div class="input-group mb-2">
                     <span class="input-group-text bg-body border-end-0 text-primary"><i class="fa-solid fa-location-dot"></i></span>
                     <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Origen (ej. Cala Cala, Quillacollo)" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
@@ -101,15 +100,15 @@
                     <span class="input-group-text bg-body border-end-0 text-muted"><i class="fa-solid fa-screwdriver-wrench"></i></span>
                     <input type="text" class="form-control border-start-0 ps-0" id="inputProducto" placeholder="¿Qué producto buscas? (ej. Cemento, Fierro 1/2&quot;, Yeso)" required>
                 </div>
-                <!-- Acordeón Desplegable para Ponderación AHP Multicriterio -->
+                <!-- Acordeón Desplegable AHP -->
                 <div class="accordion accordion-flush mb-3 rounded-3 border" id="accordionAHP">
                     <div class="accordion-item bg-transparent">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed py-2 px-3 small fw-medium text-main" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAHP">
+                        <h2 class="accordion-header" id="headingAHP">
+                            <button class="accordion-button collapsed py-2 px-3 small fw-medium text-main" type="button" id="btnToggleAHP" data-bs-toggle="collapse" data-bs-target="#collapseAHP" aria-expanded="false" aria-controls="collapseAHP">
                                 <i class="fa-solid fa-sliders text-primary me-2"></i> Ajustar Criterios AHP (Saaty)
                             </button>
                         </h2>
-                        <div id="collapseAHP" class="accordion-collapse collapse" data-bs-parent="#accordionAHP">
+                        <div id="collapseAHP" class="accordion-collapse collapse" aria-labelledby="headingAHP" data-bs-parent="#accordionAHP">
                             <div class="accordion-body p-3">
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small mb-1">
@@ -182,7 +181,7 @@
         </div>
     </main>
 
-    <!-- MODAL DE AUTENTICACIÓN (LOGIN JWT / GOOGLE OAUTH)-->
+    <!-- MODAL DE AUTENTICACIÓN -->
     <div class="modal fade" id="modalLoginAuth" tabindex="-1" aria-labelledby="modalLoginAuthLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
@@ -217,7 +216,7 @@
         </div>
     </div>
 
-    <!-- MODAL DASHBOARD / CALCULADORAS DE INVESTIGACIÓN OPERATIVA II -->
+    <!-- MODAL DASHBOARD / CALCULADORAS DE I.O. -->
     <div class="modal fade" id="modalDashboardIO" tabindex="-1" aria-labelledby="modalDashboardIOLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg rounded-4">
@@ -361,7 +360,7 @@
                                             </div>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label small text-muted">Probabilidad Estado 1 ($P_1$)</label>
+                                            <label class="form-label small text-muted">Probabilidad Estado 1 (P1)</label>
                                             <input type="number" step="0.01" class="form-control form-control-sm" id="decProbE1" value="0.60" min="0" max="1">
                                         </div>
                                         <button type="submit" class="btn btn-sm btn-primary w-100">Evaluar Incertidumbre & Riesgo (VME)</button>
@@ -384,14 +383,14 @@
                                     <form id="formMarkov" onsubmit="event.preventDefault();">
                                         <p class="small text-muted">Estados Transitorios: <strong>Búsqueda (S1)</strong> y <strong>Carrito (S2)</strong>.<br>Estados Absorbentes: <strong>Compra (A1)</strong> y <strong>Abandono (A2)</strong>.</p>
                                         <div class="mb-2">
-                                            <label class="form-label extra-small text-muted">Prob. Búsqueda $\rightarrow$ Carrito</label>
+                                            <label class="form-label extra-small text-muted">Prob. Búsqueda → Carrito</label>
                                             <input type="number" step="0.01" class="form-control form-control-sm" id="markovP12" value="0.40">
                                         </div>
                                         <div class="mb-2">
-                                            <label class="form-label extra-small text-muted">Prob. Carrito $\rightarrow$ Compra (Absorción)</label>
+                                            <label class="form-label extra-small text-muted">Prob. Carrito → Compra (Absorción)</label>
                                             <input type="number" step="0.01" class="form-control form-control-sm" id="markovP2A1" value="0.70">
                                         </div>
-                                        <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Calcular Matriz Absorción $B = N \cdot R$</button>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 mt-2">Calcular Matriz Absorción B = N · R</button>
                                     </form>
                                 </div>
                                 <div class="col-md-7 ps-md-4">
@@ -410,11 +409,11 @@
                                     <h6 class="fw-bold mb-3 text-main">Parámetros Mostrador M/M/1</h6>
                                     <form id="formColas" onsubmit="event.preventDefault();">
                                         <div class="mb-2">
-                                            <label class="form-label small text-muted">Tasa de Llegada ($\lambda$ clientes/hora)</label>
+                                            <label class="form-label small text-muted">Tasa de Llegada (λ clientes/hora)</label>
                                             <input type="number" step="0.1" class="form-control form-control-sm" id="colaLambda" value="8.0" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label small text-muted">Tasa de Servicio ($\mu$ clientes/hora)</label>
+                                            <label class="form-label small text-muted">Tasa de Servicio (μ clientes/hora)</label>
                                             <input type="number" step="0.1" class="form-control form-control-sm" id="colaMu" value="10.0" required>
                                         </div>
                                         <div class="mb-3">
@@ -432,13 +431,13 @@
                                     <div class="row g-2">
                                         <div class="col-6">
                                             <div class="p-3 border rounded-3 bg-body-tertiary text-center">
-                                                <span class="d-block extra-small text-muted">Uso del Sistema ($\rho$)</span>
+                                                <span class="d-block extra-small text-muted">Uso del Sistema (ρ)</span>
                                                 <h4 class="fw-bold text-info mb-0" id="resColaRho">0%</h4>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="p-3 border rounded-3 bg-body-tertiary text-center">
-                                                <span class="d-block extra-small text-muted">Tiempo en Cola ($W_q$)</span>
+                                                <span class="d-block extra-small text-muted">Tiempo en Cola (Wq)</span>
                                                 <h4 class="fw-bold text-warning mb-0" id="resColaWq">0 min</h4>
                                             </div>
                                         </div>
@@ -481,16 +480,11 @@
             </div>
         </div>
     </div>
-    <!-- 1. Bootstrap 5.3 JS Bundle (Sin hash SRI bloqueante) -->
+
+    <!-- JS Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
-
-    <!-- 2. Leaflet.js JS con SRI -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-
-    <!-- 3. SweetAlert2 JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- 4. Script de Aplicación -->
     <script src="/assets/js/app.js"></script>
 </body>
 </html>

@@ -1,12 +1,10 @@
 # app/modules/decisiones/schemas.py
-# Contratos de entrada y salida para evaluar 
-# decisiones bajo incertidumbre y riesgo.
+# Contratos de entrada y salida para evaluar decisiones bajo incertidumbre y riesgo.
+
 from typing import List, Dict, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-# -------------------------------------------------------------------------
-# MODELO DE ENTRADA: MATRIZ DE PAGOS Y ESCENARIOS
-# -------------------------------------------------------------------------
+
 class DecisionInput(BaseModel):
     alternativas: List[str] = Field(
         default=["Lote Conservador", "Lote Estándar", "Lote Mayorista"],
@@ -30,8 +28,7 @@ class DecisionInput(BaseModel):
         le=1.0, 
         description="Coeficiente de optimismo alpha para Hurwicz"
     )
-    # VALIDADOR 1: Comprobar dimensiones de la matriz de pagos 
-    # vs alternativas y estados
+
     @field_validator("matriz_pagos")
     @classmethod
     def validar_dimensiones_matriz(cls, v: List[List[float]], info) -> List[List[float]]:
@@ -54,11 +51,9 @@ class DecisionInput(BaseModel):
                         f"La fila {i} de la matriz tiene {len(fila)} columnas, pero hay {num_cols} estados de la naturaleza."
                     )
         return v
-    # VALIDADOR 2: Si se envían probabilidades, deben coincidir 
-    # con la cantidad de estados y sumar 1.0
+
     @model_validator(mode="after")
     def validar_consistencia_decision(self) -> "DecisionInput":
-        # Evitar claves sobrescritas en diccionarios
         if len(set(self.alternativas)) != len(self.alternativas):
             raise ValueError("No puede haber nombres de alternativas duplicadas.")
         if len(set(self.estados_naturaleza)) != len(self.estados_naturaleza):
@@ -82,9 +77,6 @@ class DecisionInput(BaseModel):
         return self
 
 
-# -------------------------------------------------------------------------
-# MODELO DE SALIDA: RESULTADOS DE TODOS LOS CRITERIOS DE I.O. II
-# -------------------------------------------------------------------------
 class CriterioResultado(BaseModel):
     alternativa_optima: str = Field(..., description="Nombre de la mejor alternativa según este criterio")
     valor_obtenido: float = Field(..., description="Valor óptimo calculado por el criterio")

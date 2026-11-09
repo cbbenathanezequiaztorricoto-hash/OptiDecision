@@ -1,22 +1,14 @@
 # app/modules/buscador_ahp/routes.py
 # Controlador HTTP para el Algoritmo AHP de Selección y Buscador Multicriterio.
+
 from fastapi import APIRouter, HTTPException, status
 from app.modules.buscador_ahp.schemas import AHPSearchInput, AHPMatrizCriteriosInput, AHPResultadoOutput
 from app.modules.buscador_ahp.engine import calcular_proceso_ahp
 from app.shared.database import obtener_conexion
 
-#Definimos una variable del tipo APIRouter que contendrá todos los endpoints 
-# relacionados con el módulo AHP.
-
-### RECUERDA: Un endpoint es una función que se ejecuta cuando un cliente 
-# hace una solicitud HTTP a una ruta específica de la API.
-
 router = APIRouter(prefix="/api/ahp", tags=["Buscador AHP Geoespacial"])
 
 
-
-#¿QUÉ HACÍA ESTE ENDPOINT?
-#Es una arroba que define un endpoint POST en la ruta "/buscar" del router de FastAPI. 
 @router.post(
     "/buscar",
     response_model=AHPResultadoOutput,
@@ -43,7 +35,6 @@ async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
         conn = obtener_conexion()
         if conn:
             with conn.cursor() as cur:
-                # Consulta SQL parametrizada con cálculo de distancia esférica (PostGIS)
                 sql = """
                     SELECT 
                         f.id_ferreteria, f.nombre, f.direccion, f.latitud, f.longitud,
@@ -58,11 +49,11 @@ async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
                 filas = cur.fetchall()
 
                 if filas:
-                    # Extraer min/max para normalización Min-Max por criterio
-                    precios = [f[5] for f in filas]
-                    distancias = [f[8] for f in filas]
-                    reputaciones = [f[7] for f in filas]
-                    stocks = [f[6] for f in filas]
+                    # Lectura con llaves de RealDictCursor
+                    precios = [float(f["precio_bob"]) for f in filas]
+                    distancias = [float(f["distancia_km"]) for f in filas]
+                    reputaciones = [float(f["reputacion"]) for f in filas]
+                    stocks = [int(f["stock_actual"]) for f in filas]
 
                     max_p, min_p = max(precios) or 1.0, min(precios) or 0.0
                     max_d, min_d = max(distancias) or 1.0, min(distancias) or 0.0
@@ -75,28 +66,26 @@ async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
                     w_stock = res_math["vector_pesos_W"]["Stock"] / 100.0
 
                     for f in filas:
-                        # Normalizar valores (Precio y Distancia son inversamente proporcionales)
-                        norm_precio = (max_p - f[5]) / (max_p - min_p) if max_p != min_p else 1.0
-                        norm_dist = (max_d - f[8]) / (max_d - min_d) if max_d != min_d else 1.0
-                        norm_rep = (f[7] - min_r) / (max_r - min_r) if max_r != min_r else 1.0
-                        norm_stock = (f[6] - min_s) / (max_s - min_s) if max_s != min_s else 1.0
+                        norm_precio = (max_p - float(f["precio_bob"])) / (max_p - min_p) if max_p != min_p else 1.0
+                        norm_dist = (max_d - float(f["distancia_km"])) / (max_d - min_d) if max_d != min_d else 1.0
+                        norm_rep = (float(f["reputacion"]) - min_r) / (max_r - min_r) if max_r != min_r else 1.0
+                        norm_stock = (int(f["stock_actual"]) - min_s) / (max_s - min_s) if max_s != min_s else 1.0
 
                         score_total = (norm_precio * w_precio) + (norm_dist * w_dist) + (norm_rep * w_rep) + (norm_stock * w_stock)
 
                         ferreterias_ordenadas.append({
-                            "id_ferreteria": f[0],
-                            "nombre": f[1],
-                            "direccion": f[2],
-                            "latitud": float(f[3]),
-                            "longitud": float(f[4]),
-                            "precio_bob": float(f[5]),
-                            "stock": int(f[6]),
-                            "reputacion": float(f[7]),
-                            "distancia_km": round(float(f[8]), 2),
+                            "id_ferreteria": f["id_ferreteria"],
+                            "nombre": f["nombre"],
+                            "direccion": f["direccion"],
+                            "latitud": float(f["latitud"]),
+                            "longitud": float(f["longitud"]),
+                            "precio_bob": float(f["precio_bob"]),
+                            "stock": int(f["stock_actual"]),
+                            "reputacion": float(f["reputacion"]),
+                            "distancia_km": round(float(f["distancia_km"]), 2),
                             "puntuacion_ahp": round(float(score_total), 4)
                         })
 
-                    # Ordenar descendentemente por puntuación AHP final
                     ferreterias_ordenadas.sort(key=lambda x: x["puntuacion_ahp"], reverse=True)
             conn.close()
 

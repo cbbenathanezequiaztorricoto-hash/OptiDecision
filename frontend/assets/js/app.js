@@ -1,5 +1,5 @@
 /* ===================================================================
-   OPTI DECISION SUITE - IOP812 | FRONTEND APP (SWEETALERT2 INTEGRATED) (CONSUMO PURO DE API)
+   OPTI DECISION SUITE - IOP812 | FRONTEND APP (SURGICAL FIX)
    =================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let markersLayer = null;
     let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
 
-    // Helper reutilizable para notificaciones con diseño Industrial-Tech
+    // Helper para notificaciones con SweetAlert2
     const notificar = (titulo, texto, icono = 'info') => {
         const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
         return Swal.fire({
@@ -36,12 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const aplicarTema = (tema) => {
         document.documentElement.setAttribute('data-theme', tema);
         localStorage.setItem('iop812-theme', tema);
-        //Aquí preguntamos ¿El tema es light? Si es así, cambiamos el icono a sol, de lo contrario a luna
         if (themeIcon) {
             themeIcon.className = tema === 'light' ? 'fa-solid fa-sun text-warning' : 'fa-solid fa-moon text-light';
         }
     };
-    // Cargar tema guardado o por defecto (dark)
     aplicarTema(localStorage.getItem('iop812-theme') || 'dark');
 
     themeToggleBtn?.addEventListener('click', () => {
@@ -52,33 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------------------------------------------------------------
     // 3. INICIALIZACIÓN DE LEAFLET
     // ---------------------------------------------------------------
-    const inicializarMapa = () => {
-        const mapContainer = document.getElementById('map');
-        if (!mapContainer) return;
-        
-        map = L.map('map', {
-            center: COCHABAMBA_DEFAULT,
-            zoom: 14,
-            zoomControl: false
-        });
-        // Posicionar control de zoom en la esquina inferior derecha
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        // Capa base de azulejos OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors | IOP812'
-        }).addTo(map);
-        // Marcador inicial de ubicación del usuario (Azul)
-        markersLayer = L.layerGroup().addTo(map);
-        // Auto-centrado dinámico inteligente al cargar la aplicación 
-        intentoAutoGeolocalizacion();
-    };
-
     const actualizarMarcadorUsuario = (lat, lng, titulo) => {
         ubicacionUsuario = { lat, lng };
-        // Eliminar marcador previo del usuario si existe
+        if (!markersLayer) return null;
+
         markersLayer.eachLayer(layer => {
-            if (layer.options.isUserMarker) {
+            if (layer.options && layer.options.isUserMarker) {
                 markersLayer.removeLayer(layer);
             }
         });
@@ -100,19 +77,47 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
-                    map.setView([latitude, longitude], 15);
-                    actualizarMarcadorUsuario(latitude, longitude, "Tu ubicación GPS actual").openPopup();
+                    if (map) map.setView([latitude, longitude], 15);
+                    const marker = actualizarMarcadorUsuario(latitude, longitude, "Tu ubicación GPS actual");
+                    if (marker) marker.openPopup();
                     const inputOrigen = document.getElementById('inputOrigen');
                     if (inputOrigen) inputOrigen.value = `Ubicación GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
                 },
                 () => {
-                    // Fallback silencioso a Cochabamba centro
                     actualizarMarcadorUsuario(COCHABAMBA_DEFAULT[0], COCHABAMBA_DEFAULT[1], "Origen: Plaza 14 de Septiembre, Cochabamba");
                 },
                 { timeout: 5000 }
             );
         } else {
             actualizarMarcadorUsuario(COCHABAMBA_DEFAULT[0], COCHABAMBA_DEFAULT[1], "Origen: Plaza 14 de Septiembre, Cochabamba");
+        }
+    };
+
+    const inicializarMapa = () => {
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer || map !== null) return;
+
+        try {
+            map = L.map('map', {
+                center: COCHABAMBA_DEFAULT,
+                zoom: 14,
+                zoomControl: false
+            });
+
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors | IOP812'
+            }).addTo(map);
+
+            markersLayer = L.layerGroup().addTo(map);
+            intentoAutoGeolocalizacion();
+
+            // Resuelve la pantalla en blanco forzando el recálculo de dimensiones del canvas Leaflet
+            setTimeout(() => { if (map) map.invalidateSize(); }, 250);
+        } catch (e) {
+            console.error("Error al inicializar Leaflet:", e);
         }
     };
 
@@ -129,9 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords;
-                map.flyTo([latitude, longitude], 15);
-                actualizarMarcadorUsuario(latitude, longitude, "Tu ubicación GPS actual").openPopup();
-                inputOrigen.value = `Ubicación GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+                if (map) map.flyTo([latitude, longitude], 15);
+                const marker = actualizarMarcadorUsuario(latitude, longitude, "Tu ubicación GPS actual");
+                if (marker) marker.openPopup();
+                if (inputOrigen) inputOrigen.value = `Ubicación GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
                 btnGPS.innerHTML = `<i class="fa-solid fa-crosshairs text-primary"></i>`;
             },
             (err) => {
@@ -140,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         );
     });
-    // Convertir dirección digitada a Coordenadas mediante Geocoding dinámico
+
     const resolverCoordenadasOrigen = async (textoOrigen) => {
         if (textoOrigen.includes("GPS")) return ubicacionUsuario;
 
@@ -152,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
-                map.flyTo([lat, lon], 14);
+                if (map) map.flyTo([lat, lon], 14);
                 actualizarMarcadorUsuario(lat, lon, `Origen: ${data[0].display_name.split(',')[0]}`);
                 return { lat, lng: lon };
             }
@@ -163,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ---------------------------------------------------------------
-    // 5. SLIDERS AHP (Ponderación Saaty 1-9)(Actualización Visual de UI)
+    // 5. SLIDERS AHP (Ponderación Saaty 1-9)
     // ---------------------------------------------------------------
     const sliders = {
         precio: document.getElementById('sliderPrecio'),
@@ -185,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const valR = parseInt(sliders.reputacion?.value || 2, 10);
         const valS = parseInt(sliders.stock?.value || 1, 10);
         const suma = valP + valD + valR + valS;
-        // Actualizar etiquetas de porcentaje en la UI
+
         if (labels.precio) labels.precio.textContent = `${Math.round((valP / suma) * 100)}%`;
         if (labels.distancia) labels.distancia.textContent = `${Math.round((valD / suma) * 100)}%`;
         if (labels.reputacion) labels.reputacion.textContent = `${Math.round((valR / suma) * 100)}%`;
@@ -195,9 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
     Object.values(sliders).forEach(slider => {
         slider?.addEventListener('input', actualizarPorcentajesAHP);
     });
+    actualizarPorcentajesAHP();
 
     // ---------------------------------------------------------------
-    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (CORREGIDO PAI & 422)
+    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (AHPSearchInput)
     // ---------------------------------------------------------------
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
@@ -209,30 +216,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formBuscador?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const productoText = document.getElementById('inputProducto').value.trim();
-        const origenText = document.getElementById('inputOrigen').value.trim();
+        const productoText = document.getElementById('inputProducto')?.value.trim();
+        const origenText = document.getElementById('inputOrigen')?.value.trim();
         if (!productoText) return;
 
         const btnBuscar = document.getElementById('btnBuscarAHP');
-        btnBuscar.disabled = true;
-        btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Consultando PostGIS & AHP...`;
+        if (btnBuscar) {
+            btnBuscar.disabled = true;
+            btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Consultando PostGIS & AHP...`;
+        }
 
-        // Obtener coordenadas dinámicas según el texto digitado en Origen
-        const coordsActuales = await resolverCoordenadasOrigen(origenText);
+        const coordsActuales = await resolverCoordenadasOrigen(origenText || '');
 
-        // Payload adaptado con nombres de campo estándar para Pydantic AHPSearchInput
+        // Estructura exacta requerida por AHPSearchInput en app/modules/buscador_ahp/schemas.py
         const payload = {
             latitud: coordsActuales.lat,
             longitud: coordsActuales.lng,
-            latitud_usuario: coordsActuales.lat,   // Alias de compatibilidad
-            longitud_usuario: coordsActuales.lng,  // Alias de compatibilidad
             producto: productoText,
-            texto_buscado: productoText,          // Alias de compatibilidad
             pesos: {
-                precio: parseInt(sliders.precio.value, 10),
-                distancia: parseInt(sliders.distancia.value, 10),
-                reputacion: parseInt(sliders.reputacion.value, 10),
-                stock: parseInt(sliders.stock.value, 10)
+                precio: parseInt(sliders.precio?.value || 4, 10),
+                distancia: parseInt(sliders.distancia?.value || 3, 10),
+                reputacion: parseInt(sliders.reputacion?.value || 2, 10),
+                stock: parseInt(sliders.stock?.value || 1, 10)
             }
         };
 
@@ -245,15 +250,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errData = await response.json();
-                
-                // Formateador de errores de validación Pydantic (evita "[object Object]")
                 let detalleError = 'Error en la búsqueda geoespacial';
                 if (Array.isArray(errData.detail)) {
                     detalleError = errData.detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join('<br>');
                 } else if (typeof errData.detail === 'string') {
                     detalleError = errData.detail;
                 }
-
                 throw new Error(detalleError);
             }
 
@@ -262,12 +264,15 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             notificar('Error en Búsqueda AHP', error.message, 'warning');
         } finally {
-            btnBuscar.disabled = false;
-            btnBuscar.innerHTML = `<i class="fa-solid fa-route"></i> <span>Optimizar y Buscar Ferretería</span>`;
+            if (btnBuscar) {
+                btnBuscar.disabled = false;
+                btnBuscar.innerHTML = `<i class="fa-solid fa-route"></i> <span>Optimizar y Buscar Ferretería</span>`;
+            }
         }
     });
 
     const renderizarResultadosAHP = (data) => {
+        if (!markersLayer) return;
         markersLayer.clearLayers();
         actualizarMarcadorUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng, "Tu Origen de Búsqueda");
 
@@ -278,13 +283,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const top = data.ferreterias[0];
 
-        // Renderizar Tarjeta Top Pick
-        document.getElementById('topFerreteriaNombre').textContent = top.nombre;
-        document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
-        document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
-        document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
-        document.getElementById('topReputacion').textContent = top.reputacion;
-        document.getElementById('topStock').textContent = `${top.stock} un.`;
+        const elNombre = document.getElementById('topFerreteriaNombre');
+        const elDireccion = document.getElementById('topFerreteriaDireccion');
+        const elPrecio = document.getElementById('topPrecioBOB');
+        const elDistancia = document.getElementById('topDistanciaKM');
+        const elReputacion = document.getElementById('topReputacion');
+        const elStock = document.getElementById('topStock');
+
+        if (elNombre) elNombre.textContent = top.nombre;
+        if (elDireccion) elDireccion.innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
+        if (elPrecio) elPrecio.textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
+        if (elDistancia) elDistancia.textContent = `${top.distancia_km} km`;
+        if (elReputacion) elReputacion.textContent = top.reputacion;
+        if (elStock) elStock.textContent = `${top.stock} un.`;
+
         cardTopResult?.classList.remove('d-none');
 
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
@@ -312,11 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
             puntosBounds.push([f.latitud, f.longitud]);
         });
 
-        map.fitBounds(puntosBounds, { padding: [50, 50] });
+        if (map) map.fitBounds(puntosBounds, { padding: [50, 50] });
     };
 
     // ---------------------------------------------------------------
-    // 7. AUTENTICACIÓN JWT Y PANEL FERRETERO/ADMINISTRADOR
+    // 7. AUTENTICACIÓN JWT Y SESIÓN
     // ---------------------------------------------------------------
     const formLogin = document.getElementById('formLogin');
     const navItemDashboard = document.getElementById('navItemDashboard');
@@ -330,8 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formLogin?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('inputEmail').value;
-        const password = document.getElementById('inputPassword').value;
+        const email = document.getElementById('inputEmail')?.value;
+        const password = document.getElementById('inputPassword')?.value;
 
         try {
             const res = await fetch('/api/auth/login', {
@@ -348,8 +360,10 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('¡Acceso Correcto!', 'Sesión iniciada como administrador ferretero.', 'success');
 
             const modalElement = document.getElementById('modalLoginAuth');
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            modalInstance?.hide();
+            if (modalElement && typeof bootstrap !== 'undefined') {
+                const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                modalInstance.hide();
+            }
 
             verificarSesion();
         } catch (err) {
@@ -358,18 +372,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------
-    // 8. CALCULADORA INVENTARIOS EOQ (REAL API FASTAPI /api/inventario/calcular)
+    // 8. CALCULADORA INVENTARIOS EOQ (EOQParametrosInput)
     // ---------------------------------------------------------------
     const formEOQ = document.getElementById('formEOQ');
     formEOQ?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const D = parseFloat(document.getElementById('eoqD').value);
-        const K = parseFloat(document.getElementById('eoqK').value);
-        const H = parseFloat(document.getElementById('eoqH').value);
-        const L_dias = parseFloat(document.getElementById('eoqL').value);
+        const D = parseFloat(document.getElementById('eoqD')?.value || 0);
+        const K = parseFloat(document.getElementById('eoqK')?.value || 0);
+        const H = parseFloat(document.getElementById('eoqH')?.value || 0);
+        const L_dias = parseFloat(document.getElementById('eoqL')?.value || 0);
 
         try {
-            // El cálculo de Q* y ROP se envía al motor matemático en Python (engine.py)
             const response = await fetch('/api/inventario/calcular', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -382,28 +395,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
 
-            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ en Python');
+            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ');
 
             const data = await response.json();
+            const elQ = document.getElementById('resQOptimo');
+            const elROP = document.getElementById('resROP');
+            if (elQ) elQ.textContent = `${data.lote_optimo_Q} un.`;
+            if (elROP) elROP.textContent = `${data.punto_reorden_ROP} un.`;
 
-            // Asignación directa de campos del contrato backend (lote_optimo_Q y punto_reorden_ROP)
-            document.getElementById('resQOptimo').textContent = `${data.lote_optimo_Q} un.`;
-            document.getElementById('resROP').textContent = `${data.punto_reorden_ROP} un.`;
-
-            notificar('Cálculo Exitoso', 'Los valores de EOQ y ROP han sido actualizados por el motor numérico.', 'success');
+            notificar('Cálculo Exitoso', 'Valores de EOQ y ROP actualizados por el motor matemático.', 'success');
         } catch (err) {
             notificar('Error en Modelo EOQ', err.message, 'error');
         }
     });
+
     // ---------------------------------------------------------------
-    // 9. ESTIMACIÓN DE COLAS M/M/1 (ALINEADO 1:1 CON ColasMM1Input)
+    // 9. ESTIMACIÓN DE COLAS M/M/1 (ColasMM1Input)
     // ---------------------------------------------------------------
     const formColas = document.getElementById('formColas');
     formColas?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const lambda = parseFloat(document.getElementById('colaLambda').value);
-        const mu = parseFloat(document.getElementById('colaMu').value);
-        const unidad = document.getElementById('colaUnidad')?.value || 'horas'; // Captura del select
+        const lambda = parseFloat(document.getElementById('colaLambda')?.value || 0);
+        const mu = parseFloat(document.getElementById('colaMu')?.value || 0);
+        const unidad = document.getElementById('colaUnidad')?.value || 'horas';
 
         try {
             const res = await fetch('/api/colas/mm1', {
@@ -412,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     tasa_llegada_lambda: lambda,
                     tasa_servicio_mu: mu,
-                    unidad_tiempo: unidad // Envío explícito al backend
+                    unidad_tiempo: unidad
                 })
             });
 
@@ -422,39 +436,39 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await res.json();
+            const elRho = document.getElementById('resColaRho');
+            const elWq = document.getElementById('resColaWq');
 
-            // Renderizado de resultados de la API y métricas retornadas por ColaMM1Output
-            document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
+            if (elRho) elRho.textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
             
-            // Si la unidad seleccionada es 'horas', convertimos Wq a minutos para mejor lectura visual
             const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
-            document.getElementById('resColaWq').textContent = tiempoMostrar;
+            if (elWq) elWq.textContent = tiempoMostrar;
 
-            notificar('Métricas M/M/1 Calculadas', 'Estimación de tiempo en mostrador procesada.', 'success');
+            notificar('Métricas M/M/1 Calculadas', 'Estimación procesada correctamente.', 'success');
         } catch (err) {
             notificar('Error en Colas', err.message, 'error');
         }
     });
+
     // ---------------------------------------------------------------
-    // 10. SIMULACIÓN CADENAS DE MARKOV (ALINEADO CON MarkovMatrixInput)
+    // 10. SIMULACIÓN CADENAS DE MARKOV (MarkovMatrixInput)
     // ---------------------------------------------------------------
     const formMarkov = document.getElementById('formMarkov');
     formMarkov?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const p12 = parseFloat(document.getElementById('markovP12').value);  // Prob Búsqueda -> Carrito
-        const p2A1 = parseFloat(document.getElementById('markovP2A1').value); // Prob Carrito -> Compra
+        const p12 = parseFloat(document.getElementById('markovP12')?.value || 0);
+        const p2A1 = parseFloat(document.getElementById('markovP2A1')?.value || 0);
 
-        // Construcción de la Forma Canónica exigida por Pydantic (MarkovMatrixInput)
         const payload = {
             estados_transitorios: ["Busqueda", "EnCarrito"],
             estados_absorbentes: ["CompraRealizada", "Abandono"],
             matriz_Q: [
-                [0.0, p12],       // De Búsqueda a Búsqueda (0), De Búsqueda a Carrito (p12)
-                [0.0, 0.0]        // De Carrito a Búsqueda (0), De Carrito a Carrito (0)
+                [0.0, p12],
+                [0.0, 0.0]
             ],
             matriz_R: [
-                [0.0, 1 - p12],   // De Búsqueda a Compra (0), De Búsqueda a Abandono (1 - p12)
-                [p2A1, 1 - p2A1]  // De Carrito a Compra (p2A1), De Carrito a Abandono (1 - p2A1)
+                [0.0, 1 - p12],
+                [p2A1, 1 - p2A1]
             ]
         };
 
@@ -471,19 +485,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            
-            // Extracción directa desde la estructura Dict: matriz_absorcion_B["Busqueda"]["CompraRealizada"]
             const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
             const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
 
-            document.getElementById('resMarkovContainer').innerHTML = `
-                <div class="alert alert-success border-0 mb-0">
-                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
-                    <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
-                    <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
-                    <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
-                </div>
-            `;
+            const container = document.getElementById('resMarkovContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="alert alert-success border-0 mb-0">
+                        <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
+                        <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
+                        <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
+                        <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
+                    </div>
+                `;
+            }
 
             notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas por el motor NumPy.', 'success');
         } catch (err) {
@@ -492,21 +507,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------
-    // 11. EVALUACIÓN TEORÍA DE DECISIONES (ALINEADO CON DecisionesInput)
+    // 11. EVALUACIÓN TEORÍA DE DECISIONES (Alineado con DecisionOutput)
     // ---------------------------------------------------------------
     const formDecisiones = document.getElementById('formDecisiones');
     formDecisiones?.addEventListener('submit', async (e) => {
         e.preventDefault();
         try {
-            const alt1 = document.getElementById('decAlt1').value;
-            const a1e1 = parseFloat(document.getElementById('decA1E1').value);
-            const a1e2 = parseFloat(document.getElementById('decA1E2').value);
+            const alt1 = document.getElementById('decAlt1')?.value || '';
+            const a1e1 = parseFloat(document.getElementById('decA1E1')?.value || 0);
+            const a1e2 = parseFloat(document.getElementById('decA1E2')?.value || 0);
 
-            const alt2 = document.getElementById('decAlt2').value;
-            const a2e1 = parseFloat(document.getElementById('decA2E1').value);
-            const a2e2 = parseFloat(document.getElementById('decA2E2').value);
+            const alt2 = document.getElementById('decAlt2')?.value || '';
+            const a2e1 = parseFloat(document.getElementById('decA2E1')?.value || 0);
+            const a2e2 = parseFloat(document.getElementById('decA2E2')?.value || 0);
 
-            const p1 = parseFloat(document.getElementById('decProbE1').value);
+            const p1 = parseFloat(document.getElementById('decProbE1')?.value || 0);
             const p2 = 1 - p1;
 
             const payload = {
@@ -532,22 +547,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await res.json();
+            
+            // Extracción corregida mapeando los contratos del schema DecisionOutput
+            const vmeOpt = data.analisis_riesgo ? data.analisis_riesgo.decision_optima_vme : 'N/A';
+            const laplaceOpt = data.criterios_incertidumbre?.["Laplace (Equiprobabilidad)"]?.alternativa_optima || 'N/A';
+            const waldOpt = data.criterios_incertidumbre?.["Wald Pesimista (MaxiMin)"]?.alternativa_optima || 'N/A';
+            const savageOpt = data.criterios_incertidumbre?.["Savage (MiniMax Arrepentimiento)"]?.alternativa_optima || 'N/A';
 
-            document.getElementById('resDecisionesContainer').innerHTML = `
-                <ul class="list-unstyled mb-0 small">
-                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${data.sugerencia_riesgo_vme || data.mejor_vme_alternativa || 'Calculado'}</span></li>
-                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${data.criterio_laplace || data.laplace_alternativa || 'N/A'}</li>
-                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${data.criterio_wald_pesimista || 'N/A'}</li>
-                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${data.criterio_savage || data.savage_alternativa || 'N/A'}</li>
-                </ul>
-            `;
+            const container = document.getElementById('resDecisionesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${vmeOpt}</span></li>
+                        <li class="mb-1"><strong>Criterio Laplace:</strong> ${laplaceOpt}</li>
+                        <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${waldOpt}</li>
+                        <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${savageOpt}</li>
+                    </ul>
+                    <div class="mt-2 pt-2 border-top extra-small text-muted">${data.recomendacion_general}</div>
+                `;
+            }
             notificar('Evaluación Completada', 'Los criterios de decisión fueron procesados exitosamente.', 'success');
         } catch (err) {
             notificar('Error en Decisiones', err.message, 'error');
         }
     });
+
     // ---------------------------------------------------------------
-    // TAB 1: CARGA DINÁMICA DEL CATÁLOGO (POSTGRESQL / BD)
+    // 12. CARGA DINÁMICA DEL CATÁLOGO (Tabla productos de PostgreSQL)
     // ---------------------------------------------------------------
     const cargarProductosCRUD = async () => {
         const tbody = document.getElementById('tbodyCatálogo');
@@ -560,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!res.ok) {
-                if (res.status === 401) return; // Sesión no iniciada; mantiene estado por defecto
+                if (res.status === 401) return;
                 throw new Error(`Error en servidor (${res.status})`);
             }
 
@@ -587,7 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Exponer handlers globales para las acciones de los botones de la tabla
     window.editarProducto = (id) => {
         notificar('Editar Producto', `Abriendo edición para el producto ID: ${id}`, 'info');
     };
@@ -606,10 +631,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (confirmacion.isConfirmed) {
             notificar('Producto Eliminado', `El producto ID ${id} fue removido.`, 'success');
-            cargarProductosCRUD(); // Recargar tabla
+            cargarProductosCRUD();
         }
     };
 
-    // Invocar la carga al hacer clic en la pestaña del catálogo
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 });
