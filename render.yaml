@@ -1,3 +1,9 @@
+databases:
+  - name: iop812-postgres
+    plan: free
+    databaseName: iop812_db
+    user: iop812_user
+
 services:
   - type: web
     name: optidecision-iop812
@@ -18,11 +24,7 @@ services:
         value: "24"
       - key: GOOGLE_CLIENT_ID
         sync: false
-      - key: ADMIN_EMAIL
+      - key: GOOGLE_CLIENT_SECRET
         sync: false
-
-databases:
-  - name: iop812-postgres
-    plan: free
-    databaseName: iop812_db
-    user: iop812_user
+      - key: ADMIN_EMAILS
+        value: ezequiaz910@gmail.com

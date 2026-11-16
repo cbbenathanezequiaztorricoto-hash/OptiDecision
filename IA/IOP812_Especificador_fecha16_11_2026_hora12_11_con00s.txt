@@ -134,10 +134,12 @@ __all__ = ["auth_router"]
 # app/modules/autenticacion/routes.py
 # Endpoints HTTP para registro, login, Google OAuth2 y perfil con persistencia PostgreSQL.
 import os
+import csv
+import io
 from urllib.parse import urlencode
 from typing import Dict, Any, Optional, List
-from fastapi import APIRouter, HTTPException, Depends, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File, status
+from fastapi.responses import RedirectResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.shared.database import obtener_conexion
@@ -552,6 +554,171 @@ async def cambiar_rol_usuario(
                 )
             conn.commit()
             return {"mensaje": f"Rol de {actualizado['username']} actualizado a {actualizado['rol']}."}
+    finally:
+        conn.close()
+@router.get("/ferreterias/resumen", summary="Resumen global de ferreterías y productos (Solo Admin)")
+async def resumen_ferreterias_admin(admin: Dict[str, Any] = Depends(requerir_admin)) -> Dict[str, int]:
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM ferreterias;")
+            total_ferreterias = cur.fetchone()["total"]
+            cur.execute("SELECT COUNT(*) AS total FROM productos;")
+            total_productos = cur.fetchone()["total"]
+            return {
+                "total_ferreterias": total_ferreterias,
+                "total_productos": total_productos
+            }
+    finally:
+        conn.close()
+
+@router.get("/ferreterias/plantilla-catalogo", summary="Generar plantilla CSV dinámica con las ferreterías registradas")
+async def descargar_plantilla_catalogo_admin(admin: Dict[str, Any] = Depends(requerir_admin)):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT nombre FROM ferreterias ORDER BY nombre ASC;")
+            ferreterias = [r["nombre"] for r in cur.fetchall()]
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow([
+            "ferreteria", "nombre", "precio_bob", "stock_actual",
+            "demanda_anual_D", "costo_pedido_K", "costo_mantenimiento_H",
+            "tiempo_entrega_dias_L", "stock_seguridad_SS"
+        ])
+        for nombre_ferr in ferreterias:
+            writer.writerow([nombre_ferr, "", "", "", "", "", "", "", ""])
+
+        return Response(
+            content="\ufeff" + buffer.getvalue(),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="plantilla_ferreterias_cbba.csv"'}
+        )
+    finally:
+        conn.close()
+@router.post("/ferreterias/carga-masiva", summary="Carga masiva CSV de ferreterías reales (Solo Admin/Desarrollador)")
+async def carga_masiva_ferreterias_admin(
+    archivo: UploadFile = File(...),
+    admin: Dict[str, Any] = Depends(requerir_admin)
+):
+    """
+    Acepta directamente el CSV exportado desde Overpass Turbo:
+      @id,name,addr:street,addr:city,@lat,@lon
+    o el formato estándar:
+      nombre,direccion,latitud,longitud,reputacion,superficie_almacen_m2,capacidad_canales_atencion
+    """
+    contenido = await archivo.read()
+    texto = contenido.decode("utf-8-sig", errors="replace")
+    lineas = texto.splitlines()
+    if not lineas:
+        raise HTTPException(status_code=400, detail="El archivo CSV está vacío.")
+
+    delimitador = ";" if ";" in lineas[0] else ","
+    lector = csv.DictReader(io.StringIO(texto), delimiter=delimitador)
+
+    conn = obtener_conexion()
+    insertadas = 0
+    actualizadas = 0
+    omitidas = 0
+    errores = []
+
+    def _limpiar_campo(val: Optional[str]) -> str:
+        if not val:
+            return ""
+        limpio = val.strip()
+        return "" if limpio.lower() == "null" else limpio
+
+    try:
+        with conn.cursor() as cur:
+            for num_fila, fila in enumerate(lector, start=2):
+                try:
+                    nombre = _limpiar_campo(fila.get("nombre") or fila.get("name"))
+                    if not nombre:
+                        omitidas += 1
+                        continue
+
+                    raw_lat = _limpiar_campo(fila.get("latitud") or fila.get("@lat"))
+                    raw_lon = _limpiar_campo(fila.get("longitud") or fila.get("@lon"))
+                    if not raw_lat or not raw_lon:
+                        omitidas += 1
+                        continue
+
+                    latitud = float(raw_lat)
+                    longitud = float(raw_lon)
+
+                    direccion = _limpiar_campo(fila.get("direccion"))
+                    if not direccion:
+                        calle = _limpiar_campo(fila.get("addr:street"))
+                        ciudad = _limpiar_campo(fila.get("addr:city"))
+                        partes = [p for p in (calle, ciudad) if p]
+                        direccion = ", ".join(partes) if partes else "Región Metropolitana Kanata, Cochabamba"
+
+                    reputacion = float(_limpiar_campo(fila.get("reputacion")) or 4.5)
+                    superficie = float(_limpiar_campo(fila.get("superficie_almacen_m2")) or 120.0)
+                    canales = int(float(_limpiar_campo(fila.get("capacidad_canales_atencion")) or 1))
+
+                    # Evitar duplicados por nombre y cercanía (< ~50m)
+                    cur.execute(
+                        """
+                        SELECT id_ferreteria FROM ferreterias
+                        WHERE LOWER(nombre) = LOWER(%s)
+                          AND ABS(latitud - %s) < 0.0005
+                          AND ABS(longitud - %s) < 0.0005
+                        LIMIT 1;
+                        """,
+                        (nombre, latitud, longitud)
+                    )
+                    existente = cur.fetchone()
+
+                    if existente:
+                        cur.execute(
+                            """
+                            UPDATE ferreterias
+                            SET direccion = %s, latitud = %s, longitud = %s,
+                                ubicacion = ST_SetSRID(ST_MakePoint(%s, %s), 4326),
+                                reputacion = %s, superficie_almacen_m2 = %s,
+                                capacidad_canales_atencion = %s
+                            WHERE id_ferreteria = %s;
+                            """,
+                            (
+                                direccion, latitud, longitud, longitud, latitud,
+                                reputacion, superficie, canales, existente["id_ferreteria"]
+                            )
+                        )
+                        actualizadas += 1
+                    else:
+                        cur.execute(
+                            """
+                            INSERT INTO ferreterias (
+                                id_usuario_propietario, nombre, direccion, latitud, longitud,
+                                ubicacion, reputacion, superficie_almacen_m2, capacidad_canales_atencion
+                            )
+                            VALUES (NULL, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s, %s);
+                            """,
+                            (
+                                nombre, direccion, latitud, longitud,
+                                longitud, latitud, reputacion, superficie, canales
+                            )
+                        )
+                        insertadas += 1
+                except Exception as row_err:
+                    errores.append(f"Fila {num_fila}: {str(row_err)}")
+
+            conn.commit()
+            return {
+                "mensaje": f"Ferreterías procesadas: {insertadas} nuevas, {actualizadas} actualizadas ({omitidas} sin nombre/coordenadas omitidas).",
+                "insertadas": insertadas,
+                "actualizados": actualizadas,
+                "omitidas": omitidas,
+                "errores": errores[:15]
+            }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Error en carga masiva de ferreterías: {str(e)}")
     finally:
         conn.close()
 ]]>
@@ -1409,17 +1576,29 @@ async def eliminar_producto(id_producto: int, usuario: Dict[str, Any] = Depends(
     status_code=status.HTTP_200_OK,
     summary="Carga masiva CSV de catálogo, precios BOB y stock"
 )
+@router.post(
+    "/api/productos/carga-masiva", 
+    status_code=status.HTTP_200_OK,
+    summary="Carga masiva CSV de catálogo, precios BOB y stock (soporta multi-sucursal para Admin)"
+)
 async def carga_masiva_productos(
     archivo: UploadFile = File(...),
     usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
 ):
     """
     Columnas CSV aceptadas (con encabezado):
-    nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
+    [ferreteria],nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
+    - Si 'ferreteria' es 'TODAS' (solo Admin), aplica el producto a todas las ferreterías registradas.
+    - Si 'ferreteria' tiene el nombre de una sucursal (solo Admin), busca esa ferretería.
+    - Si se omite 'ferreteria', asigna a la ferretería del usuario actual.
     """
     contenido = await archivo.read()
     texto = contenido.decode("utf-8-sig", errors="replace")
-    delimitador = ";" if ";" in texto.splitlines()[0] else ","
+    lineas = texto.splitlines()
+    if not lineas:
+        raise HTTPException(status_code=400, detail="El archivo CSV está vacío.")
+
+    delimitador = ";" if ";" in lineas[0] else ","
     lector = csv.DictReader(io.StringIO(texto), delimiter=delimitador)
 
     conn = obtener_conexion()
@@ -1429,13 +1608,19 @@ async def carga_masiva_productos(
 
     try:
         with conn.cursor() as cur:
-            id_ferr = _resolver_ferreteria_destino(cur, usuario, None)
+            es_admin = usuario.get("rol") == "admin"
+            id_ferr_default = _resolver_ferreteria_destino(cur, usuario, None)
+
+            cur.execute("SELECT id_ferreteria, LOWER(nombre) AS nombre_lower FROM ferreterias;")
+            mapa_ferreterias = cur.fetchall()
+            todos_ids = [r["id_ferreteria"] for r in mapa_ferreterias]
 
             for num_fila, fila in enumerate(lector, start=2):
                 try:
                     nombre = (fila.get("nombre") or "").strip()
                     if not nombre:
                         continue
+
                     precio = float(fila.get("precio_bob") or 0)
                     stock = int(float(fila.get("stock_actual") or 0))
                     demanda = int(float(fila.get("demanda_anual_D") or 120))
@@ -1444,44 +1629,63 @@ async def carga_masiva_productos(
                     lead_l = int(float(fila.get("tiempo_entrega_dias_L") or 3))
                     ss = int(float(fila.get("stock_seguridad_SS") or 10))
 
-                    cur.execute(
-                        "SELECT id_producto FROM productos WHERE id_ferreteria = %s AND LOWER(nombre) = LOWER(%s);",
-                        (id_ferr, nombre)
-                    )
-                    existente = cur.fetchone()
-                    if existente:
-                        cur.execute(
-                            """
-                            UPDATE productos
-                            SET precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
-                                costo_pedido_K = %s, costo_mantenimiento_H = %s,
-                                tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s
-                            WHERE id_producto = %s;
-                            """,
-                            (precio, stock, demanda, costo_k, costo_h, lead_l, ss, existente["id_producto"])
-                        )
-                        actualizados += 1
+                    ferr_col = (fila.get("ferreteria") or "").strip()
+                    destinos: List[int] = []
+
+                    if es_admin and ferr_col:
+                        if ferr_col.upper() in ("TODAS", "*"):
+                            destinos = todos_ids
+                        else:
+                            coincidencias = [
+                                r["id_ferreteria"] for r in mapa_ferreterias
+                                if r["nombre_lower"] == ferr_col.lower()
+                            ]
+                            if not coincidencias:
+                                errores.append(f"Fila {num_fila}: Ferretería '{ferr_col}' no encontrada.")
+                                continue
+                            destinos = coincidencias
                     else:
+                        destinos = [id_ferr_default]
+
+                    for id_ferr in destinos:
                         cur.execute(
-                            """
-                            INSERT INTO productos (
-                                id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
-                                costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L, stock_seguridad_SS
-                            )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-                            """,
-                            (id_ferr, nombre, precio, stock, demanda, costo_k, costo_h, lead_l, ss)
+                            "SELECT id_producto FROM productos WHERE id_ferreteria = %s AND LOWER(nombre) = LOWER(%s);",
+                            (id_ferr, nombre)
                         )
-                        insertados += 1
+                        existente = cur.fetchone()
+                        if existente:
+                            cur.execute(
+                                """
+                                UPDATE productos
+                                SET precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
+                                    costo_pedido_K = %s, costo_mantenimiento_H = %s,
+                                    tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s
+                                WHERE id_producto = %s;
+                                """,
+                                (precio, stock, demanda, costo_k, costo_h, lead_l, ss, existente["id_producto"])
+                            )
+                            actualizados += 1
+                        else:
+                            cur.execute(
+                                """
+                                INSERT INTO productos (
+                                    id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
+                                    costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L, stock_seguridad_SS
+                                )
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                                """,
+                                (id_ferr, nombre, precio, stock, demanda, costo_k, costo_h, lead_l, ss)
+                            )
+                            insertados += 1
                 except Exception as row_err:
                     errores.append(f"Fila {num_fila}: {str(row_err)}")
 
             conn.commit()
             return {
-                "mensaje": f"Carga masiva completada: {insertados} nuevos, {actualizados} actualizados.",
+                "mensaje": f"Carga masiva completada: {insertados} registros nuevos, {actualizados} actualizados.",
                 "insertados": insertados,
                 "actualizados": actualizados,
-                "errores": errores
+                "errores": errores[:15]
             }
     except HTTPException:
         conn.rollback()
@@ -3090,10 +3294,42 @@ if __name__ == "__main__":
 
                         <!-- TAB 6: ADMINISTRACIÓN GLOBAL (SOLO ROL ADMIN) -->
                         <div class="tab-pane fade" id="tab-admin" role="tabpanel">
+                            <!-- Bloque Exclusivo Desarrollador / Admin: Ingesta Masiva de Datos Reales -->
+                            <div class="p-3 mb-4 rounded-3 border border-warning-subtle bg-body-tertiary">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    <div>
+                                        <span class="badge bg-warning text-dark me-1"><i class="fa-solid fa-code me-1"></i> MODO DESARROLLADOR / ADMIN</span>
+                                        <strong class="small text-main">Ingesta Masiva de Datos Reales (PostGIS + Catálogos)</strong>
+                                    </div>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" id="badgeResumenAdmin">
+                                        0 ferreterías | 0 productos
+                                    </span>
+                                </div>
+                                <p class="extra-small text-muted mb-3">
+                                    1) Sube el CSV exportado de Overpass Turbo (<code>@id,name,addr:street,addr:city,@lat,@lon</code>) para poblar el mapa.<br>
+                                    2) Sube el CSV de precios BOB con la columna <code>ferreteria</code> (nombre exacto o <code>TODAS</code>) para abastecer sucursales.
+                                </p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <label class="btn btn-sm btn-warning text-dark fw-semibold rounded-pill mb-0" for="inputCsvFerreterias">
+                                        <i class="fa-solid fa-map-location-dot me-1"></i> 1. Importar Ferreterías CSV
+                                    </label>
+                                    <input type="file" id="inputCsvFerreterias" accept=".csv" class="d-none">
+
+                                    <label class="btn btn-sm btn-success fw-semibold rounded-pill mb-0" for="inputCsvCatalogoAdmin">
+                                        <i class="fa-solid fa-boxes-stacked me-1"></i> 2. Importar Catálogo Multi-Sucursal CSV
+                                    </label>
+                                    <input type="file" id="inputCsvCatalogoAdmin" accept=".csv" class="d-none">
+
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill" id="btnPlantillaCatalogoAdmin" type="button">
+                                        <i class="fa-solid fa-download me-1"></i> Plantilla Multi-Sucursal CSV
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                                 <h6 class="fw-bold mb-0 text-main">Gestión de Usuarios, Roles y Ferreterías</h6>
                                 <button class="btn btn-sm btn-primary rounded-pill" id="btnAdminNuevaFerreteria" type="button">
-                                    <i class="fa-solid fa-store me-1"></i> Registrar Ferretería
+                                    <i class="fa-solid fa-store me-1"></i> Registrar Ferretería Individual
                                 </button>
                             </div>
                             <div class="table-responsive">
@@ -4159,8 +4395,89 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('Error al Registrar', err.message, 'error');
         }
     });
+const cargarResumenAdmin = async () => {
+        const badge = document.getElementById('badgeResumenAdmin');
+        if (!badge) return;
+        try {
+            const res = await fetch('/api/auth/ferreterias/resumen', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            badge.textContent = `${data.total_ferreterias} ferreterías | ${data.total_productos} productos`;
+        } catch (e) {
+            console.warn('No se pudo cargar resumen admin:', e);
+        }
+    };
 
+    document.getElementById('btnPlantillaCatalogoAdmin')?.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/auth/ferreterias/plantilla-catalogo', {
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('No se pudo generar la plantilla desde la base de datos');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_ferreterias_cbba.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            notificar('Error en Plantilla', err.message, 'error');
+        }
+    });
+
+    document.getElementById('inputCsvFerreterias')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/auth/ferreterias/carga-masiva', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al importar ferreterías CSV');
+
+            notificar('Ferreterías Importadas', data.mensaje, 'success');
+            cargarResumenAdmin();
+        } catch (err) {
+            notificar('Error en Carga de Ferreterías', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
+
+    document.getElementById('inputCsvCatalogoAdmin')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/productos/carga-masiva', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al importar catálogo multi-sucursal');
+
+            notificar('Catálogo Multi-Sucursal Cargado', data.mensaje, 'success');
+            cargarResumenAdmin();
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error en Carga de Catálogo', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
     const cargarUsuariosAdmin = async () => {
+        cargarResumenAdmin();
         const tbody = document.getElementById('tbodyUsuariosAdmin');
         if (!tbody) return;
         try {
