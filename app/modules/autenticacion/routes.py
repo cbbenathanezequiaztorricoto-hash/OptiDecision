@@ -1,9 +1,11 @@
 # app/modules/autenticacion/routes.py
 # Endpoints HTTP para registro, login, Google OAuth2 y perfil con persistencia PostgreSQL.
 import os
+import csv
+import io
 from urllib.parse import urlencode
 from typing import Dict, Any, Optional, List
-from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -419,5 +421,146 @@ async def cambiar_rol_usuario(
                 )
             conn.commit()
             return {"mensaje": f"Rol de {actualizado['username']} actualizado a {actualizado['rol']}."}
+    finally:
+        conn.close()
+@router.get("/ferreterias/resumen", summary="Resumen global de ferreterías y productos (Solo Admin)")
+async def resumen_ferreterias_admin(admin: Dict[str, Any] = Depends(requerir_admin)) -> Dict[str, int]:
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM ferreterias;")
+            total_ferreterias = cur.fetchone()["total"]
+            cur.execute("SELECT COUNT(*) AS total FROM productos;")
+            total_productos = cur.fetchone()["total"]
+            return {
+                "total_ferreterias": total_ferreterias,
+                "total_productos": total_productos
+            }
+    finally:
+        conn.close()
+
+
+@router.post("/ferreterias/carga-masiva", summary="Carga masiva CSV de ferreterías reales (Solo Admin/Desarrollador)")
+async def carga_masiva_ferreterias_admin(
+    archivo: UploadFile = File(...),
+    admin: Dict[str, Any] = Depends(requerir_admin)
+):
+    """
+    Acepta directamente el CSV exportado desde Overpass Turbo:
+      @id,name,addr:street,addr:city,@lat,@lon
+    o el formato estándar:
+      nombre,direccion,latitud,longitud,reputacion,superficie_almacen_m2,capacidad_canales_atencion
+    """
+    contenido = await archivo.read()
+    texto = contenido.decode("utf-8-sig", errors="replace")
+    lineas = texto.splitlines()
+    if not lineas:
+        raise HTTPException(status_code=400, detail="El archivo CSV está vacío.")
+
+    delimitador = ";" if ";" in lineas[0] else ","
+    lector = csv.DictReader(io.StringIO(texto), delimiter=delimitador)
+
+    conn = obtener_conexion()
+    insertadas = 0
+    actualizadas = 0
+    omitidas = 0
+    errores = []
+
+    def _limpiar_campo(val: Optional[str]) -> str:
+        if not val:
+            return ""
+        limpio = val.strip()
+        return "" if limpio.lower() == "null" else limpio
+
+    try:
+        with conn.cursor() as cur:
+            for num_fila, fila in enumerate(lector, start=2):
+                try:
+                    nombre = _limpiar_campo(fila.get("nombre") or fila.get("name"))
+                    if not nombre:
+                        omitidas += 1
+                        continue
+
+                    raw_lat = _limpiar_campo(fila.get("latitud") or fila.get("@lat"))
+                    raw_lon = _limpiar_campo(fila.get("longitud") or fila.get("@lon"))
+                    if not raw_lat or not raw_lon:
+                        omitidas += 1
+                        continue
+
+                    latitud = float(raw_lat)
+                    longitud = float(raw_lon)
+
+                    direccion = _limpiar_campo(fila.get("direccion"))
+                    if not direccion:
+                        calle = _limpiar_campo(fila.get("addr:street"))
+                        ciudad = _limpiar_campo(fila.get("addr:city"))
+                        partes = [p for p in (calle, ciudad) if p]
+                        direccion = ", ".join(partes) if partes else "Región Metropolitana Kanata, Cochabamba"
+
+                    reputacion = float(_limpiar_campo(fila.get("reputacion")) or 4.5)
+                    superficie = float(_limpiar_campo(fila.get("superficie_almacen_m2")) or 120.0)
+                    canales = int(float(_limpiar_campo(fila.get("capacidad_canales_atencion")) or 1))
+
+                    # Evitar duplicados por nombre y cercanía (< ~50m)
+                    cur.execute(
+                        """
+                        SELECT id_ferreteria FROM ferreterias
+                        WHERE LOWER(nombre) = LOWER(%s)
+                          AND ABS(latitud - %s) < 0.0005
+                          AND ABS(longitud - %s) < 0.0005
+                        LIMIT 1;
+                        """,
+                        (nombre, latitud, longitud)
+                    )
+                    existente = cur.fetchone()
+
+                    if existente:
+                        cur.execute(
+                            """
+                            UPDATE ferreterias
+                            SET direccion = %s, latitud = %s, longitud = %s,
+                                ubicacion = ST_SetSRID(ST_MakePoint(%s, %s), 4326),
+                                reputacion = %s, superficie_almacen_m2 = %s,
+                                capacidad_canales_atencion = %s
+                            WHERE id_ferreteria = %s;
+                            """,
+                            (
+                                direccion, latitud, longitud, longitud, latitud,
+                                reputacion, superficie, canales, existente["id_ferreteria"]
+                            )
+                        )
+                        actualizadas += 1
+                    else:
+                        cur.execute(
+                            """
+                            INSERT INTO ferreterias (
+                                id_usuario_propietario, nombre, direccion, latitud, longitud,
+                                ubicacion, reputacion, superficie_almacen_m2, capacidad_canales_atencion
+                            )
+                            VALUES (NULL, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s, %s);
+                            """,
+                            (
+                                nombre, direccion, latitud, longitud,
+                                longitud, latitud, reputacion, superficie, canales
+                            )
+                        )
+                        insertadas += 1
+                except Exception as row_err:
+                    errores.append(f"Fila {num_fila}: {str(row_err)}")
+
+            conn.commit()
+            return {
+                "mensaje": f"Ferreterías procesadas: {insertadas} nuevas, {actualizadas} actualizadas ({omitidas} sin nombre/coordenadas omitidas).",
+                "insertadas": insertadas,
+                "actualizados": actualizadas,
+                "omitidas": omitidas,
+                "errores": errores[:15]
+            }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Error en carga masiva de ferreterías: {str(e)}")
     finally:
         conn.close()

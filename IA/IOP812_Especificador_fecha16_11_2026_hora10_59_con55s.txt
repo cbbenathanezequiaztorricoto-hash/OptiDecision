@@ -1747,7 +1747,7 @@ def evaluar_toma_decisiones(datos: DecisionInput) -> Dict[str, Any]:
     alts = datos.alternativas
     estados = datos.estados_naturaleza
     matriz_A = np.array(datos.matriz_pagos, dtype=float)  # Dimensión: (num_alts, num_estados)
-    alpha = datos.alpha_hurwicz
+    alpha = datos.coeficiente_alpha
 
     num_alts, num_estados = matriz_A.shape
 
@@ -2537,7 +2537,7 @@ if __name__ == "__main__":
 
             <div class="d-flex align-items-center gap-2">
                 <!-- Indicador de usuario y rol activo -->
-                <span class="badge bg-secondary-subtle text-main border rounded-pill px-3 py-2 d-none d-md-inline-flex align-items-center gap-2 d-none" id="navUserBadge">
+                <span class="badge bg-secondary-subtle text-main border rounded-pill px-3 py-2 d-none align-items-center gap-2" id="navUserBadge">
                     <i class="fa-solid fa-user-check text-primary"></i>
                     <span id="navUserName">Usuario</span>
                     <span class="badge bg-primary text-uppercase" id="navUserRole">cliente</span>
@@ -3864,10 +3864,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const res = await fetch('/api/ahp/favoritos', {
+            const res = await fetch(`/api/ahp/favoritos/${idFerreteria}`, {
                 method: 'POST',
-                headers: getAuthHeaders(true),
-                body: JSON.stringify({ id_ferreteria: idFerreteria })
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'No se pudo guardar en favoritos');
@@ -4001,10 +4000,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const navBadge = document.getElementById('navUserBadge');
         if (navBadge) {
             navBadge.classList.toggle('d-none', !autenticado);
-            if (autenticado) {
-                document.getElementById('navUserName').textContent = perfil.username;
-                document.getElementById('navUserRole').textContent = rol;
-            }
+            navBadge.classList.toggle('d-md-inline-flex', autenticado);
+            document.getElementById('navUserName').textContent = autenticado ? perfil.username : '';
+            document.getElementById('navUserRole').textContent = autenticado ? rol : '';
         }
 
         const esGestor = autenticado && (rol === 'ferretero' || rol === 'admin');
@@ -4116,7 +4114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const res = await fetch('/api/ahp/ferreterias', {
+            const res = await fetch('/api/auth/registrar-ferreteria', {
                 method: 'POST',
                 headers: getAuthHeaders(true),
                 body: JSON.stringify(payload)
@@ -4124,13 +4122,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Error al registrar ferretería');
 
+            if (data.access_token) {
+                localStorage.setItem('iop812-token', data.access_token);
+            }
+
             const modalEl = document.getElementById('modalRegistrarFerreteria');
             if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 
             const token = localStorage.getItem('iop812-token');
             if (token) actualizarInterfazSesion(await obtenerPerfil(token));
 
-            notificar('Ferretería Registrada', data.mensaje || 'Tu ferretería ya está activa en el mapa.', 'success');
+            notificar('Ferretería Registrada', 'Tu ferretería ya está activa en el mapa y tu panel fue habilitado.', 'success');
         } catch (err) {
             notificar('Error al Registrar', err.message, 'error');
         }
@@ -4147,7 +4149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td class="fw-medium">${u.username}</td>
                     <td>${u.email}</td>
-                    <td>${u.ferreteria_nombre || '<span class="text-muted">Sin ferretería</span>'}</td>
+                    <td>${u.nombre_ferreteria || '<span class="text-muted">Sin ferretería</span>'}</td>
                     <td>
                         <select class="form-select form-select-sm w-auto" onchange="window.cambiarRolUsuario(${u.id_usuario}, this.value)">
                             <option value="cliente" ${u.rol === 'cliente' ? 'selected' : ''}>cliente</option>
