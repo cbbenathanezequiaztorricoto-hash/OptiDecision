@@ -284,8 +284,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
 
+    const setBuscadorColapsado = (colapsado) => {
+        const body = document.getElementById('searchCardBody');
+        const icon = document.getElementById('iconToggleSearchCard');
+        if (!body) return;
+        body.classList.toggle('d-none', colapsado);
+        if (icon) {
+            icon.className = colapsado ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+        }
+    };
+
+    document.getElementById('btnToggleSearchCard')?.addEventListener('click', () => {
+        const body = document.getElementById('searchCardBody');
+        const estaOculto = body?.classList.contains('d-none');
+        setBuscadorColapsado(!estaOculto);
+    });
+
     document.getElementById('btnCloseTopResult')?.addEventListener('click', () => {
         cardTopResult?.classList.add('d-none');
+        if (window.innerWidth < 768) setBuscadorColapsado(false);
     });
 
     formBuscador?.addEventListener('submit', async (e) => {
@@ -359,7 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('topReputacion').textContent = top.reputacion;
         document.getElementById('topStock').textContent = `${top.stock} un.`;
         cardTopResult?.classList.remove('d-none');
-
+        
+        if (window.innerWidth < 768) setBuscadorColapsado(true);
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
 
         data.ferreterias.forEach((f, idx) => {

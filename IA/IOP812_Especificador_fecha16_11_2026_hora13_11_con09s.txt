@@ -2750,14 +2750,14 @@ if __name__ == "__main__":
 <body>
     <!-- NAV BAR SUPERIOR HÍBRIDA -->
     <nav class="navbar sticky-top border-bottom" id="topNav">
-        <div class="container-fluid px-3 px-lg-4">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-outline-secondary border-0 fs-5" type="button" data-bs-toggle="offcanvas" data-bs-target="#drawerGoogleMaps" aria-controls="drawerGoogleMaps" title="Menú Principal & Historial">
+        <div class="container-fluid px-2 px-sm-3 px-lg-4 flex-nowrap gap-1">
+            <div class="d-flex align-items-center gap-1 gap-sm-2 min-w-0">
+                <button class="btn btn-outline-secondary border-0 px-2 fs-5" type="button" data-bs-toggle="offcanvas" data-bs-target="#drawerGoogleMaps" aria-controls="drawerGoogleMaps" title="Menú Principal & Historial">
                     <i class="fa-solid fa-bars text-main"></i>
                 </button>
-                <a class="navbar-brand d-flex align-items-center gap-2 m-0" href="#mapa-ahp">
-                    <img src="/assets/images/favicon.ico" alt="OptiDecision Logo" width="32" height="32" class="rounded">
-                    <span class="fw-bold fs-5 tracking-tight">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7">IOP812</span></span>
+                <a class="navbar-brand d-flex align-items-center gap-2 m-0 text-truncate" href="#mapa-ahp">
+                    <img src="/assets/images/favicon.ico" alt="OptiDecision Logo" width="28" height="28" class="rounded flex-shrink-0">
+                    <span class="fw-bold fs-6 fs-sm-5 tracking-tight text-truncate">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7 d-none d-sm-inline-block">IOP812</span></span>
                 </a>
             </div>
 
@@ -2802,14 +2802,23 @@ if __name__ == "__main__":
         <div id="map"></div>
 
         <!-- HUD BUSCADOR FLOTANTE UX -->
-        <div class="floating-search-card shadow-lg rounded-4 p-3 border">
+        <div class="floating-search-card shadow-lg rounded-4 p-2 p-sm-3 border" id="floatingSearchCard">
             <form id="formBuscadorAHP" onsubmit="event.preventDefault();">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="small text-uppercase fw-bold text-muted tracking-wider"><i class="fa-solid fa-magnifying-glass-location text-primary me-1"></i> Búsqueda Rápida</span>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" id="badgeCRInfo">
-                        <i class="fa-solid fa-circle-check me-1"></i>AHP Consistente (CR &lt; 0.10)
+                <div class="d-flex align-items-center justify-content-between gap-2" id="searchCardHeader">
+                    <span class="extra-small text-uppercase fw-bold text-muted tracking-wider text-nowrap">
+                        <i class="fa-solid fa-magnifying-glass-location text-primary me-1"></i>Buscador
                     </span>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill extra-small text-nowrap" id="badgeCRInfo">
+                            <i class="fa-solid fa-circle-check me-1"></i>CR &lt; 0.10
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2" id="btnToggleSearchCard" title="Minimizar / Expandir buscador">
+                            <i class="fa-solid fa-chevron-up" id="iconToggleSearchCard"></i>
+                        </button>
+                    </div>
                 </div>
+
+                <div id="searchCardBody" class="mt-2">
                 <!-- Campo Origen -->
                 <div class="input-group mb-2">
                     <span class="input-group-text bg-body border-end-0 text-primary"><i class="fa-solid fa-location-dot"></i></span>
@@ -2870,6 +2879,7 @@ if __name__ == "__main__":
                     <i class="fa-solid fa-route"></i>
                     <span>Optimizar y Buscar Ferretería</span>
                 </button>
+                </div>
             </form>
         </div>
 
@@ -3518,8 +3528,19 @@ body {
 .navbar {
     background-color: var(--card-bg) !important;
     border-color: var(--border-color) !important;
-    height: var(--nav-height);
+    min-height: var(--nav-height);
+    height: auto;
     z-index: 1030;
+}
+
+/* Evitar fondo blanco del autocompletado del navegador en inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset !important;
+    -webkit-text-fill-color: var(--text-main) !important;
+    caret-color: var(--text-main);
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 .navbar-brand span { 
@@ -3658,6 +3679,7 @@ body {
 }
 
 /* 6. ADAPTACIÓN RESPONSIVA (MOBILE-FIRST < 768px) */
+/* 6. ADAPTACIÓN RESPONSIVA (MOBILE-FIRST < 768px) */
 @media (max-width: 767.98px) {
     .floating-search-card {
         top: 10px;
@@ -3667,14 +3689,24 @@ body {
     }
 
     .floating-results-card {
-        bottom: 15px;
+        bottom: 12px;
         left: 50%;
         transform: translateX(-50%);
         width: calc(100vw - 20px);
+        padding: 0.75rem !important;
+    }
+
+    .floating-results-card .row.my-2 {
+        margin-top: 0.35rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .floating-results-card .p-2 {
+        padding: 0.35rem 0.5rem !important;
     }
 
     #mapa-ahp {
-        height: calc(100vh - var(--nav-height));
+        height: calc(100dvh - var(--nav-height));
     }
 }
 /* ===================================================================
@@ -4009,8 +4041,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
 
+    const setBuscadorColapsado = (colapsado) => {
+        const body = document.getElementById('searchCardBody');
+        const icon = document.getElementById('iconToggleSearchCard');
+        if (!body) return;
+        body.classList.toggle('d-none', colapsado);
+        if (icon) {
+            icon.className = colapsado ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+        }
+    };
+
+    document.getElementById('btnToggleSearchCard')?.addEventListener('click', () => {
+        const body = document.getElementById('searchCardBody');
+        const estaOculto = body?.classList.contains('d-none');
+        setBuscadorColapsado(!estaOculto);
+    });
+
     document.getElementById('btnCloseTopResult')?.addEventListener('click', () => {
         cardTopResult?.classList.add('d-none');
+        if (window.innerWidth < 768) setBuscadorColapsado(false);
     });
 
     formBuscador?.addEventListener('submit', async (e) => {
@@ -4084,7 +4133,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('topReputacion').textContent = top.reputacion;
         document.getElementById('topStock').textContent = `${top.stock} un.`;
         cardTopResult?.classList.remove('d-none');
-
+        cardTopResult?.classList.remove('d-none');
+        if (window.innerWidth < 768) setBuscadorColapsado(true);
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
 
         data.ferreterias.forEach((f, idx) => {

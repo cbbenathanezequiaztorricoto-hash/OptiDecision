@@ -56,8 +56,19 @@ body {
 .navbar {
     background-color: var(--card-bg) !important;
     border-color: var(--border-color) !important;
-    height: var(--nav-height);
+    min-height: var(--nav-height);
+    height: auto;
     z-index: 1030;
+}
+
+/* Evitar fondo blanco del autocompletado del navegador en inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset !important;
+    -webkit-text-fill-color: var(--text-main) !important;
+    caret-color: var(--text-main);
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 .navbar-brand span { 
@@ -196,6 +207,7 @@ body {
 }
 
 /* 6. ADAPTACIÓN RESPONSIVA (MOBILE-FIRST < 768px) */
+/* 6. ADAPTACIÓN RESPONSIVA (MOBILE-FIRST < 768px) */
 @media (max-width: 767.98px) {
     .floating-search-card {
         top: 10px;
@@ -205,14 +217,24 @@ body {
     }
 
     .floating-results-card {
-        bottom: 15px;
+        bottom: 12px;
         left: 50%;
         transform: translateX(-50%);
         width: calc(100vw - 20px);
+        padding: 0.75rem !important;
+    }
+
+    .floating-results-card .row.my-2 {
+        margin-top: 0.35rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .floating-results-card .p-2 {
+        padding: 0.35rem 0.5rem !important;
     }
 
     #mapa-ahp {
-        height: calc(100vh - var(--nav-height));
+        height: calc(100dvh - var(--nav-height));
     }
 }
 /* ===================================================================
