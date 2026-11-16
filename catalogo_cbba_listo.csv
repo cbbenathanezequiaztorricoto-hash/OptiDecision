@@ -1,0 +1,1227 @@
+﻿ferreteria,nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
+Blass,Cemento COBOCE IP-30 50kg,46.89,67,3600,85.0,6.5,2,40
+Blass,Clavos Calamina 2.5 pulg (kg),16.5,294,1400,40.0,2.4,2,20
+Blass,Fierro Corrugado 3/8 pulg 12m,40.82,231,3000,100.0,5.5,3,35
+Blass,Fierro Corrugado 1/2 pulg 12m,68.67,62,2400,120.0,9.0,3,30
+Blass,Alambre de Amarre Nro 16 (kg),14.16,273,1800,45.0,2.1,2,25
+Ferreteria,Yeso Cochabamba Bolsa 35kg,20.51,316,4200,60.0,3.2,2,50
+Ferreteria,Clavos Calamina 2.5 pulg (kg),15.73,18,1400,40.0,2.4,2,20
+Ferreteria,Tuberia PVC Tigre Desague 2 pulg 6m,35.4,96,960,70.0,4.8,4,15
+Ferreteria,Alambre de Amarre Nro 16 (kg),14.99,189,1800,45.0,2.1,2,25
+Ferreteria,Pintura Latex Monopol 18L Blanco,304.84,125,360,90.0,28.0,4,8
+Paul,Fierro Corrugado 1/2 pulg 12m,75.37,250,2400,120.0,9.0,3,30
+Paul,Cemento COBOCE IP-30 50kg,49.2,208,3600,85.0,6.5,2,40
+Paul,Yeso Cochabamba Bolsa 35kg,20.15,165,4200,60.0,3.2,2,50
+Paul,Tuberia PVC Tigre Desague 2 pulg 6m,35.68,200,960,70.0,4.8,4,15
+Paul,Fierro Corrugado 3/8 pulg 12m,43.32,50,3000,100.0,5.5,3,35
+Paul,Pintura Latex Monopol 18L Blanco,296.2,131,360,90.0,28.0,4,8
+Paul,Clavos Calamina 2.5 pulg (kg),16.68,55,1400,40.0,2.4,2,20
+San José,Fierro Corrugado 1/2 pulg 12m,71.6,122,2400,120.0,9.0,3,30
+San José,Yeso Cochabamba Bolsa 35kg,21.64,51,4200,60.0,3.2,2,50
+San José,Fierro Corrugado 3/8 pulg 12m,43.48,102,3000,100.0,5.5,3,35
+San José,Tuberia PVC Tigre Desague 2 pulg 6m,34.48,140,960,70.0,4.8,4,15
+San José,Clavos Calamina 2.5 pulg (kg),15.51,209,1400,40.0,2.4,2,20
+San José,Cemento COBOCE IP-30 50kg,47.65,300,3600,85.0,6.5,2,40
+Arnez,Clavos Calamina 2.5 pulg (kg),15.97,48,1400,40.0,2.4,2,20
+Arnez,Tuberia PVC Tigre Desague 2 pulg 6m,33.16,305,960,70.0,4.8,4,15
+Arnez,Cemento COBOCE IP-30 50kg,51.18,176,3600,85.0,6.5,2,40
+Arnez,Fierro Corrugado 1/2 pulg 12m,70.24,270,2400,120.0,9.0,3,30
+Arnez,Pintura Latex Monopol 18L Blanco,309.22,249,360,90.0,28.0,4,8
+Arnez,Alambre de Amarre Nro 16 (kg),14.02,86,1800,45.0,2.1,2,25
+Ferretería Nacional,Alambre de Amarre Nro 16 (kg),14.16,85,1800,45.0,2.1,2,25
+Ferretería Nacional,Clavos Calamina 2.5 pulg (kg),16.18,61,1400,40.0,2.4,2,20
+Ferretería Nacional,Pintura Latex Monopol 18L Blanco,322.62,71,360,90.0,28.0,4,8
+Ferretería Nacional,Yeso Cochabamba Bolsa 35kg,20.34,96,4200,60.0,3.2,2,50
+Ferretería Nacional,Tuberia PVC Tigre Desague 2 pulg 6m,35.53,231,960,70.0,4.8,4,15
+Ferretería Nacional,Fierro Corrugado 1/2 pulg 12m,73.55,212,2400,120.0,9.0,3,30
+Las Lomas,Pintura Latex Monopol 18L Blanco,323.09,189,360,90.0,28.0,4,8
+Las Lomas,Alambre de Amarre Nro 16 (kg),13.97,237,1800,45.0,2.1,2,25
+Las Lomas,Fierro Corrugado 3/8 pulg 12m,41.18,16,3000,100.0,5.5,3,35
+Las Lomas,Tuberia PVC Tigre Desague 2 pulg 6m,36.19,149,960,70.0,4.8,4,15
+Las Lomas,Cemento COBOCE IP-30 50kg,51.73,106,3600,85.0,6.5,2,40
+Las Lomas,Clavos Calamina 2.5 pulg (kg),16.17,69,1400,40.0,2.4,2,20
+Las Lomas,Yeso Cochabamba Bolsa 35kg,22.14,167,4200,60.0,3.2,2,50
+Las Lomas,Fierro Corrugado 1/2 pulg 12m,75.67,274,2400,120.0,9.0,3,30
+Multicentro Canelas,Fierro Corrugado 3/8 pulg 12m,42.03,24,3000,100.0,5.5,3,35
+Multicentro Canelas,Pintura Latex Monopol 18L Blanco,298.66,200,360,90.0,28.0,4,8
+Multicentro Canelas,Fierro Corrugado 1/2 pulg 12m,75.99,172,2400,120.0,9.0,3,30
+Multicentro Canelas,Alambre de Amarre Nro 16 (kg),14.19,138,1800,45.0,2.1,2,25
+Multicentro Canelas,Cemento COBOCE IP-30 50kg,51.19,55,3600,85.0,6.5,2,40
+Multicentro Canelas,Tuberia PVC Tigre Desague 2 pulg 6m,32.65,263,960,70.0,4.8,4,15
+Ferreteria La Floresta,Fierro Corrugado 3/8 pulg 12m,41.73,231,3000,100.0,5.5,3,35
+Ferreteria La Floresta,Fierro Corrugado 1/2 pulg 12m,76.73,291,2400,120.0,9.0,3,30
+Ferreteria La Floresta,Clavos Calamina 2.5 pulg (kg),16.65,117,1400,40.0,2.4,2,20
+Ferreteria La Floresta,Yeso Cochabamba Bolsa 35kg,21.75,219,4200,60.0,3.2,2,50
+Ferreteria La Floresta,Tuberia PVC Tigre Desague 2 pulg 6m,36.36,206,960,70.0,4.8,4,15
+Oscar's,Pintura Latex Monopol 18L Blanco,316.39,18,360,90.0,28.0,4,8
+Oscar's,Cemento COBOCE IP-30 50kg,46.49,45,3600,85.0,6.5,2,40
+Oscar's,Fierro Corrugado 1/2 pulg 12m,70.38,31,2400,120.0,9.0,3,30
+Oscar's,Clavos Calamina 2.5 pulg (kg),16.85,51,1400,40.0,2.4,2,20
+Oscar's,Tuberia PVC Tigre Desague 2 pulg 6m,34.4,157,960,70.0,4.8,4,15
+Oscar's,Alambre de Amarre Nro 16 (kg),14.94,124,1800,45.0,2.1,2,25
+Oscar's,Yeso Cochabamba Bolsa 35kg,21.31,307,4200,60.0,3.2,2,50
+Oscar's,Fierro Corrugado 3/8 pulg 12m,43.31,139,3000,100.0,5.5,3,35
+Veloz,Tuberia PVC Tigre Desague 2 pulg 6m,34.21,42,960,70.0,4.8,4,15
+Veloz,Fierro Corrugado 1/2 pulg 12m,74.22,65,2400,120.0,9.0,3,30
+Veloz,Cemento COBOCE IP-30 50kg,46.43,188,3600,85.0,6.5,2,40
+Veloz,Clavos Calamina 2.5 pulg (kg),16.74,70,1400,40.0,2.4,2,20
+Veloz,Yeso Cochabamba Bolsa 35kg,20.58,112,4200,60.0,3.2,2,50
+Veloz,Pintura Latex Monopol 18L Blanco,314.45,86,360,90.0,28.0,4,8
+Veloz,Fierro Corrugado 3/8 pulg 12m,42.53,157,3000,100.0,5.5,3,35
+Veloz,Alambre de Amarre Nro 16 (kg),14.58,53,1800,45.0,2.1,2,25
+Comercial Cañoto,Fierro Corrugado 1/2 pulg 12m,71.91,261,2400,120.0,9.0,3,30
+Comercial Cañoto,Cemento COBOCE IP-30 50kg,47.32,220,3600,85.0,6.5,2,40
+Comercial Cañoto,Clavos Calamina 2.5 pulg (kg),16.93,99,1400,40.0,2.4,2,20
+Comercial Cañoto,Alambre de Amarre Nro 16 (kg),14.43,214,1800,45.0,2.1,2,25
+Comercial Cañoto,Tuberia PVC Tigre Desague 2 pulg 6m,33.38,247,960,70.0,4.8,4,15
+Comercial Cañoto,Yeso Cochabamba Bolsa 35kg,20.67,299,4200,60.0,3.2,2,50
+Comercial Cañoto,Fierro Corrugado 3/8 pulg 12m,43.75,264,3000,100.0,5.5,3,35
+Comercial Cañoto,Pintura Latex Monopol 18L Blanco,300.26,166,360,90.0,28.0,4,8
+San Miguel norte,Cemento COBOCE IP-30 50kg,47.9,40,3600,85.0,6.5,2,40
+San Miguel norte,Alambre de Amarre Nro 16 (kg),14.79,272,1800,45.0,2.1,2,25
+San Miguel norte,Clavos Calamina 2.5 pulg (kg),16.97,286,1400,40.0,2.4,2,20
+San Miguel norte,Tuberia PVC Tigre Desague 2 pulg 6m,32.94,275,960,70.0,4.8,4,15
+San Miguel norte,Pintura Latex Monopol 18L Blanco,297.48,110,360,90.0,28.0,4,8
+San Miguel norte,Fierro Corrugado 3/8 pulg 12m,40.72,49,3000,100.0,5.5,3,35
+Ferretería Sucamir,Tuberia PVC Tigre Desague 2 pulg 6m,32.63,313,960,70.0,4.8,4,15
+Ferretería Sucamir,Cemento COBOCE IP-30 50kg,49.36,176,3600,85.0,6.5,2,40
+Ferretería Sucamir,Alambre de Amarre Nro 16 (kg),15.4,119,1800,45.0,2.1,2,25
+Ferretería Sucamir,Fierro Corrugado 1/2 pulg 12m,74.19,175,2400,120.0,9.0,3,30
+Ferretería Sucamir,Pintura Latex Monopol 18L Blanco,303.38,217,360,90.0,28.0,4,8
+Ferretería Sucamir,Fierro Corrugado 3/8 pulg 12m,41.04,168,3000,100.0,5.5,3,35
+Lozada,Clavos Calamina 2.5 pulg (kg),16.23,274,1400,40.0,2.4,2,20
+Lozada,Tuberia PVC Tigre Desague 2 pulg 6m,33.38,193,960,70.0,4.8,4,15
+Lozada,Cemento COBOCE IP-30 50kg,51.2,140,3600,85.0,6.5,2,40
+Lozada,Pintura Latex Monopol 18L Blanco,308.25,95,360,90.0,28.0,4,8
+Lozada,Yeso Cochabamba Bolsa 35kg,21.05,293,4200,60.0,3.2,2,50
+Lozada,Fierro Corrugado 3/8 pulg 12m,43.96,285,3000,100.0,5.5,3,35
+Lozada,Alambre de Amarre Nro 16 (kg),13.79,298,1800,45.0,2.1,2,25
+Lozada,Fierro Corrugado 1/2 pulg 12m,70.99,68,2400,120.0,9.0,3,30
+Ferretería Junior,Alambre de Amarre Nro 16 (kg),14.27,122,1800,45.0,2.1,2,25
+Ferretería Junior,Cemento COBOCE IP-30 50kg,50.25,119,3600,85.0,6.5,2,40
+Ferretería Junior,Tuberia PVC Tigre Desague 2 pulg 6m,35.1,150,960,70.0,4.8,4,15
+Ferretería Junior,Pintura Latex Monopol 18L Blanco,313.3,143,360,90.0,28.0,4,8
+Ferretería Junior,Fierro Corrugado 1/2 pulg 12m,76.22,41,2400,120.0,9.0,3,30
+Ferretería Junior,Yeso Cochabamba Bolsa 35kg,20.18,231,4200,60.0,3.2,2,50
+A y C,Cemento COBOCE IP-30 50kg,49.29,233,3600,85.0,6.5,2,40
+A y C,Pintura Latex Monopol 18L Blanco,315.37,72,360,90.0,28.0,4,8
+A y C,Fierro Corrugado 3/8 pulg 12m,40.76,91,3000,100.0,5.5,3,35
+A y C,Fierro Corrugado 1/2 pulg 12m,73.11,204,2400,120.0,9.0,3,30
+A y C,Clavos Calamina 2.5 pulg (kg),16.32,90,1400,40.0,2.4,2,20
+A y C,Tuberia PVC Tigre Desague 2 pulg 6m,34.05,36,960,70.0,4.8,4,15
+A y C,Alambre de Amarre Nro 16 (kg),14.31,35,1800,45.0,2.1,2,25
+COSALCAR,Yeso Cochabamba Bolsa 35kg,22.4,94,4200,60.0,3.2,2,50
+COSALCAR,Clavos Calamina 2.5 pulg (kg),16.98,136,1400,40.0,2.4,2,20
+COSALCAR,Fierro Corrugado 1/2 pulg 12m,75.87,105,2400,120.0,9.0,3,30
+COSALCAR,Cemento COBOCE IP-30 50kg,51.2,27,3600,85.0,6.5,2,40
+COSALCAR,Fierro Corrugado 3/8 pulg 12m,41.29,185,3000,100.0,5.5,3,35
+COSALCAR,Pintura Latex Monopol 18L Blanco,323.6,225,360,90.0,28.0,4,8
+COSALCAR,Tuberia PVC Tigre Desague 2 pulg 6m,35.57,142,960,70.0,4.8,4,15
+Diper,Fierro Corrugado 3/8 pulg 12m,41.51,250,3000,100.0,5.5,3,35
+Diper,Tuberia PVC Tigre Desague 2 pulg 6m,33.73,131,960,70.0,4.8,4,15
+Diper,Clavos Calamina 2.5 pulg (kg),15.63,113,1400,40.0,2.4,2,20
+Diper,Cemento COBOCE IP-30 50kg,48.39,157,3600,85.0,6.5,2,40
+Diper,Yeso Cochabamba Bolsa 35kg,22.13,157,4200,60.0,3.2,2,50
+Diper,Alambre de Amarre Nro 16 (kg),14.39,275,1800,45.0,2.1,2,25
+Diper,Fierro Corrugado 1/2 pulg 12m,71.85,289,2400,120.0,9.0,3,30
+Emily,Cemento COBOCE IP-30 50kg,49.55,191,3600,85.0,6.5,2,40
+Emily,Pintura Latex Monopol 18L Blanco,321.6,175,360,90.0,28.0,4,8
+Emily,Fierro Corrugado 3/8 pulg 12m,42.6,276,3000,100.0,5.5,3,35
+Emily,Fierro Corrugado 1/2 pulg 12m,69.4,310,2400,120.0,9.0,3,30
+Emily,Clavos Calamina 2.5 pulg (kg),15.56,37,1400,40.0,2.4,2,20
+Emily,Tuberia PVC Tigre Desague 2 pulg 6m,35.19,15,960,70.0,4.8,4,15
+Emily,Yeso Cochabamba Bolsa 35kg,21.26,290,4200,60.0,3.2,2,50
+Copacabana,Clavos Calamina 2.5 pulg (kg),16.83,168,1400,40.0,2.4,2,20
+Copacabana,Yeso Cochabamba Bolsa 35kg,21.23,224,4200,60.0,3.2,2,50
+Copacabana,Cemento COBOCE IP-30 50kg,47.97,166,3600,85.0,6.5,2,40
+Copacabana,Fierro Corrugado 3/8 pulg 12m,43.2,113,3000,100.0,5.5,3,35
+Copacabana,Alambre de Amarre Nro 16 (kg),14.51,209,1800,45.0,2.1,2,25
+Copacabana,Tuberia PVC Tigre Desague 2 pulg 6m,35.06,104,960,70.0,4.8,4,15
+Gamboa,Tuberia PVC Tigre Desague 2 pulg 6m,35.51,179,960,70.0,4.8,4,15
+Gamboa,Alambre de Amarre Nro 16 (kg),14.58,241,1800,45.0,2.1,2,25
+Gamboa,Cemento COBOCE IP-30 50kg,50.01,276,3600,85.0,6.5,2,40
+Gamboa,Fierro Corrugado 3/8 pulg 12m,42.79,101,3000,100.0,5.5,3,35
+Gamboa,Pintura Latex Monopol 18L Blanco,319.01,160,360,90.0,28.0,4,8
+Gamboa,Clavos Calamina 2.5 pulg (kg),16.19,186,1400,40.0,2.4,2,20
+Gamboa,Fierro Corrugado 1/2 pulg 12m,69.21,135,2400,120.0,9.0,3,30
+Jardin Taquiña,Yeso Cochabamba Bolsa 35kg,22.43,52,4200,60.0,3.2,2,50
+Jardin Taquiña,Tuberia PVC Tigre Desague 2 pulg 6m,34.16,309,960,70.0,4.8,4,15
+Jardin Taquiña,Fierro Corrugado 1/2 pulg 12m,70.08,211,2400,120.0,9.0,3,30
+Jardin Taquiña,Clavos Calamina 2.5 pulg (kg),16.15,139,1400,40.0,2.4,2,20
+Jardin Taquiña,Cemento COBOCE IP-30 50kg,46.93,17,3600,85.0,6.5,2,40
+Jardin Taquiña,Pintura Latex Monopol 18L Blanco,327.71,69,360,90.0,28.0,4,8
+Jardin Taquiña,Fierro Corrugado 3/8 pulg 12m,44.34,127,3000,100.0,5.5,3,35
+Dania,Pintura Latex Monopol 18L Blanco,299.46,252,360,90.0,28.0,4,8
+Dania,Cemento COBOCE IP-30 50kg,49.96,301,3600,85.0,6.5,2,40
+Dania,Alambre de Amarre Nro 16 (kg),14.81,241,1800,45.0,2.1,2,25
+Dania,Fierro Corrugado 1/2 pulg 12m,73.69,273,2400,120.0,9.0,3,30
+Dania,Tuberia PVC Tigre Desague 2 pulg 6m,34.04,295,960,70.0,4.8,4,15
+Dania,Clavos Calamina 2.5 pulg (kg),16.06,96,1400,40.0,2.4,2,20
+Horizonte,Pintura Latex Monopol 18L Blanco,310.86,161,360,90.0,28.0,4,8
+Horizonte,Fierro Corrugado 3/8 pulg 12m,41.57,186,3000,100.0,5.5,3,35
+Horizonte,Fierro Corrugado 1/2 pulg 12m,71.16,291,2400,120.0,9.0,3,30
+Horizonte,Tuberia PVC Tigre Desague 2 pulg 6m,32.63,92,960,70.0,4.8,4,15
+Horizonte,Yeso Cochabamba Bolsa 35kg,20.53,93,4200,60.0,3.2,2,50
+Horizonte,Alambre de Amarre Nro 16 (kg),15.0,47,1800,45.0,2.1,2,25
+Horizonte,Cemento COBOCE IP-30 50kg,48.49,184,3600,85.0,6.5,2,40
+Horizonte,Clavos Calamina 2.5 pulg (kg),16.24,227,1400,40.0,2.4,2,20
+Pinto,Yeso Cochabamba Bolsa 35kg,22.11,309,4200,60.0,3.2,2,50
+Pinto,Tuberia PVC Tigre Desague 2 pulg 6m,33.85,18,960,70.0,4.8,4,15
+Pinto,Pintura Latex Monopol 18L Blanco,329.57,167,360,90.0,28.0,4,8
+Pinto,Clavos Calamina 2.5 pulg (kg),16.65,229,1400,40.0,2.4,2,20
+Pinto,Cemento COBOCE IP-30 50kg,49.21,294,3600,85.0,6.5,2,40
+Monica,Pintura Latex Monopol 18L Blanco,308.97,222,360,90.0,28.0,4,8
+Monica,Fierro Corrugado 1/2 pulg 12m,74.66,254,2400,120.0,9.0,3,30
+Monica,Fierro Corrugado 3/8 pulg 12m,45.06,288,3000,100.0,5.5,3,35
+Monica,Yeso Cochabamba Bolsa 35kg,20.02,216,4200,60.0,3.2,2,50
+Monica,Alambre de Amarre Nro 16 (kg),14.8,28,1800,45.0,2.1,2,25
+Monica,Cemento COBOCE IP-30 50kg,46.56,234,3600,85.0,6.5,2,40
+Oscarito,Pintura Latex Monopol 18L Blanco,302.37,182,360,90.0,28.0,4,8
+Oscarito,Fierro Corrugado 1/2 pulg 12m,71.32,209,2400,120.0,9.0,3,30
+Oscarito,Cemento COBOCE IP-30 50kg,47.69,230,3600,85.0,6.5,2,40
+Oscarito,Fierro Corrugado 3/8 pulg 12m,41.66,56,3000,100.0,5.5,3,35
+Oscarito,Yeso Cochabamba Bolsa 35kg,21.14,291,4200,60.0,3.2,2,50
+Oscarito,Tuberia PVC Tigre Desague 2 pulg 6m,32.51,194,960,70.0,4.8,4,15
+Duralit,Fierro Corrugado 1/2 pulg 12m,70.12,25,2400,120.0,9.0,3,30
+Duralit,Tuberia PVC Tigre Desague 2 pulg 6m,34.84,137,960,70.0,4.8,4,15
+Duralit,Clavos Calamina 2.5 pulg (kg),15.44,73,1400,40.0,2.4,2,20
+Duralit,Cemento COBOCE IP-30 50kg,49.36,126,3600,85.0,6.5,2,40
+Duralit,Alambre de Amarre Nro 16 (kg),14.58,146,1800,45.0,2.1,2,25
+Duralit,Yeso Cochabamba Bolsa 35kg,21.88,100,4200,60.0,3.2,2,50
+Arival,Fierro Corrugado 3/8 pulg 12m,45.11,309,3000,100.0,5.5,3,35
+Arival,Pintura Latex Monopol 18L Blanco,319.7,207,360,90.0,28.0,4,8
+Arival,Cemento COBOCE IP-30 50kg,48.38,116,3600,85.0,6.5,2,40
+Arival,Alambre de Amarre Nro 16 (kg),13.91,139,1800,45.0,2.1,2,25
+Arival,Clavos Calamina 2.5 pulg (kg),15.4,169,1400,40.0,2.4,2,20
+Cala Cala,Cemento COBOCE IP-30 50kg,46.48,189,3600,85.0,6.5,2,40
+Cala Cala,Fierro Corrugado 3/8 pulg 12m,40.44,230,3000,100.0,5.5,3,35
+Cala Cala,Alambre de Amarre Nro 16 (kg),15.21,69,1800,45.0,2.1,2,25
+Cala Cala,Yeso Cochabamba Bolsa 35kg,21.04,200,4200,60.0,3.2,2,50
+Cala Cala,Tuberia PVC Tigre Desague 2 pulg 6m,34.89,250,960,70.0,4.8,4,15
+La Favorita,Tuberia PVC Tigre Desague 2 pulg 6m,35.6,290,960,70.0,4.8,4,15
+La Favorita,Fierro Corrugado 1/2 pulg 12m,75.09,253,2400,120.0,9.0,3,30
+La Favorita,Clavos Calamina 2.5 pulg (kg),16.04,318,1400,40.0,2.4,2,20
+La Favorita,Alambre de Amarre Nro 16 (kg),14.24,140,1800,45.0,2.1,2,25
+La Favorita,Fierro Corrugado 3/8 pulg 12m,44.61,59,3000,100.0,5.5,3,35
+La Favorita,Yeso Cochabamba Bolsa 35kg,20.65,245,4200,60.0,3.2,2,50
+Saravia,Pintura Latex Monopol 18L Blanco,312.89,181,360,90.0,28.0,4,8
+Saravia,Alambre de Amarre Nro 16 (kg),14.09,123,1800,45.0,2.1,2,25
+Saravia,Tuberia PVC Tigre Desague 2 pulg 6m,33.75,147,960,70.0,4.8,4,15
+Saravia,Yeso Cochabamba Bolsa 35kg,20.81,320,4200,60.0,3.2,2,50
+Saravia,Fierro Corrugado 3/8 pulg 12m,43.95,156,3000,100.0,5.5,3,35
+Saravia,Cemento COBOCE IP-30 50kg,49.31,279,3600,85.0,6.5,2,40
+Ferreteria Rodríguez,Fierro Corrugado 1/2 pulg 12m,74.95,258,2400,120.0,9.0,3,30
+Ferreteria Rodríguez,Pintura Latex Monopol 18L Blanco,318.53,266,360,90.0,28.0,4,8
+Ferreteria Rodríguez,Clavos Calamina 2.5 pulg (kg),16.06,23,1400,40.0,2.4,2,20
+Ferreteria Rodríguez,Yeso Cochabamba Bolsa 35kg,20.18,128,4200,60.0,3.2,2,50
+Ferreteria Rodríguez,Alambre de Amarre Nro 16 (kg),14.48,139,1800,45.0,2.1,2,25
+Ferreteria Rodríguez,Fierro Corrugado 3/8 pulg 12m,41.94,312,3000,100.0,5.5,3,35
+Meneces,Pintura Latex Monopol 18L Blanco,307.59,247,360,90.0,28.0,4,8
+Meneces,Alambre de Amarre Nro 16 (kg),14.25,143,1800,45.0,2.1,2,25
+Meneces,Tuberia PVC Tigre Desague 2 pulg 6m,33.24,113,960,70.0,4.8,4,15
+Meneces,Fierro Corrugado 3/8 pulg 12m,41.98,289,3000,100.0,5.5,3,35
+Meneces,Yeso Cochabamba Bolsa 35kg,22.35,109,4200,60.0,3.2,2,50
+Meneces,Clavos Calamina 2.5 pulg (kg),15.57,262,1400,40.0,2.4,2,20
+Meneces,Fierro Corrugado 1/2 pulg 12m,70.79,316,2400,120.0,9.0,3,30
+Valeros,Fierro Corrugado 1/2 pulg 12m,71.01,288,2400,120.0,9.0,3,30
+Valeros,Tuberia PVC Tigre Desague 2 pulg 6m,32.82,38,960,70.0,4.8,4,15
+Valeros,Pintura Latex Monopol 18L Blanco,330.74,298,360,90.0,28.0,4,8
+Valeros,Fierro Corrugado 3/8 pulg 12m,41.86,79,3000,100.0,5.5,3,35
+Valeros,Clavos Calamina 2.5 pulg (kg),16.42,266,1400,40.0,2.4,2,20
+Valeros,Yeso Cochabamba Bolsa 35kg,20.21,21,4200,60.0,3.2,2,50
+Valeros,Cemento COBOCE IP-30 50kg,49.42,255,3600,85.0,6.5,2,40
+Elvis,Pintura Latex Monopol 18L Blanco,309.41,52,360,90.0,28.0,4,8
+Elvis,Fierro Corrugado 3/8 pulg 12m,43.32,42,3000,100.0,5.5,3,35
+Elvis,Fierro Corrugado 1/2 pulg 12m,69.71,303,2400,120.0,9.0,3,30
+Elvis,Cemento COBOCE IP-30 50kg,51.6,58,3600,85.0,6.5,2,40
+Elvis,Tuberia PVC Tigre Desague 2 pulg 6m,36.36,75,960,70.0,4.8,4,15
+Elvis,Clavos Calamina 2.5 pulg (kg),16.27,228,1400,40.0,2.4,2,20
+Elvis,Alambre de Amarre Nro 16 (kg),14.83,130,1800,45.0,2.1,2,25
+Elvis,Yeso Cochabamba Bolsa 35kg,21.9,209,4200,60.0,3.2,2,50
+NCA,Pintura Latex Monopol 18L Blanco,329.75,121,360,90.0,28.0,4,8
+NCA,Fierro Corrugado 3/8 pulg 12m,43.57,150,3000,100.0,5.5,3,35
+NCA,Alambre de Amarre Nro 16 (kg),14.92,95,1800,45.0,2.1,2,25
+NCA,Yeso Cochabamba Bolsa 35kg,20.55,297,4200,60.0,3.2,2,50
+NCA,Tuberia PVC Tigre Desague 2 pulg 6m,32.61,16,960,70.0,4.8,4,15
+NCA,Clavos Calamina 2.5 pulg (kg),15.98,319,1400,40.0,2.4,2,20
+NCA,Cemento COBOCE IP-30 50kg,48.81,31,3600,85.0,6.5,2,40
+NCA,Fierro Corrugado 1/2 pulg 12m,70.4,159,2400,120.0,9.0,3,30
+Madetal,Fierro Corrugado 1/2 pulg 12m,74.0,151,2400,120.0,9.0,3,30
+Madetal,Clavos Calamina 2.5 pulg (kg),16.79,51,1400,40.0,2.4,2,20
+Madetal,Pintura Latex Monopol 18L Blanco,296.72,172,360,90.0,28.0,4,8
+Madetal,Fierro Corrugado 3/8 pulg 12m,43.41,306,3000,100.0,5.5,3,35
+Madetal,Tuberia PVC Tigre Desague 2 pulg 6m,36.06,239,960,70.0,4.8,4,15
+Madetal,Yeso Cochabamba Bolsa 35kg,20.26,170,4200,60.0,3.2,2,50
+Madetal,Cemento COBOCE IP-30 50kg,50.15,154,3600,85.0,6.5,2,40
+Madetal,Alambre de Amarre Nro 16 (kg),14.65,267,1800,45.0,2.1,2,25
+Struper,Fierro Corrugado 1/2 pulg 12m,69.19,309,2400,120.0,9.0,3,30
+Struper,Alambre de Amarre Nro 16 (kg),14.8,25,1800,45.0,2.1,2,25
+Struper,Cemento COBOCE IP-30 50kg,51.89,152,3600,85.0,6.5,2,40
+Struper,Yeso Cochabamba Bolsa 35kg,21.4,104,4200,60.0,3.2,2,50
+Struper,Fierro Corrugado 3/8 pulg 12m,42.77,241,3000,100.0,5.5,3,35
+Struper,Tuberia PVC Tigre Desague 2 pulg 6m,36.04,107,960,70.0,4.8,4,15
+Struper,Pintura Latex Monopol 18L Blanco,331.59,238,360,90.0,28.0,4,8
+Struper,Clavos Calamina 2.5 pulg (kg),16.42,266,1400,40.0,2.4,2,20
+Punto Com,Pintura Latex Monopol 18L Blanco,319.43,97,360,90.0,28.0,4,8
+Punto Com,Fierro Corrugado 3/8 pulg 12m,42.06,268,3000,100.0,5.5,3,35
+Punto Com,Yeso Cochabamba Bolsa 35kg,20.68,220,4200,60.0,3.2,2,50
+Punto Com,Tuberia PVC Tigre Desague 2 pulg 6m,35.62,296,960,70.0,4.8,4,15
+Punto Com,Alambre de Amarre Nro 16 (kg),13.84,60,1800,45.0,2.1,2,25
+Papaiz,Alambre de Amarre Nro 16 (kg),14.49,111,1800,45.0,2.1,2,25
+Papaiz,Fierro Corrugado 3/8 pulg 12m,43.02,270,3000,100.0,5.5,3,35
+Papaiz,Cemento COBOCE IP-30 50kg,49.71,41,3600,85.0,6.5,2,40
+Papaiz,Yeso Cochabamba Bolsa 35kg,20.46,296,4200,60.0,3.2,2,50
+Papaiz,Clavos Calamina 2.5 pulg (kg),15.45,162,1400,40.0,2.4,2,20
+Papaiz,Tuberia PVC Tigre Desague 2 pulg 6m,34.09,263,960,70.0,4.8,4,15
+Papaiz,Fierro Corrugado 1/2 pulg 12m,69.45,137,2400,120.0,9.0,3,30
+Ferretería Vanessa,Alambre de Amarre Nro 16 (kg),14.17,73,1800,45.0,2.1,2,25
+Ferretería Vanessa,Pintura Latex Monopol 18L Blanco,311.67,75,360,90.0,28.0,4,8
+Ferretería Vanessa,Cemento COBOCE IP-30 50kg,49.84,93,3600,85.0,6.5,2,40
+Ferretería Vanessa,Tuberia PVC Tigre Desague 2 pulg 6m,34.33,164,960,70.0,4.8,4,15
+Ferretería Vanessa,Yeso Cochabamba Bolsa 35kg,21.23,154,4200,60.0,3.2,2,50
+Ferretería Vanessa,Clavos Calamina 2.5 pulg (kg),16.0,262,1400,40.0,2.4,2,20
+Cañoto,Yeso Cochabamba Bolsa 35kg,20.65,227,4200,60.0,3.2,2,50
+Cañoto,Pintura Latex Monopol 18L Blanco,307.14,274,360,90.0,28.0,4,8
+Cañoto,Alambre de Amarre Nro 16 (kg),14.24,16,1800,45.0,2.1,2,25
+Cañoto,Fierro Corrugado 1/2 pulg 12m,70.84,167,2400,120.0,9.0,3,30
+Cañoto,Tuberia PVC Tigre Desague 2 pulg 6m,35.72,311,960,70.0,4.8,4,15
+Cañoto,Cemento COBOCE IP-30 50kg,51.89,265,3600,85.0,6.5,2,40
+Cañoto,Fierro Corrugado 3/8 pulg 12m,44.79,243,3000,100.0,5.5,3,35
+Cañoto,Clavos Calamina 2.5 pulg (kg),16.23,191,1400,40.0,2.4,2,20
+Tramontina,Tuberia PVC Tigre Desague 2 pulg 6m,33.25,225,960,70.0,4.8,4,15
+Tramontina,Yeso Cochabamba Bolsa 35kg,20.06,257,4200,60.0,3.2,2,50
+Tramontina,Fierro Corrugado 3/8 pulg 12m,43.97,210,3000,100.0,5.5,3,35
+Tramontina,Fierro Corrugado 1/2 pulg 12m,71.74,92,2400,120.0,9.0,3,30
+Tramontina,Alambre de Amarre Nro 16 (kg),14.64,33,1800,45.0,2.1,2,25
+Tramontina,Clavos Calamina 2.5 pulg (kg),15.44,317,1400,40.0,2.4,2,20
+Tramontina,Pintura Latex Monopol 18L Blanco,306.85,66,360,90.0,28.0,4,8
+García,Fierro Corrugado 1/2 pulg 12m,72.46,150,2400,120.0,9.0,3,30
+García,Alambre de Amarre Nro 16 (kg),14.36,218,1800,45.0,2.1,2,25
+García,Yeso Cochabamba Bolsa 35kg,21.59,183,4200,60.0,3.2,2,50
+García,Cemento COBOCE IP-30 50kg,51.04,288,3600,85.0,6.5,2,40
+García,Pintura Latex Monopol 18L Blanco,308.64,177,360,90.0,28.0,4,8
+García,Clavos Calamina 2.5 pulg (kg),16.4,264,1400,40.0,2.4,2,20
+García,Tuberia PVC Tigre Desague 2 pulg 6m,35.86,33,960,70.0,4.8,4,15
+García,Fierro Corrugado 3/8 pulg 12m,43.52,135,3000,100.0,5.5,3,35
+Perteca,Yeso Cochabamba Bolsa 35kg,21.07,168,4200,60.0,3.2,2,50
+Perteca,Clavos Calamina 2.5 pulg (kg),16.93,38,1400,40.0,2.4,2,20
+Perteca,Cemento COBOCE IP-30 50kg,47.96,43,3600,85.0,6.5,2,40
+Perteca,Pintura Latex Monopol 18L Blanco,305.41,206,360,90.0,28.0,4,8
+Perteca,Tuberia PVC Tigre Desague 2 pulg 6m,34.06,140,960,70.0,4.8,4,15
+Perteca,Fierro Corrugado 3/8 pulg 12m,43.08,304,3000,100.0,5.5,3,35
+Perteca,Alambre de Amarre Nro 16 (kg),14.96,107,1800,45.0,2.1,2,25
+Ferro I,Fierro Corrugado 3/8 pulg 12m,45.03,88,3000,100.0,5.5,3,35
+Ferro I,Cemento COBOCE IP-30 50kg,47.43,145,3600,85.0,6.5,2,40
+Ferro I,Alambre de Amarre Nro 16 (kg),14.57,19,1800,45.0,2.1,2,25
+Ferro I,Yeso Cochabamba Bolsa 35kg,22.22,253,4200,60.0,3.2,2,50
+Ferro I,Fierro Corrugado 1/2 pulg 12m,76.19,294,2400,120.0,9.0,3,30
+Ferro I,Clavos Calamina 2.5 pulg (kg),15.5,241,1400,40.0,2.4,2,20
+Soraya,Alambre de Amarre Nro 16 (kg),15.51,262,1800,45.0,2.1,2,25
+Soraya,Clavos Calamina 2.5 pulg (kg),15.4,210,1400,40.0,2.4,2,20
+Soraya,Yeso Cochabamba Bolsa 35kg,21.39,309,4200,60.0,3.2,2,50
+Soraya,Fierro Corrugado 3/8 pulg 12m,41.88,166,3000,100.0,5.5,3,35
+Soraya,Tuberia PVC Tigre Desague 2 pulg 6m,32.39,217,960,70.0,4.8,4,15
+Soraya,Fierro Corrugado 1/2 pulg 12m,70.77,304,2400,120.0,9.0,3,30
+Soraya,Cemento COBOCE IP-30 50kg,51.11,40,3600,85.0,6.5,2,40
+Ferretería Davi's,Alambre de Amarre Nro 16 (kg),14.95,85,1800,45.0,2.1,2,25
+Ferretería Davi's,Tuberia PVC Tigre Desague 2 pulg 6m,34.86,35,960,70.0,4.8,4,15
+Ferretería Davi's,Fierro Corrugado 1/2 pulg 12m,71.07,240,2400,120.0,9.0,3,30
+Ferretería Davi's,Pintura Latex Monopol 18L Blanco,295.74,201,360,90.0,28.0,4,8
+Ferretería Davi's,Fierro Corrugado 3/8 pulg 12m,44.11,61,3000,100.0,5.5,3,35
+Ferretería Davi's,Cemento COBOCE IP-30 50kg,51.37,182,3600,85.0,6.5,2,40
+Ferretería Davi's,Yeso Cochabamba Bolsa 35kg,21.83,104,4200,60.0,3.2,2,50
+Ferretería Davi's,Clavos Calamina 2.5 pulg (kg),15.59,291,1400,40.0,2.4,2,20
+Electrojhu,Alambre de Amarre Nro 16 (kg),15.17,254,1800,45.0,2.1,2,25
+Electrojhu,Tuberia PVC Tigre Desague 2 pulg 6m,36.23,87,960,70.0,4.8,4,15
+Electrojhu,Fierro Corrugado 1/2 pulg 12m,74.92,130,2400,120.0,9.0,3,30
+Electrojhu,Fierro Corrugado 3/8 pulg 12m,44.76,218,3000,100.0,5.5,3,35
+Electrojhu,Yeso Cochabamba Bolsa 35kg,22.39,300,4200,60.0,3.2,2,50
+Electrojhu,Clavos Calamina 2.5 pulg (kg),15.9,217,1400,40.0,2.4,2,20
+Electrojhu,Pintura Latex Monopol 18L Blanco,295.02,289,360,90.0,28.0,4,8
+Buena Estrella,Pintura Latex Monopol 18L Blanco,325.09,205,360,90.0,28.0,4,8
+Buena Estrella,Fierro Corrugado 3/8 pulg 12m,40.93,134,3000,100.0,5.5,3,35
+Buena Estrella,Clavos Calamina 2.5 pulg (kg),16.11,302,1400,40.0,2.4,2,20
+Buena Estrella,Tuberia PVC Tigre Desague 2 pulg 6m,33.64,128,960,70.0,4.8,4,15
+Buena Estrella,Yeso Cochabamba Bolsa 35kg,21.58,252,4200,60.0,3.2,2,50
+Truper,Tuberia PVC Tigre Desague 2 pulg 6m,32.77,135,960,70.0,4.8,4,15
+Truper,Cemento COBOCE IP-30 50kg,51.24,84,3600,85.0,6.5,2,40
+Truper,Fierro Corrugado 1/2 pulg 12m,71.76,204,2400,120.0,9.0,3,30
+Truper,Pintura Latex Monopol 18L Blanco,319.44,291,360,90.0,28.0,4,8
+Truper,Alambre de Amarre Nro 16 (kg),14.5,94,1800,45.0,2.1,2,25
+Truper,Clavos Calamina 2.5 pulg (kg),16.9,65,1400,40.0,2.4,2,20
+Truper,Fierro Corrugado 3/8 pulg 12m,44.63,223,3000,100.0,5.5,3,35
+Atocha,Cemento COBOCE IP-30 50kg,51.05,65,3600,85.0,6.5,2,40
+Atocha,Clavos Calamina 2.5 pulg (kg),17.08,203,1400,40.0,2.4,2,20
+Atocha,Fierro Corrugado 3/8 pulg 12m,43.15,198,3000,100.0,5.5,3,35
+Atocha,Fierro Corrugado 1/2 pulg 12m,68.92,156,2400,120.0,9.0,3,30
+Atocha,Yeso Cochabamba Bolsa 35kg,20.43,77,4200,60.0,3.2,2,50
+Atocha,Alambre de Amarre Nro 16 (kg),15.43,247,1800,45.0,2.1,2,25
+Atocha,Pintura Latex Monopol 18L Blanco,297.91,123,360,90.0,28.0,4,8
+Sanchez,Cemento COBOCE IP-30 50kg,50.66,120,3600,85.0,6.5,2,40
+Sanchez,Tuberia PVC Tigre Desague 2 pulg 6m,32.58,298,960,70.0,4.8,4,15
+Sanchez,Fierro Corrugado 3/8 pulg 12m,41.43,125,3000,100.0,5.5,3,35
+Sanchez,Fierro Corrugado 1/2 pulg 12m,75.42,134,2400,120.0,9.0,3,30
+Sanchez,Alambre de Amarre Nro 16 (kg),14.35,90,1800,45.0,2.1,2,25
+Comercial Vargas,Alambre de Amarre Nro 16 (kg),15.16,71,1800,45.0,2.1,2,25
+Comercial Vargas,Tuberia PVC Tigre Desague 2 pulg 6m,35.0,28,960,70.0,4.8,4,15
+Comercial Vargas,Fierro Corrugado 1/2 pulg 12m,69.54,198,2400,120.0,9.0,3,30
+Comercial Vargas,Clavos Calamina 2.5 pulg (kg),16.72,136,1400,40.0,2.4,2,20
+Comercial Vargas,Fierro Corrugado 3/8 pulg 12m,43.38,23,3000,100.0,5.5,3,35
+Comercial J & J,Alambre de Amarre Nro 16 (kg),13.89,244,1800,45.0,2.1,2,25
+Comercial J & J,Cemento COBOCE IP-30 50kg,50.6,277,3600,85.0,6.5,2,40
+Comercial J & J,Fierro Corrugado 1/2 pulg 12m,73.53,246,2400,120.0,9.0,3,30
+Comercial J & J,Yeso Cochabamba Bolsa 35kg,21.22,37,4200,60.0,3.2,2,50
+Comercial J & J,Tuberia PVC Tigre Desague 2 pulg 6m,35.27,281,960,70.0,4.8,4,15
+Comercial J & J,Fierro Corrugado 3/8 pulg 12m,41.91,30,3000,100.0,5.5,3,35
+Comercial Josefina,Pintura Latex Monopol 18L Blanco,312.74,242,360,90.0,28.0,4,8
+Comercial Josefina,Tuberia PVC Tigre Desague 2 pulg 6m,32.6,56,960,70.0,4.8,4,15
+Comercial Josefina,Yeso Cochabamba Bolsa 35kg,20.76,90,4200,60.0,3.2,2,50
+Comercial Josefina,Clavos Calamina 2.5 pulg (kg),15.33,155,1400,40.0,2.4,2,20
+Comercial Josefina,Cemento COBOCE IP-30 50kg,49.71,314,3600,85.0,6.5,2,40
+Comercial Jacky Color,Tuberia PVC Tigre Desague 2 pulg 6m,32.7,73,960,70.0,4.8,4,15
+Comercial Jacky Color,Alambre de Amarre Nro 16 (kg),15.26,297,1800,45.0,2.1,2,25
+Comercial Jacky Color,Pintura Latex Monopol 18L Blanco,321.32,125,360,90.0,28.0,4,8
+Comercial Jacky Color,Fierro Corrugado 3/8 pulg 12m,42.57,131,3000,100.0,5.5,3,35
+Comercial Jacky Color,Yeso Cochabamba Bolsa 35kg,20.99,247,4200,60.0,3.2,2,50
+Comercial Jacky Color,Clavos Calamina 2.5 pulg (kg),15.97,63,1400,40.0,2.4,2,20
+Comercial Jacky Color,Fierro Corrugado 1/2 pulg 12m,71.1,175,2400,120.0,9.0,3,30
+Grupo Lujan,Clavos Calamina 2.5 pulg (kg),15.38,64,1400,40.0,2.4,2,20
+Grupo Lujan,Fierro Corrugado 1/2 pulg 12m,74.83,205,2400,120.0,9.0,3,30
+Grupo Lujan,Pintura Latex Monopol 18L Blanco,324.7,299,360,90.0,28.0,4,8
+Grupo Lujan,Yeso Cochabamba Bolsa 35kg,20.1,302,4200,60.0,3.2,2,50
+Grupo Lujan,Cemento COBOCE IP-30 50kg,49.34,77,3600,85.0,6.5,2,40
+Grupo Lujan,Alambre de Amarre Nro 16 (kg),14.49,231,1800,45.0,2.1,2,25
+Grupo Lujan,Fierro Corrugado 3/8 pulg 12m,44.8,41,3000,100.0,5.5,3,35
+Importadora LINZ,Alambre de Amarre Nro 16 (kg),14.17,70,1800,45.0,2.1,2,25
+Importadora LINZ,Fierro Corrugado 3/8 pulg 12m,42.16,299,3000,100.0,5.5,3,35
+Importadora LINZ,Cemento COBOCE IP-30 50kg,48.21,157,3600,85.0,6.5,2,40
+Importadora LINZ,Pintura Latex Monopol 18L Blanco,315.86,234,360,90.0,28.0,4,8
+Importadora LINZ,Fierro Corrugado 1/2 pulg 12m,75.7,300,2400,120.0,9.0,3,30
+Importadora LINZ,Clavos Calamina 2.5 pulg (kg),15.25,151,1400,40.0,2.4,2,20
+Importadora LINZ,Yeso Cochabamba Bolsa 35kg,20.02,154,4200,60.0,3.2,2,50
+Abbys,Clavos Calamina 2.5 pulg (kg),15.33,30,1400,40.0,2.4,2,20
+Abbys,Fierro Corrugado 3/8 pulg 12m,40.84,286,3000,100.0,5.5,3,35
+Abbys,Cemento COBOCE IP-30 50kg,47.33,229,3600,85.0,6.5,2,40
+Abbys,Fierro Corrugado 1/2 pulg 12m,72.32,95,2400,120.0,9.0,3,30
+Abbys,Alambre de Amarre Nro 16 (kg),14.42,181,1800,45.0,2.1,2,25
+Abbys,Tuberia PVC Tigre Desague 2 pulg 6m,35.47,305,960,70.0,4.8,4,15
+Abbys,Yeso Cochabamba Bolsa 35kg,21.45,41,4200,60.0,3.2,2,50
+Buenos Aires,Fierro Corrugado 3/8 pulg 12m,42.63,232,3000,100.0,5.5,3,35
+Buenos Aires,Tuberia PVC Tigre Desague 2 pulg 6m,34.28,241,960,70.0,4.8,4,15
+Buenos Aires,Alambre de Amarre Nro 16 (kg),14.5,125,1800,45.0,2.1,2,25
+Buenos Aires,Cemento COBOCE IP-30 50kg,50.47,73,3600,85.0,6.5,2,40
+Buenos Aires,Clavos Calamina 2.5 pulg (kg),15.86,71,1400,40.0,2.4,2,20
+Buenos Aires,Fierro Corrugado 1/2 pulg 12m,70.85,318,2400,120.0,9.0,3,30
+Ismmar,Alambre de Amarre Nro 16 (kg),15.42,85,1800,45.0,2.1,2,25
+Ismmar,Cemento COBOCE IP-30 50kg,50.52,163,3600,85.0,6.5,2,40
+Ismmar,Fierro Corrugado 1/2 pulg 12m,71.23,18,2400,120.0,9.0,3,30
+Ismmar,Yeso Cochabamba Bolsa 35kg,21.2,235,4200,60.0,3.2,2,50
+Ismmar,Tuberia PVC Tigre Desague 2 pulg 6m,33.02,209,960,70.0,4.8,4,15
+Ismmar,Pintura Latex Monopol 18L Blanco,314.31,132,360,90.0,28.0,4,8
+Ismmar,Fierro Corrugado 3/8 pulg 12m,42.93,196,3000,100.0,5.5,3,35
+Ismmar,Clavos Calamina 2.5 pulg (kg),15.34,36,1400,40.0,2.4,2,20
+TemplaBol,Cemento COBOCE IP-30 50kg,47.76,222,3600,85.0,6.5,2,40
+TemplaBol,Yeso Cochabamba Bolsa 35kg,20.0,181,4200,60.0,3.2,2,50
+TemplaBol,Pintura Latex Monopol 18L Blanco,300.89,250,360,90.0,28.0,4,8
+TemplaBol,Fierro Corrugado 3/8 pulg 12m,44.62,200,3000,100.0,5.5,3,35
+TemplaBol,Tuberia PVC Tigre Desague 2 pulg 6m,32.66,69,960,70.0,4.8,4,15
+TemplaBol,Alambre de Amarre Nro 16 (kg),14.2,316,1800,45.0,2.1,2,25
+TemplaBol,Fierro Corrugado 1/2 pulg 12m,71.86,55,2400,120.0,9.0,3,30
+TemplaBol,Clavos Calamina 2.5 pulg (kg),15.96,173,1400,40.0,2.4,2,20
+Importadora Nalex,Yeso Cochabamba Bolsa 35kg,22.23,193,4200,60.0,3.2,2,50
+Importadora Nalex,Fierro Corrugado 3/8 pulg 12m,42.17,90,3000,100.0,5.5,3,35
+Importadora Nalex,Fierro Corrugado 1/2 pulg 12m,70.44,89,2400,120.0,9.0,3,30
+Importadora Nalex,Cemento COBOCE IP-30 50kg,47.56,103,3600,85.0,6.5,2,40
+Importadora Nalex,Alambre de Amarre Nro 16 (kg),14.82,53,1800,45.0,2.1,2,25
+Importadora Nalex,Tuberia PVC Tigre Desague 2 pulg 6m,33.02,267,960,70.0,4.8,4,15
+Importadora Nalex,Pintura Latex Monopol 18L Blanco,311.76,303,360,90.0,28.0,4,8
+Incerpaz,Clavos Calamina 2.5 pulg (kg),16.05,170,1400,40.0,2.4,2,20
+Incerpaz,Tuberia PVC Tigre Desague 2 pulg 6m,35.55,317,960,70.0,4.8,4,15
+Incerpaz,Pintura Latex Monopol 18L Blanco,296.59,274,360,90.0,28.0,4,8
+Incerpaz,Fierro Corrugado 3/8 pulg 12m,40.75,251,3000,100.0,5.5,3,35
+Incerpaz,Fierro Corrugado 1/2 pulg 12m,72.3,44,2400,120.0,9.0,3,30
+Incerpaz,Yeso Cochabamba Bolsa 35kg,20.88,161,4200,60.0,3.2,2,50
+Incerpaz,Cemento COBOCE IP-30 50kg,46.52,61,3600,85.0,6.5,2,40
+Incerpaz,Alambre de Amarre Nro 16 (kg),14.85,274,1800,45.0,2.1,2,25
+Casa y Construcción,Pintura Latex Monopol 18L Blanco,317.01,271,360,90.0,28.0,4,8
+Casa y Construcción,Alambre de Amarre Nro 16 (kg),14.04,46,1800,45.0,2.1,2,25
+Casa y Construcción,Tuberia PVC Tigre Desague 2 pulg 6m,34.14,190,960,70.0,4.8,4,15
+Casa y Construcción,Cemento COBOCE IP-30 50kg,51.79,58,3600,85.0,6.5,2,40
+Casa y Construcción,Yeso Cochabamba Bolsa 35kg,21.22,103,4200,60.0,3.2,2,50
+Casa y Construcción,Fierro Corrugado 3/8 pulg 12m,40.57,239,3000,100.0,5.5,3,35
+Casa y Construcción,Clavos Calamina 2.5 pulg (kg),17.1,283,1400,40.0,2.4,2,20
+Casa y Construcción,Fierro Corrugado 1/2 pulg 12m,72.92,96,2400,120.0,9.0,3,30
+Ferretería San Jorge,Clavos Calamina 2.5 pulg (kg),16.72,186,1400,40.0,2.4,2,20
+Ferretería San Jorge,Fierro Corrugado 3/8 pulg 12m,40.71,63,3000,100.0,5.5,3,35
+Ferretería San Jorge,Yeso Cochabamba Bolsa 35kg,21.36,212,4200,60.0,3.2,2,50
+Ferretería San Jorge,Pintura Latex Monopol 18L Blanco,305.07,91,360,90.0,28.0,4,8
+Ferretería San Jorge,Tuberia PVC Tigre Desague 2 pulg 6m,33.66,313,960,70.0,4.8,4,15
+Ferretería San Jorge,Alambre de Amarre Nro 16 (kg),14.93,194,1800,45.0,2.1,2,25
+Ferretería San Jorge,Cemento COBOCE IP-30 50kg,47.88,215,3600,85.0,6.5,2,40
+Galvez,Fierro Corrugado 1/2 pulg 12m,74.19,284,2400,120.0,9.0,3,30
+Galvez,Fierro Corrugado 3/8 pulg 12m,40.85,231,3000,100.0,5.5,3,35
+Galvez,Alambre de Amarre Nro 16 (kg),14.66,24,1800,45.0,2.1,2,25
+Galvez,Yeso Cochabamba Bolsa 35kg,20.86,107,4200,60.0,3.2,2,50
+Galvez,Tuberia PVC Tigre Desague 2 pulg 6m,36.18,189,960,70.0,4.8,4,15
+Galvez,Cemento COBOCE IP-30 50kg,51.59,263,3600,85.0,6.5,2,40
+Fischer,Yeso Cochabamba Bolsa 35kg,21.23,291,4200,60.0,3.2,2,50
+Fischer,Fierro Corrugado 1/2 pulg 12m,75.62,284,2400,120.0,9.0,3,30
+Fischer,Tuberia PVC Tigre Desague 2 pulg 6m,32.45,187,960,70.0,4.8,4,15
+Fischer,Cemento COBOCE IP-30 50kg,51.18,82,3600,85.0,6.5,2,40
+Fischer,Fierro Corrugado 3/8 pulg 12m,43.42,93,3000,100.0,5.5,3,35
+Fischer,Alambre de Amarre Nro 16 (kg),14.06,99,1800,45.0,2.1,2,25
+Ferreteria Fischer,Cemento COBOCE IP-30 50kg,47.44,137,3600,85.0,6.5,2,40
+Ferreteria Fischer,Yeso Cochabamba Bolsa 35kg,20.73,255,4200,60.0,3.2,2,50
+Ferreteria Fischer,Fierro Corrugado 3/8 pulg 12m,44.99,114,3000,100.0,5.5,3,35
+Ferreteria Fischer,Fierro Corrugado 1/2 pulg 12m,71.58,307,2400,120.0,9.0,3,30
+Ferreteria Fischer,Tuberia PVC Tigre Desague 2 pulg 6m,36.32,251,960,70.0,4.8,4,15
+Ferreteria Fischer,Clavos Calamina 2.5 pulg (kg),16.68,210,1400,40.0,2.4,2,20
+Ferreteria Fischer,Alambre de Amarre Nro 16 (kg),14.65,229,1800,45.0,2.1,2,25
+Ferreteria Fischer,Pintura Latex Monopol 18L Blanco,330.45,117,360,90.0,28.0,4,8
+Ferretería Miraflores,Alambre de Amarre Nro 16 (kg),15.4,279,1800,45.0,2.1,2,25
+Ferretería Miraflores,Cemento COBOCE IP-30 50kg,51.03,160,3600,85.0,6.5,2,40
+Ferretería Miraflores,Clavos Calamina 2.5 pulg (kg),15.36,97,1400,40.0,2.4,2,20
+Ferretería Miraflores,Yeso Cochabamba Bolsa 35kg,20.64,277,4200,60.0,3.2,2,50
+Ferretería Miraflores,Fierro Corrugado 3/8 pulg 12m,41.13,238,3000,100.0,5.5,3,35
+Ferretería Miraflores,Pintura Latex Monopol 18L Blanco,297.91,128,360,90.0,28.0,4,8
+Coral,Clavos Calamina 2.5 pulg (kg),15.94,56,1400,40.0,2.4,2,20
+Coral,Cemento COBOCE IP-30 50kg,48.26,29,3600,85.0,6.5,2,40
+Coral,Yeso Cochabamba Bolsa 35kg,20.75,65,4200,60.0,3.2,2,50
+Coral,Tuberia PVC Tigre Desague 2 pulg 6m,35.72,186,960,70.0,4.8,4,15
+Coral,Pintura Latex Monopol 18L Blanco,323.94,85,360,90.0,28.0,4,8
+Coral,Fierro Corrugado 3/8 pulg 12m,40.57,256,3000,100.0,5.5,3,35
+Coral,Fierro Corrugado 1/2 pulg 12m,74.41,86,2400,120.0,9.0,3,30
+Coral,Alambre de Amarre Nro 16 (kg),15.1,255,1800,45.0,2.1,2,25
+S. Ramirez,Cemento COBOCE IP-30 50kg,50.59,136,3600,85.0,6.5,2,40
+S. Ramirez,Pintura Latex Monopol 18L Blanco,305.7,39,360,90.0,28.0,4,8
+S. Ramirez,Tuberia PVC Tigre Desague 2 pulg 6m,33.27,249,960,70.0,4.8,4,15
+S. Ramirez,Fierro Corrugado 3/8 pulg 12m,40.7,270,3000,100.0,5.5,3,35
+S. Ramirez,Fierro Corrugado 1/2 pulg 12m,73.56,23,2400,120.0,9.0,3,30
+S. Ramirez,Clavos Calamina 2.5 pulg (kg),16.41,309,1400,40.0,2.4,2,20
+S. Ramirez,Yeso Cochabamba Bolsa 35kg,20.56,88,4200,60.0,3.2,2,50
+S. Ramirez,Alambre de Amarre Nro 16 (kg),14.28,15,1800,45.0,2.1,2,25
+Segovia R.,Yeso Cochabamba Bolsa 35kg,20.12,284,4200,60.0,3.2,2,50
+Segovia R.,Alambre de Amarre Nro 16 (kg),14.72,274,1800,45.0,2.1,2,25
+Segovia R.,Pintura Latex Monopol 18L Blanco,315.11,214,360,90.0,28.0,4,8
+Segovia R.,Fierro Corrugado 1/2 pulg 12m,75.95,37,2400,120.0,9.0,3,30
+Segovia R.,Cemento COBOCE IP-30 50kg,49.77,206,3600,85.0,6.5,2,40
+Segovia R.,Fierro Corrugado 3/8 pulg 12m,41.67,23,3000,100.0,5.5,3,35
+Segovia R.,Tuberia PVC Tigre Desague 2 pulg 6m,33.76,49,960,70.0,4.8,4,15
+Marianela,Yeso Cochabamba Bolsa 35kg,20.84,188,4200,60.0,3.2,2,50
+Marianela,Clavos Calamina 2.5 pulg (kg),16.76,104,1400,40.0,2.4,2,20
+Marianela,Tuberia PVC Tigre Desague 2 pulg 6m,35.69,252,960,70.0,4.8,4,15
+Marianela,Cemento COBOCE IP-30 50kg,51.78,260,3600,85.0,6.5,2,40
+Marianela,Fierro Corrugado 3/8 pulg 12m,43.6,84,3000,100.0,5.5,3,35
+Marianela,Alambre de Amarre Nro 16 (kg),13.88,249,1800,45.0,2.1,2,25
+Marianela,Pintura Latex Monopol 18L Blanco,295.88,118,360,90.0,28.0,4,8
+Ferretería Michelle,Yeso Cochabamba Bolsa 35kg,22.44,293,4200,60.0,3.2,2,50
+Ferretería Michelle,Cemento COBOCE IP-30 50kg,48.83,33,3600,85.0,6.5,2,40
+Ferretería Michelle,Fierro Corrugado 3/8 pulg 12m,44.22,112,3000,100.0,5.5,3,35
+Ferretería Michelle,Clavos Calamina 2.5 pulg (kg),15.75,39,1400,40.0,2.4,2,20
+Ferretería Michelle,Pintura Latex Monopol 18L Blanco,326.71,184,360,90.0,28.0,4,8
+Cordova,Fierro Corrugado 1/2 pulg 12m,76.13,212,2400,120.0,9.0,3,30
+Cordova,Tuberia PVC Tigre Desague 2 pulg 6m,33.68,110,960,70.0,4.8,4,15
+Cordova,Fierro Corrugado 3/8 pulg 12m,42.91,269,3000,100.0,5.5,3,35
+Cordova,Yeso Cochabamba Bolsa 35kg,20.88,280,4200,60.0,3.2,2,50
+Cordova,Alambre de Amarre Nro 16 (kg),14.24,57,1800,45.0,2.1,2,25
+Cordova,Clavos Calamina 2.5 pulg (kg),16.6,55,1400,40.0,2.4,2,20
+Cordova,Pintura Latex Monopol 18L Blanco,310.52,107,360,90.0,28.0,4,8
+Ferrocar,Clavos Calamina 2.5 pulg (kg),16.36,233,1400,40.0,2.4,2,20
+Ferrocar,Cemento COBOCE IP-30 50kg,47.04,242,3600,85.0,6.5,2,40
+Ferrocar,Tuberia PVC Tigre Desague 2 pulg 6m,33.73,36,960,70.0,4.8,4,15
+Ferrocar,Fierro Corrugado 3/8 pulg 12m,44.08,195,3000,100.0,5.5,3,35
+Ferrocar,Alambre de Amarre Nro 16 (kg),14.84,237,1800,45.0,2.1,2,25
+Ferrocar,Fierro Corrugado 1/2 pulg 12m,70.77,44,2400,120.0,9.0,3,30
+Ferrocar,Yeso Cochabamba Bolsa 35kg,20.14,222,4200,60.0,3.2,2,50
+Ayala,Fierro Corrugado 3/8 pulg 12m,40.72,202,3000,100.0,5.5,3,35
+Ayala,Cemento COBOCE IP-30 50kg,48.18,305,3600,85.0,6.5,2,40
+Ayala,Fierro Corrugado 1/2 pulg 12m,68.68,93,2400,120.0,9.0,3,30
+Ayala,Alambre de Amarre Nro 16 (kg),14.96,204,1800,45.0,2.1,2,25
+Ayala,Yeso Cochabamba Bolsa 35kg,20.89,54,4200,60.0,3.2,2,50
+Ayala,Tuberia PVC Tigre Desague 2 pulg 6m,34.64,286,960,70.0,4.8,4,15
+Ayala,Pintura Latex Monopol 18L Blanco,308.15,175,360,90.0,28.0,4,8
+Comercial Torrez,Yeso Cochabamba Bolsa 35kg,22.25,75,4200,60.0,3.2,2,50
+Comercial Torrez,Cemento COBOCE IP-30 50kg,47.6,148,3600,85.0,6.5,2,40
+Comercial Torrez,Tuberia PVC Tigre Desague 2 pulg 6m,35.17,124,960,70.0,4.8,4,15
+Comercial Torrez,Fierro Corrugado 1/2 pulg 12m,77.01,161,2400,120.0,9.0,3,30
+Comercial Torrez,Pintura Latex Monopol 18L Blanco,320.32,266,360,90.0,28.0,4,8
+Comercial Torrez,Fierro Corrugado 3/8 pulg 12m,41.4,84,3000,100.0,5.5,3,35
+Comercial Torrez,Alambre de Amarre Nro 16 (kg),15.26,246,1800,45.0,2.1,2,25
+Del Carmen,Pintura Latex Monopol 18L Blanco,296.92,292,360,90.0,28.0,4,8
+Del Carmen,Cemento COBOCE IP-30 50kg,47.76,168,3600,85.0,6.5,2,40
+Del Carmen,Clavos Calamina 2.5 pulg (kg),16.83,104,1400,40.0,2.4,2,20
+Del Carmen,Fierro Corrugado 3/8 pulg 12m,44.42,275,3000,100.0,5.5,3,35
+Del Carmen,Alambre de Amarre Nro 16 (kg),14.17,117,1800,45.0,2.1,2,25
+Del Carmen,Yeso Cochabamba Bolsa 35kg,21.95,136,4200,60.0,3.2,2,50
+Santiago II,Cemento COBOCE IP-30 50kg,46.46,218,3600,85.0,6.5,2,40
+Santiago II,Fierro Corrugado 3/8 pulg 12m,45.47,260,3000,100.0,5.5,3,35
+Santiago II,Alambre de Amarre Nro 16 (kg),14.69,224,1800,45.0,2.1,2,25
+Santiago II,Clavos Calamina 2.5 pulg (kg),16.78,52,1400,40.0,2.4,2,20
+Santiago II,Tuberia PVC Tigre Desague 2 pulg 6m,32.81,177,960,70.0,4.8,4,15
+Santiago II,Fierro Corrugado 1/2 pulg 12m,73.95,245,2400,120.0,9.0,3,30
+Santiago II,Pintura Latex Monopol 18L Blanco,311.83,279,360,90.0,28.0,4,8
+Santiago II,Yeso Cochabamba Bolsa 35kg,20.82,297,4200,60.0,3.2,2,50
+Dupast,Fierro Corrugado 3/8 pulg 12m,41.16,99,3000,100.0,5.5,3,35
+Dupast,Yeso Cochabamba Bolsa 35kg,20.36,130,4200,60.0,3.2,2,50
+Dupast,Alambre de Amarre Nro 16 (kg),14.38,280,1800,45.0,2.1,2,25
+Dupast,Cemento COBOCE IP-30 50kg,51.28,55,3600,85.0,6.5,2,40
+Dupast,Clavos Calamina 2.5 pulg (kg),15.68,297,1400,40.0,2.4,2,20
+Dupast,Pintura Latex Monopol 18L Blanco,304.71,170,360,90.0,28.0,4,8
+Balderrama,Fierro Corrugado 3/8 pulg 12m,43.73,187,3000,100.0,5.5,3,35
+Balderrama,Alambre de Amarre Nro 16 (kg),15.24,303,1800,45.0,2.1,2,25
+Balderrama,Tuberia PVC Tigre Desague 2 pulg 6m,32.47,29,960,70.0,4.8,4,15
+Balderrama,Fierro Corrugado 1/2 pulg 12m,69.1,310,2400,120.0,9.0,3,30
+Balderrama,Clavos Calamina 2.5 pulg (kg),15.71,122,1400,40.0,2.4,2,20
+Rodríguez,Cemento COBOCE IP-30 50kg,47.5,222,3600,85.0,6.5,2,40
+Rodríguez,Yeso Cochabamba Bolsa 35kg,20.7,52,4200,60.0,3.2,2,50
+Rodríguez,Clavos Calamina 2.5 pulg (kg),16.52,95,1400,40.0,2.4,2,20
+Rodríguez,Alambre de Amarre Nro 16 (kg),14.54,262,1800,45.0,2.1,2,25
+Rodríguez,Fierro Corrugado 3/8 pulg 12m,42.74,189,3000,100.0,5.5,3,35
+Rodríguez,Tuberia PVC Tigre Desague 2 pulg 6m,34.78,175,960,70.0,4.8,4,15
+Rodríguez,Fierro Corrugado 1/2 pulg 12m,75.84,178,2400,120.0,9.0,3,30
+Rodríguez,Pintura Latex Monopol 18L Blanco,321.81,191,360,90.0,28.0,4,8
+Económica MultiPlast,Fierro Corrugado 3/8 pulg 12m,41.0,245,3000,100.0,5.5,3,35
+Económica MultiPlast,Tuberia PVC Tigre Desague 2 pulg 6m,33.31,64,960,70.0,4.8,4,15
+Económica MultiPlast,Pintura Latex Monopol 18L Blanco,296.38,211,360,90.0,28.0,4,8
+Económica MultiPlast,Alambre de Amarre Nro 16 (kg),15.28,229,1800,45.0,2.1,2,25
+Económica MultiPlast,Cemento COBOCE IP-30 50kg,47.52,96,3600,85.0,6.5,2,40
+Económica MultiPlast,Fierro Corrugado 1/2 pulg 12m,75.43,310,2400,120.0,9.0,3,30
+Económica MultiPlast,Yeso Cochabamba Bolsa 35kg,21.77,112,4200,60.0,3.2,2,50
+Económica MultiPlast,Clavos Calamina 2.5 pulg (kg),16.67,270,1400,40.0,2.4,2,20
+Medina,Pintura Latex Monopol 18L Blanco,302.5,195,360,90.0,28.0,4,8
+Medina,Fierro Corrugado 3/8 pulg 12m,40.62,159,3000,100.0,5.5,3,35
+Medina,Yeso Cochabamba Bolsa 35kg,21.2,255,4200,60.0,3.2,2,50
+Medina,Cemento COBOCE IP-30 50kg,47.74,19,3600,85.0,6.5,2,40
+Medina,Alambre de Amarre Nro 16 (kg),15.25,235,1800,45.0,2.1,2,25
+Medina,Fierro Corrugado 1/2 pulg 12m,69.56,150,2400,120.0,9.0,3,30
+Medina,Tuberia PVC Tigre Desague 2 pulg 6m,35.27,221,960,70.0,4.8,4,15
+Medina,Clavos Calamina 2.5 pulg (kg),15.9,220,1400,40.0,2.4,2,20
+Sol de Septiembre,Yeso Cochabamba Bolsa 35kg,20.92,245,4200,60.0,3.2,2,50
+Sol de Septiembre,Fierro Corrugado 3/8 pulg 12m,44.27,158,3000,100.0,5.5,3,35
+Sol de Septiembre,Alambre de Amarre Nro 16 (kg),15.21,75,1800,45.0,2.1,2,25
+Sol de Septiembre,Tuberia PVC Tigre Desague 2 pulg 6m,32.82,64,960,70.0,4.8,4,15
+Sol de Septiembre,Cemento COBOCE IP-30 50kg,48.37,188,3600,85.0,6.5,2,40
+Comercial Deco Hogar,Fierro Corrugado 3/8 pulg 12m,40.61,85,3000,100.0,5.5,3,35
+Comercial Deco Hogar,Fierro Corrugado 1/2 pulg 12m,74.57,257,2400,120.0,9.0,3,30
+Comercial Deco Hogar,Alambre de Amarre Nro 16 (kg),14.68,91,1800,45.0,2.1,2,25
+Comercial Deco Hogar,Clavos Calamina 2.5 pulg (kg),16.36,278,1400,40.0,2.4,2,20
+Comercial Deco Hogar,Yeso Cochabamba Bolsa 35kg,20.3,178,4200,60.0,3.2,2,50
+Comercial Deco Hogar,Pintura Latex Monopol 18L Blanco,300.55,168,360,90.0,28.0,4,8
+Comercial Deco Hogar,Cemento COBOCE IP-30 50kg,49.53,274,3600,85.0,6.5,2,40
+Orellana,Alambre de Amarre Nro 16 (kg),14.79,28,1800,45.0,2.1,2,25
+Orellana,Yeso Cochabamba Bolsa 35kg,21.45,150,4200,60.0,3.2,2,50
+Orellana,Cemento COBOCE IP-30 50kg,51.7,311,3600,85.0,6.5,2,40
+Orellana,Fierro Corrugado 3/8 pulg 12m,43.32,41,3000,100.0,5.5,3,35
+Orellana,Pintura Latex Monopol 18L Blanco,316.21,102,360,90.0,28.0,4,8
+Orellana,Tuberia PVC Tigre Desague 2 pulg 6m,34.44,209,960,70.0,4.8,4,15
+Orellana,Clavos Calamina 2.5 pulg (kg),15.48,139,1400,40.0,2.4,2,20
+Orellana,Fierro Corrugado 1/2 pulg 12m,68.67,71,2400,120.0,9.0,3,30
+JT,Cemento COBOCE IP-30 50kg,50.09,225,3600,85.0,6.5,2,40
+JT,Yeso Cochabamba Bolsa 35kg,21.21,256,4200,60.0,3.2,2,50
+JT,Fierro Corrugado 3/8 pulg 12m,44.83,46,3000,100.0,5.5,3,35
+JT,Tuberia PVC Tigre Desague 2 pulg 6m,35.18,280,960,70.0,4.8,4,15
+JT,Fierro Corrugado 1/2 pulg 12m,70.19,181,2400,120.0,9.0,3,30
+JT,Alambre de Amarre Nro 16 (kg),15.51,259,1800,45.0,2.1,2,25
+Cerbol,Clavos Calamina 2.5 pulg (kg),16.37,113,1400,40.0,2.4,2,20
+Cerbol,Fierro Corrugado 1/2 pulg 12m,76.67,157,2400,120.0,9.0,3,30
+Cerbol,Yeso Cochabamba Bolsa 35kg,21.36,130,4200,60.0,3.2,2,50
+Cerbol,Alambre de Amarre Nro 16 (kg),15.41,167,1800,45.0,2.1,2,25
+Cerbol,Fierro Corrugado 3/8 pulg 12m,44.31,121,3000,100.0,5.5,3,35
+Cerbol,Pintura Latex Monopol 18L Blanco,320.18,265,360,90.0,28.0,4,8
+Cerbol,Tuberia PVC Tigre Desague 2 pulg 6m,33.59,193,960,70.0,4.8,4,15
+Cerbol,Cemento COBOCE IP-30 50kg,49.34,155,3600,85.0,6.5,2,40
+Feprom Solutions,Fierro Corrugado 1/2 pulg 12m,76.65,89,2400,120.0,9.0,3,30
+Feprom Solutions,Alambre de Amarre Nro 16 (kg),14.28,162,1800,45.0,2.1,2,25
+Feprom Solutions,Clavos Calamina 2.5 pulg (kg),17.03,55,1400,40.0,2.4,2,20
+Feprom Solutions,Tuberia PVC Tigre Desague 2 pulg 6m,33.71,241,960,70.0,4.8,4,15
+Feprom Solutions,Yeso Cochabamba Bolsa 35kg,21.6,260,4200,60.0,3.2,2,50
+Feprom Solutions,Pintura Latex Monopol 18L Blanco,302.46,290,360,90.0,28.0,4,8
+Feprom Solutions,Fierro Corrugado 3/8 pulg 12m,41.76,302,3000,100.0,5.5,3,35
+Milo,Fierro Corrugado 3/8 pulg 12m,43.79,286,3000,100.0,5.5,3,35
+Milo,Cemento COBOCE IP-30 50kg,47.39,134,3600,85.0,6.5,2,40
+Milo,Alambre de Amarre Nro 16 (kg),13.87,226,1800,45.0,2.1,2,25
+Milo,Clavos Calamina 2.5 pulg (kg),15.83,256,1400,40.0,2.4,2,20
+Milo,Fierro Corrugado 1/2 pulg 12m,69.27,85,2400,120.0,9.0,3,30
+Milo,Tuberia PVC Tigre Desague 2 pulg 6m,32.32,296,960,70.0,4.8,4,15
+Milo,Pintura Latex Monopol 18L Blanco,330.88,95,360,90.0,28.0,4,8
+F & V,Pintura Latex Monopol 18L Blanco,328.28,60,360,90.0,28.0,4,8
+F & V,Yeso Cochabamba Bolsa 35kg,21.59,133,4200,60.0,3.2,2,50
+F & V,Clavos Calamina 2.5 pulg (kg),16.23,34,1400,40.0,2.4,2,20
+F & V,Fierro Corrugado 1/2 pulg 12m,76.29,104,2400,120.0,9.0,3,30
+F & V,Fierro Corrugado 3/8 pulg 12m,42.51,105,3000,100.0,5.5,3,35
+F & V,Alambre de Amarre Nro 16 (kg),15.4,33,1800,45.0,2.1,2,25
+F & V,Tuberia PVC Tigre Desague 2 pulg 6m,36.37,218,960,70.0,4.8,4,15
+F & V,Cemento COBOCE IP-30 50kg,50.66,110,3600,85.0,6.5,2,40
+Marcelo,Cemento COBOCE IP-30 50kg,48.72,293,3600,85.0,6.5,2,40
+Marcelo,Pintura Latex Monopol 18L Blanco,314.0,83,360,90.0,28.0,4,8
+Marcelo,Fierro Corrugado 3/8 pulg 12m,44.72,254,3000,100.0,5.5,3,35
+Marcelo,Alambre de Amarre Nro 16 (kg),14.25,72,1800,45.0,2.1,2,25
+Marcelo,Tuberia PVC Tigre Desague 2 pulg 6m,33.65,249,960,70.0,4.8,4,15
+Marcelo,Fierro Corrugado 1/2 pulg 12m,74.0,110,2400,120.0,9.0,3,30
+Marcelo,Clavos Calamina 2.5 pulg (kg),15.23,187,1400,40.0,2.4,2,20
+San Carlos,Yeso Cochabamba Bolsa 35kg,20.17,63,4200,60.0,3.2,2,50
+San Carlos,Fierro Corrugado 1/2 pulg 12m,70.0,86,2400,120.0,9.0,3,30
+San Carlos,Alambre de Amarre Nro 16 (kg),14.61,142,1800,45.0,2.1,2,25
+San Carlos,Pintura Latex Monopol 18L Blanco,294.75,211,360,90.0,28.0,4,8
+San Carlos,Clavos Calamina 2.5 pulg (kg),15.65,151,1400,40.0,2.4,2,20
+San Carlos,Fierro Corrugado 3/8 pulg 12m,45.24,169,3000,100.0,5.5,3,35
+San Carlos,Tuberia PVC Tigre Desague 2 pulg 6m,34.68,308,960,70.0,4.8,4,15
+Urkupiñita,Alambre de Amarre Nro 16 (kg),14.94,253,1800,45.0,2.1,2,25
+Urkupiñita,Clavos Calamina 2.5 pulg (kg),15.79,222,1400,40.0,2.4,2,20
+Urkupiñita,Fierro Corrugado 3/8 pulg 12m,43.87,174,3000,100.0,5.5,3,35
+Urkupiñita,Fierro Corrugado 1/2 pulg 12m,74.36,166,2400,120.0,9.0,3,30
+Urkupiñita,Cemento COBOCE IP-30 50kg,48.21,128,3600,85.0,6.5,2,40
+La Casa del Ceramiquista,Fierro Corrugado 3/8 pulg 12m,43.95,256,3000,100.0,5.5,3,35
+La Casa del Ceramiquista,Yeso Cochabamba Bolsa 35kg,21.86,126,4200,60.0,3.2,2,50
+La Casa del Ceramiquista,Fierro Corrugado 1/2 pulg 12m,74.98,320,2400,120.0,9.0,3,30
+La Casa del Ceramiquista,Tuberia PVC Tigre Desague 2 pulg 6m,35.86,56,960,70.0,4.8,4,15
+La Casa del Ceramiquista,Pintura Latex Monopol 18L Blanco,314.05,285,360,90.0,28.0,4,8
+La Casa del Ceramiquista,Clavos Calamina 2.5 pulg (kg),16.55,54,1400,40.0,2.4,2,20
+Carmen,Cemento COBOCE IP-30 50kg,49.41,91,3600,85.0,6.5,2,40
+Carmen,Tuberia PVC Tigre Desague 2 pulg 6m,32.97,281,960,70.0,4.8,4,15
+Carmen,Alambre de Amarre Nro 16 (kg),14.54,120,1800,45.0,2.1,2,25
+Carmen,Clavos Calamina 2.5 pulg (kg),16.58,265,1400,40.0,2.4,2,20
+Carmen,Fierro Corrugado 1/2 pulg 12m,69.19,276,2400,120.0,9.0,3,30
+Ferreteria Colombus,Cemento COBOCE IP-30 50kg,49.99,172,3600,85.0,6.5,2,40
+Ferreteria Colombus,Yeso Cochabamba Bolsa 35kg,21.77,217,4200,60.0,3.2,2,50
+Ferreteria Colombus,Fierro Corrugado 1/2 pulg 12m,70.6,16,2400,120.0,9.0,3,30
+Ferreteria Colombus,Alambre de Amarre Nro 16 (kg),15.07,311,1800,45.0,2.1,2,25
+Ferreteria Colombus,Tuberia PVC Tigre Desague 2 pulg 6m,32.6,231,960,70.0,4.8,4,15
+Ferreteria Colombus,Clavos Calamina 2.5 pulg (kg),15.86,47,1400,40.0,2.4,2,20
+Ferreteria Colombus,Pintura Latex Monopol 18L Blanco,314.63,45,360,90.0,28.0,4,8
+Ferreteria Colombus,Fierro Corrugado 3/8 pulg 12m,45.14,50,3000,100.0,5.5,3,35
+Ferretería Danny,Cemento COBOCE IP-30 50kg,51.85,210,3600,85.0,6.5,2,40
+Ferretería Danny,Fierro Corrugado 3/8 pulg 12m,42.66,208,3000,100.0,5.5,3,35
+Ferretería Danny,Yeso Cochabamba Bolsa 35kg,20.9,291,4200,60.0,3.2,2,50
+Ferretería Danny,Fierro Corrugado 1/2 pulg 12m,69.55,193,2400,120.0,9.0,3,30
+Ferretería Danny,Alambre de Amarre Nro 16 (kg),13.98,290,1800,45.0,2.1,2,25
+Ferretería Danny,Tuberia PVC Tigre Desague 2 pulg 6m,33.9,80,960,70.0,4.8,4,15
+Ferretería Danny,Clavos Calamina 2.5 pulg (kg),16.6,129,1400,40.0,2.4,2,20
+Ferretería Danny,Pintura Latex Monopol 18L Blanco,325.56,26,360,90.0,28.0,4,8
+Ferretería Vigabriel,Pintura Latex Monopol 18L Blanco,325.13,141,360,90.0,28.0,4,8
+Ferretería Vigabriel,Clavos Calamina 2.5 pulg (kg),16.08,94,1400,40.0,2.4,2,20
+Ferretería Vigabriel,Tuberia PVC Tigre Desague 2 pulg 6m,33.42,72,960,70.0,4.8,4,15
+Ferretería Vigabriel,Alambre de Amarre Nro 16 (kg),13.83,229,1800,45.0,2.1,2,25
+Ferretería Vigabriel,Yeso Cochabamba Bolsa 35kg,21.5,23,4200,60.0,3.2,2,50
+Ferretería Vigabriel,Fierro Corrugado 3/8 pulg 12m,41.6,49,3000,100.0,5.5,3,35
+Ferretería Vigabriel,Fierro Corrugado 1/2 pulg 12m,69.27,32,2400,120.0,9.0,3,30
+Ferretería Edyar,Cemento COBOCE IP-30 50kg,50.47,43,3600,85.0,6.5,2,40
+Ferretería Edyar,Fierro Corrugado 1/2 pulg 12m,69.61,163,2400,120.0,9.0,3,30
+Ferretería Edyar,Clavos Calamina 2.5 pulg (kg),15.65,309,1400,40.0,2.4,2,20
+Ferretería Edyar,Pintura Latex Monopol 18L Blanco,306.36,179,360,90.0,28.0,4,8
+Ferretería Edyar,Yeso Cochabamba Bolsa 35kg,20.55,88,4200,60.0,3.2,2,50
+Ferretería Edyar,Tuberia PVC Tigre Desague 2 pulg 6m,36.32,281,960,70.0,4.8,4,15
+Ferretería Edyar,Alambre de Amarre Nro 16 (kg),14.16,168,1800,45.0,2.1,2,25
+Ferretería Edyar,Fierro Corrugado 3/8 pulg 12m,41.78,300,3000,100.0,5.5,3,35
+Almanza,Tuberia PVC Tigre Desague 2 pulg 6m,35.04,283,960,70.0,4.8,4,15
+Almanza,Alambre de Amarre Nro 16 (kg),14.33,228,1800,45.0,2.1,2,25
+Almanza,Yeso Cochabamba Bolsa 35kg,20.98,168,4200,60.0,3.2,2,50
+Almanza,Cemento COBOCE IP-30 50kg,48.27,290,3600,85.0,6.5,2,40
+Almanza,Fierro Corrugado 3/8 pulg 12m,42.79,130,3000,100.0,5.5,3,35
+Almanza,Clavos Calamina 2.5 pulg (kg),15.78,88,1400,40.0,2.4,2,20
+Campero,Cemento COBOCE IP-30 50kg,47.26,55,3600,85.0,6.5,2,40
+Campero,Alambre de Amarre Nro 16 (kg),15.38,204,1800,45.0,2.1,2,25
+Campero,Yeso Cochabamba Bolsa 35kg,20.18,112,4200,60.0,3.2,2,50
+Campero,Clavos Calamina 2.5 pulg (kg),15.3,208,1400,40.0,2.4,2,20
+Campero,Fierro Corrugado 1/2 pulg 12m,74.22,35,2400,120.0,9.0,3,30
+Campero,Tuberia PVC Tigre Desague 2 pulg 6m,35.86,111,960,70.0,4.8,4,15
+Campero,Pintura Latex Monopol 18L Blanco,324.43,315,360,90.0,28.0,4,8
+Campero,Fierro Corrugado 3/8 pulg 12m,44.07,301,3000,100.0,5.5,3,35
+Viaducto,Pintura Latex Monopol 18L Blanco,329.36,75,360,90.0,28.0,4,8
+Viaducto,Fierro Corrugado 1/2 pulg 12m,74.85,260,2400,120.0,9.0,3,30
+Viaducto,Fierro Corrugado 3/8 pulg 12m,45.04,119,3000,100.0,5.5,3,35
+Viaducto,Clavos Calamina 2.5 pulg (kg),15.96,137,1400,40.0,2.4,2,20
+Viaducto,Cemento COBOCE IP-30 50kg,49.29,159,3600,85.0,6.5,2,40
+Viaducto,Yeso Cochabamba Bolsa 35kg,20.91,288,4200,60.0,3.2,2,50
+LU,Alambre de Amarre Nro 16 (kg),15.17,255,1800,45.0,2.1,2,25
+LU,Fierro Corrugado 3/8 pulg 12m,44.26,178,3000,100.0,5.5,3,35
+LU,Tuberia PVC Tigre Desague 2 pulg 6m,36.03,204,960,70.0,4.8,4,15
+LU,Pintura Latex Monopol 18L Blanco,306.14,38,360,90.0,28.0,4,8
+LU,Yeso Cochabamba Bolsa 35kg,21.37,128,4200,60.0,3.2,2,50
+LU,Fierro Corrugado 1/2 pulg 12m,74.8,23,2400,120.0,9.0,3,30
+LU,Cemento COBOCE IP-30 50kg,47.59,314,3600,85.0,6.5,2,40
+Melina,Alambre de Amarre Nro 16 (kg),14.73,187,1800,45.0,2.1,2,25
+Melina,Fierro Corrugado 1/2 pulg 12m,70.62,265,2400,120.0,9.0,3,30
+Melina,Tuberia PVC Tigre Desague 2 pulg 6m,36.24,266,960,70.0,4.8,4,15
+Melina,Fierro Corrugado 3/8 pulg 12m,42.73,195,3000,100.0,5.5,3,35
+Melina,Clavos Calamina 2.5 pulg (kg),15.52,294,1400,40.0,2.4,2,20
+Melina,Yeso Cochabamba Bolsa 35kg,21.18,292,4200,60.0,3.2,2,50
+Melina,Cemento COBOCE IP-30 50kg,51.84,45,3600,85.0,6.5,2,40
+Melina,Pintura Latex Monopol 18L Blanco,313.99,53,360,90.0,28.0,4,8
+El Rey,Cemento COBOCE IP-30 50kg,50.19,19,3600,85.0,6.5,2,40
+El Rey,Yeso Cochabamba Bolsa 35kg,20.5,248,4200,60.0,3.2,2,50
+El Rey,Fierro Corrugado 1/2 pulg 12m,71.62,262,2400,120.0,9.0,3,30
+El Rey,Clavos Calamina 2.5 pulg (kg),16.47,23,1400,40.0,2.4,2,20
+El Rey,Pintura Latex Monopol 18L Blanco,294.75,297,360,90.0,28.0,4,8
+Ariel,Cemento COBOCE IP-30 50kg,46.7,64,3600,85.0,6.5,2,40
+Ariel,Pintura Latex Monopol 18L Blanco,314.01,138,360,90.0,28.0,4,8
+Ariel,Alambre de Amarre Nro 16 (kg),14.11,284,1800,45.0,2.1,2,25
+Ariel,Fierro Corrugado 3/8 pulg 12m,41.66,196,3000,100.0,5.5,3,35
+Ariel,Clavos Calamina 2.5 pulg (kg),15.71,218,1400,40.0,2.4,2,20
+Ariel,Tuberia PVC Tigre Desague 2 pulg 6m,32.62,222,960,70.0,4.8,4,15
+Ariel,Fierro Corrugado 1/2 pulg 12m,72.37,139,2400,120.0,9.0,3,30
+Ariel,Yeso Cochabamba Bolsa 35kg,22.45,130,4200,60.0,3.2,2,50
+Cardozo,Fierro Corrugado 1/2 pulg 12m,71.66,258,2400,120.0,9.0,3,30
+Cardozo,Clavos Calamina 2.5 pulg (kg),15.31,19,1400,40.0,2.4,2,20
+Cardozo,Tuberia PVC Tigre Desague 2 pulg 6m,35.17,57,960,70.0,4.8,4,15
+Cardozo,Cemento COBOCE IP-30 50kg,48.98,237,3600,85.0,6.5,2,40
+Cardozo,Alambre de Amarre Nro 16 (kg),14.9,184,1800,45.0,2.1,2,25
+Cardozo,Pintura Latex Monopol 18L Blanco,315.55,63,360,90.0,28.0,4,8
+Cardozo,Fierro Corrugado 3/8 pulg 12m,44.94,36,3000,100.0,5.5,3,35
+RHENN,Yeso Cochabamba Bolsa 35kg,20.07,53,4200,60.0,3.2,2,50
+RHENN,Tuberia PVC Tigre Desague 2 pulg 6m,35.09,158,960,70.0,4.8,4,15
+RHENN,Clavos Calamina 2.5 pulg (kg),16.93,303,1400,40.0,2.4,2,20
+RHENN,Alambre de Amarre Nro 16 (kg),14.92,106,1800,45.0,2.1,2,25
+RHENN,Pintura Latex Monopol 18L Blanco,329.05,176,360,90.0,28.0,4,8
+RHENN,Fierro Corrugado 1/2 pulg 12m,68.54,121,2400,120.0,9.0,3,30
+Veizaga,Tuberia PVC Tigre Desague 2 pulg 6m,35.71,214,960,70.0,4.8,4,15
+Veizaga,Cemento COBOCE IP-30 50kg,50.02,291,3600,85.0,6.5,2,40
+Veizaga,Fierro Corrugado 3/8 pulg 12m,42.07,86,3000,100.0,5.5,3,35
+Veizaga,Fierro Corrugado 1/2 pulg 12m,75.23,55,2400,120.0,9.0,3,30
+Veizaga,Alambre de Amarre Nro 16 (kg),14.65,192,1800,45.0,2.1,2,25
+Veizaga,Clavos Calamina 2.5 pulg (kg),15.3,238,1400,40.0,2.4,2,20
+La Paceña,Fierro Corrugado 1/2 pulg 12m,68.66,154,2400,120.0,9.0,3,30
+La Paceña,Fierro Corrugado 3/8 pulg 12m,44.37,245,3000,100.0,5.5,3,35
+La Paceña,Alambre de Amarre Nro 16 (kg),14.63,197,1800,45.0,2.1,2,25
+La Paceña,Clavos Calamina 2.5 pulg (kg),16.26,207,1400,40.0,2.4,2,20
+La Paceña,Yeso Cochabamba Bolsa 35kg,21.04,314,4200,60.0,3.2,2,50
+La Paceña,Pintura Latex Monopol 18L Blanco,319.08,58,360,90.0,28.0,4,8
+Silvia,Yeso Cochabamba Bolsa 35kg,21.74,93,4200,60.0,3.2,2,50
+Silvia,Clavos Calamina 2.5 pulg (kg),16.62,177,1400,40.0,2.4,2,20
+Silvia,Cemento COBOCE IP-30 50kg,48.17,61,3600,85.0,6.5,2,40
+Silvia,Tuberia PVC Tigre Desague 2 pulg 6m,32.32,172,960,70.0,4.8,4,15
+Silvia,Fierro Corrugado 3/8 pulg 12m,42.64,153,3000,100.0,5.5,3,35
+Silvia,Alambre de Amarre Nro 16 (kg),13.95,59,1800,45.0,2.1,2,25
+Silvia,Fierro Corrugado 1/2 pulg 12m,70.02,244,2400,120.0,9.0,3,30
+Xander,Fierro Corrugado 1/2 pulg 12m,68.51,226,2400,120.0,9.0,3,30
+Xander,Cemento COBOCE IP-30 50kg,48.33,58,3600,85.0,6.5,2,40
+Xander,Tuberia PVC Tigre Desague 2 pulg 6m,35.26,301,960,70.0,4.8,4,15
+Xander,Fierro Corrugado 3/8 pulg 12m,44.99,139,3000,100.0,5.5,3,35
+Xander,Clavos Calamina 2.5 pulg (kg),16.3,101,1400,40.0,2.4,2,20
+Xander,Alambre de Amarre Nro 16 (kg),14.97,101,1800,45.0,2.1,2,25
+Xander,Pintura Latex Monopol 18L Blanco,299.66,169,360,90.0,28.0,4,8
+Xander,Yeso Cochabamba Bolsa 35kg,20.63,89,4200,60.0,3.2,2,50
+Club del Constructor,Fierro Corrugado 3/8 pulg 12m,42.84,54,3000,100.0,5.5,3,35
+Club del Constructor,Yeso Cochabamba Bolsa 35kg,20.86,141,4200,60.0,3.2,2,50
+Club del Constructor,Pintura Latex Monopol 18L Blanco,321.32,268,360,90.0,28.0,4,8
+Club del Constructor,Tuberia PVC Tigre Desague 2 pulg 6m,34.72,115,960,70.0,4.8,4,15
+Club del Constructor,Clavos Calamina 2.5 pulg (kg),16.08,84,1400,40.0,2.4,2,20
+Ferretería Chapaco,Cemento COBOCE IP-30 50kg,48.02,319,3600,85.0,6.5,2,40
+Ferretería Chapaco,Yeso Cochabamba Bolsa 35kg,20.29,179,4200,60.0,3.2,2,50
+Ferretería Chapaco,Fierro Corrugado 3/8 pulg 12m,43.45,117,3000,100.0,5.5,3,35
+Ferretería Chapaco,Alambre de Amarre Nro 16 (kg),14.61,105,1800,45.0,2.1,2,25
+Ferretería Chapaco,Tuberia PVC Tigre Desague 2 pulg 6m,36.24,178,960,70.0,4.8,4,15
+Ferretería Chapaco,Fierro Corrugado 1/2 pulg 12m,70.92,266,2400,120.0,9.0,3,30
+Ferretería Chapaco,Clavos Calamina 2.5 pulg (kg),17.06,139,1400,40.0,2.4,2,20
+FerroTodo,Tuberia PVC Tigre Desague 2 pulg 6m,34.72,294,960,70.0,4.8,4,15
+FerroTodo,Fierro Corrugado 3/8 pulg 12m,41.29,296,3000,100.0,5.5,3,35
+FerroTodo,Yeso Cochabamba Bolsa 35kg,20.02,251,4200,60.0,3.2,2,50
+FerroTodo,Pintura Latex Monopol 18L Blanco,329.58,122,360,90.0,28.0,4,8
+FerroTodo,Cemento COBOCE IP-30 50kg,48.63,164,3600,85.0,6.5,2,40
+FerroTodo,Alambre de Amarre Nro 16 (kg),15.22,50,1800,45.0,2.1,2,25
+FerroTodo,Clavos Calamina 2.5 pulg (kg),16.77,224,1400,40.0,2.4,2,20
+DISMAT,Fierro Corrugado 3/8 pulg 12m,44.4,52,3000,100.0,5.5,3,35
+DISMAT,Clavos Calamina 2.5 pulg (kg),16.06,260,1400,40.0,2.4,2,20
+DISMAT,Pintura Latex Monopol 18L Blanco,316.16,288,360,90.0,28.0,4,8
+DISMAT,Fierro Corrugado 1/2 pulg 12m,72.78,229,2400,120.0,9.0,3,30
+DISMAT,Tuberia PVC Tigre Desague 2 pulg 6m,34.52,199,960,70.0,4.8,4,15
+DISMAT,Yeso Cochabamba Bolsa 35kg,21.72,289,4200,60.0,3.2,2,50
+DISMAT,Cemento COBOCE IP-30 50kg,49.53,58,3600,85.0,6.5,2,40
+DISMAT,Alambre de Amarre Nro 16 (kg),13.97,142,1800,45.0,2.1,2,25
+San Marcos,Fierro Corrugado 3/8 pulg 12m,40.92,65,3000,100.0,5.5,3,35
+San Marcos,Clavos Calamina 2.5 pulg (kg),15.7,276,1400,40.0,2.4,2,20
+San Marcos,Alambre de Amarre Nro 16 (kg),15.07,300,1800,45.0,2.1,2,25
+San Marcos,Cemento COBOCE IP-30 50kg,49.45,309,3600,85.0,6.5,2,40
+San Marcos,Yeso Cochabamba Bolsa 35kg,20.51,206,4200,60.0,3.2,2,50
+San Marcos,Fierro Corrugado 1/2 pulg 12m,71.78,316,2400,120.0,9.0,3,30
+San Marcos,Pintura Latex Monopol 18L Blanco,320.18,92,360,90.0,28.0,4,8
+Ferretería Gross Basta,Cemento COBOCE IP-30 50kg,50.91,87,3600,85.0,6.5,2,40
+Ferretería Gross Basta,Yeso Cochabamba Bolsa 35kg,20.83,190,4200,60.0,3.2,2,50
+Ferretería Gross Basta,Pintura Latex Monopol 18L Blanco,311.44,120,360,90.0,28.0,4,8
+Ferretería Gross Basta,Fierro Corrugado 3/8 pulg 12m,43.03,193,3000,100.0,5.5,3,35
+Ferretería Gross Basta,Tuberia PVC Tigre Desague 2 pulg 6m,34.24,239,960,70.0,4.8,4,15
+Ferretería Gross Basta,Clavos Calamina 2.5 pulg (kg),16.59,246,1400,40.0,2.4,2,20
+Ferretería Gross Basta,Alambre de Amarre Nro 16 (kg),14.33,168,1800,45.0,2.1,2,25
+Table Sur,Fierro Corrugado 1/2 pulg 12m,76.43,139,2400,120.0,9.0,3,30
+Table Sur,Cemento COBOCE IP-30 50kg,49.08,297,3600,85.0,6.5,2,40
+Table Sur,Fierro Corrugado 3/8 pulg 12m,41.19,301,3000,100.0,5.5,3,35
+Table Sur,Tuberia PVC Tigre Desague 2 pulg 6m,34.04,251,960,70.0,4.8,4,15
+Table Sur,Pintura Latex Monopol 18L Blanco,303.13,222,360,90.0,28.0,4,8
+FerroElectric,Fierro Corrugado 3/8 pulg 12m,44.14,116,3000,100.0,5.5,3,35
+FerroElectric,Clavos Calamina 2.5 pulg (kg),16.06,234,1400,40.0,2.4,2,20
+FerroElectric,Tuberia PVC Tigre Desague 2 pulg 6m,33.89,124,960,70.0,4.8,4,15
+FerroElectric,Yeso Cochabamba Bolsa 35kg,20.47,47,4200,60.0,3.2,2,50
+FerroElectric,Alambre de Amarre Nro 16 (kg),14.78,289,1800,45.0,2.1,2,25
+FerroElectric,Cemento COBOCE IP-30 50kg,47.16,181,3600,85.0,6.5,2,40
+Rhalim,Pintura Latex Monopol 18L Blanco,308.96,215,360,90.0,28.0,4,8
+Rhalim,Cemento COBOCE IP-30 50kg,49.49,193,3600,85.0,6.5,2,40
+Rhalim,Fierro Corrugado 3/8 pulg 12m,42.17,249,3000,100.0,5.5,3,35
+Rhalim,Yeso Cochabamba Bolsa 35kg,21.51,167,4200,60.0,3.2,2,50
+Rhalim,Clavos Calamina 2.5 pulg (kg),16.96,317,1400,40.0,2.4,2,20
+Rhalim,Alambre de Amarre Nro 16 (kg),13.92,83,1800,45.0,2.1,2,25
+Frenzebol,Fierro Corrugado 1/2 pulg 12m,72.81,229,2400,120.0,9.0,3,30
+Frenzebol,Pintura Latex Monopol 18L Blanco,316.69,309,360,90.0,28.0,4,8
+Frenzebol,Fierro Corrugado 3/8 pulg 12m,42.33,110,3000,100.0,5.5,3,35
+Frenzebol,Cemento COBOCE IP-30 50kg,48.91,290,3600,85.0,6.5,2,40
+Frenzebol,Tuberia PVC Tigre Desague 2 pulg 6m,35.13,103,960,70.0,4.8,4,15
+Frenzebol,Yeso Cochabamba Bolsa 35kg,21.35,265,4200,60.0,3.2,2,50
+Frenzebol,Alambre de Amarre Nro 16 (kg),14.28,110,1800,45.0,2.1,2,25
+Maconal,Pintura Latex Monopol 18L Blanco,301.76,211,360,90.0,28.0,4,8
+Maconal,Alambre de Amarre Nro 16 (kg),15.45,273,1800,45.0,2.1,2,25
+Maconal,Cemento COBOCE IP-30 50kg,49.88,224,3600,85.0,6.5,2,40
+Maconal,Fierro Corrugado 3/8 pulg 12m,43.87,227,3000,100.0,5.5,3,35
+Maconal,Clavos Calamina 2.5 pulg (kg),16.56,242,1400,40.0,2.4,2,20
+Maconal,Fierro Corrugado 1/2 pulg 12m,72.62,57,2400,120.0,9.0,3,30
+Maconal,Yeso Cochabamba Bolsa 35kg,21.37,127,4200,60.0,3.2,2,50
+Appliance Center,Cemento COBOCE IP-30 50kg,49.37,268,3600,85.0,6.5,2,40
+Appliance Center,Fierro Corrugado 3/8 pulg 12m,43.18,72,3000,100.0,5.5,3,35
+Appliance Center,Fierro Corrugado 1/2 pulg 12m,73.35,152,2400,120.0,9.0,3,30
+Appliance Center,Alambre de Amarre Nro 16 (kg),15.12,202,1800,45.0,2.1,2,25
+Appliance Center,Tuberia PVC Tigre Desague 2 pulg 6m,34.51,36,960,70.0,4.8,4,15
+Appliance Center,Pintura Latex Monopol 18L Blanco,322.77,240,360,90.0,28.0,4,8
+Appliance Center,Clavos Calamina 2.5 pulg (kg),16.25,232,1400,40.0,2.4,2,20
+Dismac,Yeso Cochabamba Bolsa 35kg,20.83,59,4200,60.0,3.2,2,50
+Dismac,Fierro Corrugado 3/8 pulg 12m,42.61,75,3000,100.0,5.5,3,35
+Dismac,Cemento COBOCE IP-30 50kg,50.59,136,3600,85.0,6.5,2,40
+Dismac,Pintura Latex Monopol 18L Blanco,302.31,316,360,90.0,28.0,4,8
+Dismac,Tuberia PVC Tigre Desague 2 pulg 6m,35.11,234,960,70.0,4.8,4,15
+Doctor Calamina,Fierro Corrugado 3/8 pulg 12m,42.16,158,3000,100.0,5.5,3,35
+Doctor Calamina,Tuberia PVC Tigre Desague 2 pulg 6m,34.74,101,960,70.0,4.8,4,15
+Doctor Calamina,Fierro Corrugado 1/2 pulg 12m,71.2,164,2400,120.0,9.0,3,30
+Doctor Calamina,Clavos Calamina 2.5 pulg (kg),15.76,151,1400,40.0,2.4,2,20
+Doctor Calamina,Cemento COBOCE IP-30 50kg,51.62,278,3600,85.0,6.5,2,40
+Doctor Calamina,Pintura Latex Monopol 18L Blanco,331.16,63,360,90.0,28.0,4,8
+Isana,Tuberia PVC Tigre Desague 2 pulg 6m,32.9,179,960,70.0,4.8,4,15
+Isana,Cemento COBOCE IP-30 50kg,50.9,216,3600,85.0,6.5,2,40
+Isana,Fierro Corrugado 3/8 pulg 12m,42.87,310,3000,100.0,5.5,3,35
+Isana,Fierro Corrugado 1/2 pulg 12m,73.86,227,2400,120.0,9.0,3,30
+Isana,Alambre de Amarre Nro 16 (kg),14.43,53,1800,45.0,2.1,2,25
+Isana,Pintura Latex Monopol 18L Blanco,318.07,62,360,90.0,28.0,4,8
+Ferretería Los Angeles,Alambre de Amarre Nro 16 (kg),15.05,249,1800,45.0,2.1,2,25
+Ferretería Los Angeles,Clavos Calamina 2.5 pulg (kg),16.42,198,1400,40.0,2.4,2,20
+Ferretería Los Angeles,Fierro Corrugado 3/8 pulg 12m,44.71,288,3000,100.0,5.5,3,35
+Ferretería Los Angeles,Yeso Cochabamba Bolsa 35kg,20.95,234,4200,60.0,3.2,2,50
+Ferretería Los Angeles,Pintura Latex Monopol 18L Blanco,325.18,268,360,90.0,28.0,4,8
+Ferretería Los Angeles,Fierro Corrugado 1/2 pulg 12m,70.72,160,2400,120.0,9.0,3,30
+Ferretería Los Angeles,Cemento COBOCE IP-30 50kg,48.04,310,3600,85.0,6.5,2,40
+Ferretería Los Angeles,Tuberia PVC Tigre Desague 2 pulg 6m,32.83,263,960,70.0,4.8,4,15
+Importadora Juan,Cemento COBOCE IP-30 50kg,48.64,15,3600,85.0,6.5,2,40
+Importadora Juan,Pintura Latex Monopol 18L Blanco,331.4,234,360,90.0,28.0,4,8
+Importadora Juan,Tuberia PVC Tigre Desague 2 pulg 6m,33.13,82,960,70.0,4.8,4,15
+Importadora Juan,Yeso Cochabamba Bolsa 35kg,22.17,169,4200,60.0,3.2,2,50
+Importadora Juan,Clavos Calamina 2.5 pulg (kg),15.51,155,1400,40.0,2.4,2,20
+Importadora Juan,Alambre de Amarre Nro 16 (kg),13.94,199,1800,45.0,2.1,2,25
+Importadora Juan,Fierro Corrugado 3/8 pulg 12m,41.65,205,3000,100.0,5.5,3,35
+Ferreteria Ferroblack,Cemento COBOCE IP-30 50kg,49.89,63,3600,85.0,6.5,2,40
+Ferreteria Ferroblack,Yeso Cochabamba Bolsa 35kg,19.95,259,4200,60.0,3.2,2,50
+Ferreteria Ferroblack,Clavos Calamina 2.5 pulg (kg),15.35,318,1400,40.0,2.4,2,20
+Ferreteria Ferroblack,Fierro Corrugado 3/8 pulg 12m,41.53,242,3000,100.0,5.5,3,35
+Ferreteria Ferroblack,Fierro Corrugado 1/2 pulg 12m,68.48,190,2400,120.0,9.0,3,30
+Ferreteria Ferroblack,Tuberia PVC Tigre Desague 2 pulg 6m,35.63,231,960,70.0,4.8,4,15
+Calaminas,Pintura Latex Monopol 18L Blanco,324.48,67,360,90.0,28.0,4,8
+Calaminas,Cemento COBOCE IP-30 50kg,47.9,168,3600,85.0,6.5,2,40
+Calaminas,Fierro Corrugado 1/2 pulg 12m,69.58,83,2400,120.0,9.0,3,30
+Calaminas,Yeso Cochabamba Bolsa 35kg,21.57,88,4200,60.0,3.2,2,50
+Calaminas,Tuberia PVC Tigre Desague 2 pulg 6m,32.58,303,960,70.0,4.8,4,15
+Calaminas,Fierro Corrugado 3/8 pulg 12m,40.42,99,3000,100.0,5.5,3,35
+Ferretería Trujillo,Clavos Calamina 2.5 pulg (kg),15.37,66,1400,40.0,2.4,2,20
+Ferretería Trujillo,Pintura Latex Monopol 18L Blanco,299.71,78,360,90.0,28.0,4,8
+Ferretería Trujillo,Fierro Corrugado 1/2 pulg 12m,73.49,211,2400,120.0,9.0,3,30
+Ferretería Trujillo,Tuberia PVC Tigre Desague 2 pulg 6m,33.73,234,960,70.0,4.8,4,15
+Ferretería Trujillo,Yeso Cochabamba Bolsa 35kg,20.74,86,4200,60.0,3.2,2,50
+Ferretería Trujillo,Fierro Corrugado 3/8 pulg 12m,41.64,58,3000,100.0,5.5,3,35
+Ferretería Trujillo,Alambre de Amarre Nro 16 (kg),14.21,160,1800,45.0,2.1,2,25
+Ferretería Trujillo,Cemento COBOCE IP-30 50kg,50.61,28,3600,85.0,6.5,2,40
+Ferretería La Económica,Yeso Cochabamba Bolsa 35kg,20.69,42,4200,60.0,3.2,2,50
+Ferretería La Económica,Alambre de Amarre Nro 16 (kg),15.14,137,1800,45.0,2.1,2,25
+Ferretería La Económica,Tuberia PVC Tigre Desague 2 pulg 6m,34.32,72,960,70.0,4.8,4,15
+Ferretería La Económica,Clavos Calamina 2.5 pulg (kg),15.66,319,1400,40.0,2.4,2,20
+Ferretería La Económica,Fierro Corrugado 1/2 pulg 12m,69.01,21,2400,120.0,9.0,3,30
+Ferretería La Económica,Fierro Corrugado 3/8 pulg 12m,45.41,177,3000,100.0,5.5,3,35
+Ferretería La Económica,Pintura Latex Monopol 18L Blanco,299.41,306,360,90.0,28.0,4,8
+Ferretería Nuevo Tiempo,Clavos Calamina 2.5 pulg (kg),15.23,125,1400,40.0,2.4,2,20
+Ferretería Nuevo Tiempo,Alambre de Amarre Nro 16 (kg),13.84,45,1800,45.0,2.1,2,25
+Ferretería Nuevo Tiempo,Pintura Latex Monopol 18L Blanco,329.79,218,360,90.0,28.0,4,8
+Ferretería Nuevo Tiempo,Fierro Corrugado 1/2 pulg 12m,72.78,271,2400,120.0,9.0,3,30
+Ferretería Nuevo Tiempo,Yeso Cochabamba Bolsa 35kg,21.88,231,4200,60.0,3.2,2,50
+Ferretería Nuevo Tiempo,Cemento COBOCE IP-30 50kg,50.16,57,3600,85.0,6.5,2,40
+Ferretería Nuevo Tiempo,Fierro Corrugado 3/8 pulg 12m,43.64,290,3000,100.0,5.5,3,35
+Ferretería Nuevo Tiempo,Tuberia PVC Tigre Desague 2 pulg 6m,34.81,157,960,70.0,4.8,4,15
+Representaciones Cortez,Alambre de Amarre Nro 16 (kg),14.71,215,1800,45.0,2.1,2,25
+Representaciones Cortez,Cemento COBOCE IP-30 50kg,49.49,48,3600,85.0,6.5,2,40
+Representaciones Cortez,Pintura Latex Monopol 18L Blanco,306.04,238,360,90.0,28.0,4,8
+Representaciones Cortez,Fierro Corrugado 1/2 pulg 12m,74.71,137,2400,120.0,9.0,3,30
+Representaciones Cortez,Clavos Calamina 2.5 pulg (kg),15.31,59,1400,40.0,2.4,2,20
+Cromo Tecnica Bolivina,Fierro Corrugado 1/2 pulg 12m,68.51,85,2400,120.0,9.0,3,30
+Cromo Tecnica Bolivina,Yeso Cochabamba Bolsa 35kg,21.72,98,4200,60.0,3.2,2,50
+Cromo Tecnica Bolivina,Alambre de Amarre Nro 16 (kg),14.64,192,1800,45.0,2.1,2,25
+Cromo Tecnica Bolivina,Clavos Calamina 2.5 pulg (kg),16.2,147,1400,40.0,2.4,2,20
+Cromo Tecnica Bolivina,Cemento COBOCE IP-30 50kg,47.05,79,3600,85.0,6.5,2,40
+Cromo Tecnica Bolivina,Pintura Latex Monopol 18L Blanco,322.39,152,360,90.0,28.0,4,8
+Cromo Tecnica Bolivina,Tuberia PVC Tigre Desague 2 pulg 6m,35.29,75,960,70.0,4.8,4,15
+Cromo Tecnica Bolivina,Fierro Corrugado 3/8 pulg 12m,44.31,30,3000,100.0,5.5,3,35
+Ferreterías,Tuberia PVC Tigre Desague 2 pulg 6m,34.32,276,960,70.0,4.8,4,15
+Ferreterías,Fierro Corrugado 3/8 pulg 12m,42.21,270,3000,100.0,5.5,3,35
+Ferreterías,Alambre de Amarre Nro 16 (kg),15.27,100,1800,45.0,2.1,2,25
+Ferreterías,Cemento COBOCE IP-30 50kg,48.21,145,3600,85.0,6.5,2,40
+Ferreterías,Pintura Latex Monopol 18L Blanco,323.27,308,360,90.0,28.0,4,8
+Ferreterías,Yeso Cochabamba Bolsa 35kg,21.65,74,4200,60.0,3.2,2,50
+Ferreterías,Clavos Calamina 2.5 pulg (kg),15.64,275,1400,40.0,2.4,2,20
+Ferreteria La Guadalupana,Cemento COBOCE IP-30 50kg,48.82,211,3600,85.0,6.5,2,40
+Ferreteria La Guadalupana,Tuberia PVC Tigre Desague 2 pulg 6m,36.05,106,960,70.0,4.8,4,15
+Ferreteria La Guadalupana,Pintura Latex Monopol 18L Blanco,329.14,33,360,90.0,28.0,4,8
+Ferreteria La Guadalupana,Fierro Corrugado 1/2 pulg 12m,73.18,229,2400,120.0,9.0,3,30
+Ferreteria La Guadalupana,Clavos Calamina 2.5 pulg (kg),15.63,142,1400,40.0,2.4,2,20
+Ferreteria Urkupiña,Clavos Calamina 2.5 pulg (kg),15.63,279,1400,40.0,2.4,2,20
+Ferreteria Urkupiña,Fierro Corrugado 3/8 pulg 12m,45.38,220,3000,100.0,5.5,3,35
+Ferreteria Urkupiña,Cemento COBOCE IP-30 50kg,46.48,253,3600,85.0,6.5,2,40
+Ferreteria Urkupiña,Alambre de Amarre Nro 16 (kg),15.28,174,1800,45.0,2.1,2,25
+Ferreteria Urkupiña,Tuberia PVC Tigre Desague 2 pulg 6m,33.64,298,960,70.0,4.8,4,15
+Ferreteria Urkupiña,Pintura Latex Monopol 18L Blanco,311.49,203,360,90.0,28.0,4,8
+Ferreteria Urkupiña,Yeso Cochabamba Bolsa 35kg,20.46,303,4200,60.0,3.2,2,50
+Ferreteria Urkupiña,Fierro Corrugado 1/2 pulg 12m,75.18,139,2400,120.0,9.0,3,30
+Sidemaq,Clavos Calamina 2.5 pulg (kg),15.25,292,1400,40.0,2.4,2,20
+Sidemaq,Alambre de Amarre Nro 16 (kg),14.38,19,1800,45.0,2.1,2,25
+Sidemaq,Yeso Cochabamba Bolsa 35kg,22.35,15,4200,60.0,3.2,2,50
+Sidemaq,Fierro Corrugado 1/2 pulg 12m,74.96,207,2400,120.0,9.0,3,30
+Sidemaq,Tuberia PVC Tigre Desague 2 pulg 6m,35.76,172,960,70.0,4.8,4,15
+Sidemaq,Cemento COBOCE IP-30 50kg,46.68,286,3600,85.0,6.5,2,40
+Sidemaq,Fierro Corrugado 3/8 pulg 12m,45.39,229,3000,100.0,5.5,3,35
+Sidemaq,Pintura Latex Monopol 18L Blanco,312.8,45,360,90.0,28.0,4,8
+Ferretería Aiquile,Alambre de Amarre Nro 16 (kg),15.33,249,1800,45.0,2.1,2,25
+Ferretería Aiquile,Cemento COBOCE IP-30 50kg,51.75,58,3600,85.0,6.5,2,40
+Ferretería Aiquile,Tuberia PVC Tigre Desague 2 pulg 6m,34.67,273,960,70.0,4.8,4,15
+Ferretería Aiquile,Fierro Corrugado 1/2 pulg 12m,69.55,216,2400,120.0,9.0,3,30
+Ferretería Aiquile,Yeso Cochabamba Bolsa 35kg,20.14,305,4200,60.0,3.2,2,50
+Ferretería Aiquile,Fierro Corrugado 3/8 pulg 12m,40.69,81,3000,100.0,5.5,3,35
+Ferretería Santina,Alambre de Amarre Nro 16 (kg),14.56,134,1800,45.0,2.1,2,25
+Ferretería Santina,Fierro Corrugado 3/8 pulg 12m,40.76,118,3000,100.0,5.5,3,35
+Ferretería Santina,Tuberia PVC Tigre Desague 2 pulg 6m,32.86,314,960,70.0,4.8,4,15
+Ferretería Santina,Yeso Cochabamba Bolsa 35kg,20.22,69,4200,60.0,3.2,2,50
+Ferretería Santina,Clavos Calamina 2.5 pulg (kg),15.52,253,1400,40.0,2.4,2,20
+Ferretería Santina,Fierro Corrugado 1/2 pulg 12m,71.11,76,2400,120.0,9.0,3,30
+Distribuidora Zurita,Yeso Cochabamba Bolsa 35kg,20.35,170,4200,60.0,3.2,2,50
+Distribuidora Zurita,Pintura Latex Monopol 18L Blanco,325.24,35,360,90.0,28.0,4,8
+Distribuidora Zurita,Fierro Corrugado 3/8 pulg 12m,41.47,182,3000,100.0,5.5,3,35
+Distribuidora Zurita,Tuberia PVC Tigre Desague 2 pulg 6m,32.91,142,960,70.0,4.8,4,15
+Distribuidora Zurita,Clavos Calamina 2.5 pulg (kg),17.06,217,1400,40.0,2.4,2,20
+Distribuidora Zurita,Cemento COBOCE IP-30 50kg,49.06,168,3600,85.0,6.5,2,40
+Distribuidora Zurita,Alambre de Amarre Nro 16 (kg),14.23,104,1800,45.0,2.1,2,25
+Ferretería Panchitos,Tuberia PVC Tigre Desague 2 pulg 6m,32.69,67,960,70.0,4.8,4,15
+Ferretería Panchitos,Pintura Latex Monopol 18L Blanco,324.4,86,360,90.0,28.0,4,8
+Ferretería Panchitos,Yeso Cochabamba Bolsa 35kg,20.26,46,4200,60.0,3.2,2,50
+Ferretería Panchitos,Alambre de Amarre Nro 16 (kg),15.22,128,1800,45.0,2.1,2,25
+Ferretería Panchitos,Fierro Corrugado 1/2 pulg 12m,69.53,220,2400,120.0,9.0,3,30
+Ferretería Rogra,Fierro Corrugado 1/2 pulg 12m,70.11,242,2400,120.0,9.0,3,30
+Ferretería Rogra,Alambre de Amarre Nro 16 (kg),15.18,62,1800,45.0,2.1,2,25
+Ferretería Rogra,Tuberia PVC Tigre Desague 2 pulg 6m,35.99,184,960,70.0,4.8,4,15
+Ferretería Rogra,Fierro Corrugado 3/8 pulg 12m,41.0,251,3000,100.0,5.5,3,35
+Ferretería Rogra,Cemento COBOCE IP-30 50kg,46.37,308,3600,85.0,6.5,2,40
+Ferretería Rogra,Yeso Cochabamba Bolsa 35kg,21.04,217,4200,60.0,3.2,2,50
+Ferretería Rogra,Clavos Calamina 2.5 pulg (kg),16.15,210,1400,40.0,2.4,2,20
+Importadora CEMAR,Fierro Corrugado 3/8 pulg 12m,40.55,140,3000,100.0,5.5,3,35
+Importadora CEMAR,Pintura Latex Monopol 18L Blanco,318.58,270,360,90.0,28.0,4,8
+Importadora CEMAR,Fierro Corrugado 1/2 pulg 12m,71.96,296,2400,120.0,9.0,3,30
+Importadora CEMAR,Clavos Calamina 2.5 pulg (kg),16.12,59,1400,40.0,2.4,2,20
+Importadora CEMAR,Tuberia PVC Tigre Desague 2 pulg 6m,33.44,85,960,70.0,4.8,4,15
+Importadora CEMAR,Alambre de Amarre Nro 16 (kg),14.5,284,1800,45.0,2.1,2,25
+Importadora CEMAR,Yeso Cochabamba Bolsa 35kg,20.58,293,4200,60.0,3.2,2,50
+Importadora CEMAR,Cemento COBOCE IP-30 50kg,50.7,210,3600,85.0,6.5,2,40
+Ferreteria La Economica,Pintura Latex Monopol 18L Blanco,301.19,178,360,90.0,28.0,4,8
+Ferreteria La Economica,Alambre de Amarre Nro 16 (kg),14.81,30,1800,45.0,2.1,2,25
+Ferreteria La Economica,Yeso Cochabamba Bolsa 35kg,22.21,158,4200,60.0,3.2,2,50
+Ferreteria La Economica,Fierro Corrugado 3/8 pulg 12m,40.67,256,3000,100.0,5.5,3,35
+Ferreteria La Economica,Tuberia PVC Tigre Desague 2 pulg 6m,34.46,314,960,70.0,4.8,4,15
+Ferreteria La Economica,Fierro Corrugado 1/2 pulg 12m,77.04,96,2400,120.0,9.0,3,30
+Ferreteria La Economica,Clavos Calamina 2.5 pulg (kg),15.39,138,1400,40.0,2.4,2,20
+Ferreteria EMI,Cemento COBOCE IP-30 50kg,47.1,318,3600,85.0,6.5,2,40
+Ferreteria EMI,Tuberia PVC Tigre Desague 2 pulg 6m,33.6,198,960,70.0,4.8,4,15
+Ferreteria EMI,Fierro Corrugado 1/2 pulg 12m,76.3,29,2400,120.0,9.0,3,30
+Ferreteria EMI,Alambre de Amarre Nro 16 (kg),15.0,195,1800,45.0,2.1,2,25
+Ferreteria EMI,Yeso Cochabamba Bolsa 35kg,22.34,303,4200,60.0,3.2,2,50
+Ferreteria EMI,Clavos Calamina 2.5 pulg (kg),15.47,111,1400,40.0,2.4,2,20
+Ferreteria EMI,Pintura Latex Monopol 18L Blanco,325.63,267,360,90.0,28.0,4,8
+Pernos,Fierro Corrugado 3/8 pulg 12m,40.48,259,3000,100.0,5.5,3,35
+Pernos,Yeso Cochabamba Bolsa 35kg,19.95,118,4200,60.0,3.2,2,50
+Pernos,Cemento COBOCE IP-30 50kg,50.77,189,3600,85.0,6.5,2,40
+Pernos,Clavos Calamina 2.5 pulg (kg),16.58,180,1400,40.0,2.4,2,20
+Pernos,Alambre de Amarre Nro 16 (kg),13.88,90,1800,45.0,2.1,2,25
+Pernos,Tuberia PVC Tigre Desague 2 pulg 6m,34.69,87,960,70.0,4.8,4,15
+Pernos,Pintura Latex Monopol 18L Blanco,323.31,284,360,90.0,28.0,4,8
+Ferretería Campero,Fierro Corrugado 1/2 pulg 12m,71.19,95,2400,120.0,9.0,3,30
+Ferretería Campero,Fierro Corrugado 3/8 pulg 12m,44.11,238,3000,100.0,5.5,3,35
+Ferretería Campero,Clavos Calamina 2.5 pulg (kg),16.72,264,1400,40.0,2.4,2,20
+Ferretería Campero,Yeso Cochabamba Bolsa 35kg,21.59,104,4200,60.0,3.2,2,50
+Ferretería Campero,Cemento COBOCE IP-30 50kg,50.19,302,3600,85.0,6.5,2,40
+Ferretería Campero,Pintura Latex Monopol 18L Blanco,320.3,197,360,90.0,28.0,4,8
+Ferretería Campero,Tuberia PVC Tigre Desague 2 pulg 6m,33.21,316,960,70.0,4.8,4,15
+Comercial Céspedes,Tuberia PVC Tigre Desague 2 pulg 6m,35.27,308,960,70.0,4.8,4,15
+Comercial Céspedes,Fierro Corrugado 3/8 pulg 12m,42.37,305,3000,100.0,5.5,3,35
+Comercial Céspedes,Clavos Calamina 2.5 pulg (kg),15.26,177,1400,40.0,2.4,2,20
+Comercial Céspedes,Pintura Latex Monopol 18L Blanco,328.76,128,360,90.0,28.0,4,8
+Comercial Céspedes,Fierro Corrugado 1/2 pulg 12m,73.93,68,2400,120.0,9.0,3,30
+Comercial Céspedes,Cemento COBOCE IP-30 50kg,51.53,87,3600,85.0,6.5,2,40
+PERTEC,Fierro Corrugado 1/2 pulg 12m,75.5,186,2400,120.0,9.0,3,30
+PERTEC,Pintura Latex Monopol 18L Blanco,311.11,150,360,90.0,28.0,4,8
+PERTEC,Fierro Corrugado 3/8 pulg 12m,41.44,49,3000,100.0,5.5,3,35
+PERTEC,Clavos Calamina 2.5 pulg (kg),15.87,70,1400,40.0,2.4,2,20
+PERTEC,Tuberia PVC Tigre Desague 2 pulg 6m,35.24,39,960,70.0,4.8,4,15
+PERTEC,Alambre de Amarre Nro 16 (kg),14.45,229,1800,45.0,2.1,2,25
+PERTEC,Cemento COBOCE IP-30 50kg,51.72,226,3600,85.0,6.5,2,40
+Tolsen Bolivia,Tuberia PVC Tigre Desague 2 pulg 6m,34.14,32,960,70.0,4.8,4,15
+Tolsen Bolivia,Fierro Corrugado 3/8 pulg 12m,41.88,178,3000,100.0,5.5,3,35
+Tolsen Bolivia,Alambre de Amarre Nro 16 (kg),14.23,68,1800,45.0,2.1,2,25
+Tolsen Bolivia,Yeso Cochabamba Bolsa 35kg,20.14,102,4200,60.0,3.2,2,50
+Tolsen Bolivia,Cemento COBOCE IP-30 50kg,51.24,97,3600,85.0,6.5,2,40
+Tolsen Bolivia,Fierro Corrugado 1/2 pulg 12m,74.72,295,2400,120.0,9.0,3,30
+Tolsen Bolivia,Clavos Calamina 2.5 pulg (kg),17.01,62,1400,40.0,2.4,2,20
+Tolsen Bolivia,Pintura Latex Monopol 18L Blanco,307.07,262,360,90.0,28.0,4,8
+Ferreteria America,Tuberia PVC Tigre Desague 2 pulg 6m,32.94,66,960,70.0,4.8,4,15
+Ferreteria America,Clavos Calamina 2.5 pulg (kg),15.84,112,1400,40.0,2.4,2,20
+Ferreteria America,Fierro Corrugado 1/2 pulg 12m,71.94,298,2400,120.0,9.0,3,30
+Ferreteria America,Alambre de Amarre Nro 16 (kg),15.03,291,1800,45.0,2.1,2,25
+Ferreteria America,Yeso Cochabamba Bolsa 35kg,20.62,159,4200,60.0,3.2,2,50
+Ferreteria Rodry,Yeso Cochabamba Bolsa 35kg,20.86,233,4200,60.0,3.2,2,50
+Ferreteria Rodry,Cemento COBOCE IP-30 50kg,46.58,260,3600,85.0,6.5,2,40
+Ferreteria Rodry,Tuberia PVC Tigre Desague 2 pulg 6m,33.11,28,960,70.0,4.8,4,15
+Ferreteria Rodry,Pintura Latex Monopol 18L Blanco,302.2,164,360,90.0,28.0,4,8
+Ferreteria Rodry,Alambre de Amarre Nro 16 (kg),15.48,257,1800,45.0,2.1,2,25
+Ferreteria Rodry,Clavos Calamina 2.5 pulg (kg),16.82,172,1400,40.0,2.4,2,20
+Ferreteria Rodry,Fierro Corrugado 3/8 pulg 12m,44.38,256,3000,100.0,5.5,3,35
+Pernos Ledezma,Alambre de Amarre Nro 16 (kg),14.42,243,1800,45.0,2.1,2,25
+Pernos Ledezma,Cemento COBOCE IP-30 50kg,46.33,240,3600,85.0,6.5,2,40
+Pernos Ledezma,Clavos Calamina 2.5 pulg (kg),16.09,130,1400,40.0,2.4,2,20
+Pernos Ledezma,Pintura Latex Monopol 18L Blanco,325.64,303,360,90.0,28.0,4,8
+Pernos Ledezma,Yeso Cochabamba Bolsa 35kg,20.11,64,4200,60.0,3.2,2,50
+Pernos Ledezma,Tuberia PVC Tigre Desague 2 pulg 6m,32.65,191,960,70.0,4.8,4,15
+Pernos Ledezma,Fierro Corrugado 1/2 pulg 12m,75.38,226,2400,120.0,9.0,3,30
+Pernos Ledezma,Fierro Corrugado 3/8 pulg 12m,45.33,316,3000,100.0,5.5,3,35
+Ferretería La Solución,Cemento COBOCE IP-30 50kg,50.07,258,3600,85.0,6.5,2,40
+Ferretería La Solución,Tuberia PVC Tigre Desague 2 pulg 6m,34.64,135,960,70.0,4.8,4,15
+Ferretería La Solución,Yeso Cochabamba Bolsa 35kg,21.15,55,4200,60.0,3.2,2,50
+Ferretería La Solución,Alambre de Amarre Nro 16 (kg),14.46,32,1800,45.0,2.1,2,25
+Ferretería La Solución,Clavos Calamina 2.5 pulg (kg),16.16,279,1400,40.0,2.4,2,20
+Ferretería La Solución,Fierro Corrugado 3/8 pulg 12m,44.46,90,3000,100.0,5.5,3,35
+Ferretería Pacata,Pintura Latex Monopol 18L Blanco,299.19,231,360,90.0,28.0,4,8
+Ferretería Pacata,Fierro Corrugado 1/2 pulg 12m,69.08,237,2400,120.0,9.0,3,30
+Ferretería Pacata,Tuberia PVC Tigre Desague 2 pulg 6m,33.12,90,960,70.0,4.8,4,15
+Ferretería Pacata,Clavos Calamina 2.5 pulg (kg),16.8,147,1400,40.0,2.4,2,20
+Ferretería Pacata,Alambre de Amarre Nro 16 (kg),14.33,49,1800,45.0,2.1,2,25
+Ferretería,Tuberia PVC Tigre Desague 2 pulg 6m,35.8,281,960,70.0,4.8,4,15
+Ferretería,Alambre de Amarre Nro 16 (kg),14.57,21,1800,45.0,2.1,2,25
+Ferretería,Yeso Cochabamba Bolsa 35kg,21.93,315,4200,60.0,3.2,2,50
+Ferretería,Pintura Latex Monopol 18L Blanco,313.94,229,360,90.0,28.0,4,8
+Ferretería,Fierro Corrugado 3/8 pulg 12m,40.95,91,3000,100.0,5.5,3,35
+Comercial FAESMAQ,Fierro Corrugado 1/2 pulg 12m,76.0,225,2400,120.0,9.0,3,30
+Comercial FAESMAQ,Cemento COBOCE IP-30 50kg,47.61,263,3600,85.0,6.5,2,40
+Comercial FAESMAQ,Alambre de Amarre Nro 16 (kg),14.77,257,1800,45.0,2.1,2,25
+Comercial FAESMAQ,Tuberia PVC Tigre Desague 2 pulg 6m,32.45,156,960,70.0,4.8,4,15
+Comercial FAESMAQ,Fierro Corrugado 3/8 pulg 12m,42.43,220,3000,100.0,5.5,3,35
+Comercial FAESMAQ,Yeso Cochabamba Bolsa 35kg,20.05,184,4200,60.0,3.2,2,50
+Ferretería El Ofertón,Cemento COBOCE IP-30 50kg,48.04,170,3600,85.0,6.5,2,40
+Ferretería El Ofertón,Clavos Calamina 2.5 pulg (kg),15.8,266,1400,40.0,2.4,2,20
+Ferretería El Ofertón,Yeso Cochabamba Bolsa 35kg,22.11,65,4200,60.0,3.2,2,50
+Ferretería El Ofertón,Fierro Corrugado 3/8 pulg 12m,45.33,131,3000,100.0,5.5,3,35
+Ferretería El Ofertón,Alambre de Amarre Nro 16 (kg),14.01,241,1800,45.0,2.1,2,25
+Ferretería El Ofertón,Pintura Latex Monopol 18L Blanco,323.29,179,360,90.0,28.0,4,8
+Ferretería América,Tuberia PVC Tigre Desague 2 pulg 6m,36.03,223,960,70.0,4.8,4,15
+Ferretería América,Alambre de Amarre Nro 16 (kg),15.06,279,1800,45.0,2.1,2,25
+Ferretería América,Clavos Calamina 2.5 pulg (kg),16.87,43,1400,40.0,2.4,2,20
+Ferretería América,Cemento COBOCE IP-30 50kg,49.07,96,3600,85.0,6.5,2,40
+Ferretería América,Fierro Corrugado 1/2 pulg 12m,68.97,274,2400,120.0,9.0,3,30
+Ferretería América,Yeso Cochabamba Bolsa 35kg,20.97,283,4200,60.0,3.2,2,50
+Ferretería América,Pintura Latex Monopol 18L Blanco,327.21,29,360,90.0,28.0,4,8
+Ferreteria La Economica II,Yeso Cochabamba Bolsa 35kg,21.1,199,4200,60.0,3.2,2,50
+Ferreteria La Economica II,Tuberia PVC Tigre Desague 2 pulg 6m,35.17,155,960,70.0,4.8,4,15
+Ferreteria La Economica II,Fierro Corrugado 1/2 pulg 12m,71.58,252,2400,120.0,9.0,3,30
+Ferreteria La Economica II,Cemento COBOCE IP-30 50kg,49.01,78,3600,85.0,6.5,2,40
+Ferreteria La Economica II,Clavos Calamina 2.5 pulg (kg),16.51,138,1400,40.0,2.4,2,20
+Ferreteria La Economica II,Alambre de Amarre Nro 16 (kg),14.42,319,1800,45.0,2.1,2,25
+Ferrocasa,Fierro Corrugado 3/8 pulg 12m,44.19,61,3000,100.0,5.5,3,35
+Ferrocasa,Tuberia PVC Tigre Desague 2 pulg 6m,33.46,212,960,70.0,4.8,4,15
+Ferrocasa,Yeso Cochabamba Bolsa 35kg,20.08,307,4200,60.0,3.2,2,50
+Ferrocasa,Alambre de Amarre Nro 16 (kg),15.13,124,1800,45.0,2.1,2,25
+Ferrocasa,Pintura Latex Monopol 18L Blanco,326.38,130,360,90.0,28.0,4,8
+Ferrocasa,Fierro Corrugado 1/2 pulg 12m,74.26,152,2400,120.0,9.0,3,30
+Ferrocasa,Cemento COBOCE IP-30 50kg,49.87,277,3600,85.0,6.5,2,40
+Ferrocasa,Clavos Calamina 2.5 pulg (kg),15.24,19,1400,40.0,2.4,2,20
+Grit Center,Fierro Corrugado 3/8 pulg 12m,44.01,155,3000,100.0,5.5,3,35
+Grit Center,Clavos Calamina 2.5 pulg (kg),16.01,207,1400,40.0,2.4,2,20
+Grit Center,Fierro Corrugado 1/2 pulg 12m,75.76,250,2400,120.0,9.0,3,30
+Grit Center,Alambre de Amarre Nro 16 (kg),14.21,253,1800,45.0,2.1,2,25
+Grit Center,Cemento COBOCE IP-30 50kg,47.83,281,3600,85.0,6.5,2,40
+Grit Center,Yeso Cochabamba Bolsa 35kg,22.03,218,4200,60.0,3.2,2,50
+Grit Center,Tuberia PVC Tigre Desague 2 pulg 6m,34.68,18,960,70.0,4.8,4,15
+Grit Center,Pintura Latex Monopol 18L Blanco,313.53,206,360,90.0,28.0,4,8
+Electro Ferretería,Alambre de Amarre Nro 16 (kg),14.89,156,1800,45.0,2.1,2,25
+Electro Ferretería,Clavos Calamina 2.5 pulg (kg),15.7,167,1400,40.0,2.4,2,20
+Electro Ferretería,Cemento COBOCE IP-30 50kg,47.17,279,3600,85.0,6.5,2,40
+Electro Ferretería,Yeso Cochabamba Bolsa 35kg,21.88,44,4200,60.0,3.2,2,50
+Electro Ferretería,Tuberia PVC Tigre Desague 2 pulg 6m,35.59,221,960,70.0,4.8,4,15
+Electro Ferretería,Fierro Corrugado 1/2 pulg 12m,74.11,86,2400,120.0,9.0,3,30
+Electro Ferretería,Fierro Corrugado 3/8 pulg 12m,44.05,269,3000,100.0,5.5,3,35
+Ferretería Urkupiña,Alambre de Amarre Nro 16 (kg),14.37,128,1800,45.0,2.1,2,25
+Ferretería Urkupiña,Yeso Cochabamba Bolsa 35kg,21.68,258,4200,60.0,3.2,2,50
+Ferretería Urkupiña,Tuberia PVC Tigre Desague 2 pulg 6m,36.0,198,960,70.0,4.8,4,15
+Ferretería Urkupiña,Clavos Calamina 2.5 pulg (kg),16.17,102,1400,40.0,2.4,2,20
+Ferretería Urkupiña,Cemento COBOCE IP-30 50kg,50.97,300,3600,85.0,6.5,2,40
+Ferretería Urkupiña,Fierro Corrugado 3/8 pulg 12m,41.3,64,3000,100.0,5.5,3,35
+Ferretería Urkupiña,Pintura Latex Monopol 18L Blanco,312.01,147,360,90.0,28.0,4,8
+Ferretería San Miguel,Clavos Calamina 2.5 pulg (kg),16.63,172,1400,40.0,2.4,2,20
+Ferretería San Miguel,Pintura Latex Monopol 18L Blanco,310.14,184,360,90.0,28.0,4,8
+Ferretería San Miguel,Cemento COBOCE IP-30 50kg,48.24,314,3600,85.0,6.5,2,40
+Ferretería San Miguel,Fierro Corrugado 1/2 pulg 12m,70.94,75,2400,120.0,9.0,3,30
+Ferretería San Miguel,Fierro Corrugado 3/8 pulg 12m,42.77,313,3000,100.0,5.5,3,35
+Ferretería San Miguel,Tuberia PVC Tigre Desague 2 pulg 6m,34.67,51,960,70.0,4.8,4,15
+Ferretería Callejas,Yeso Cochabamba Bolsa 35kg,20.3,117,4200,60.0,3.2,2,50
+Ferretería Callejas,Alambre de Amarre Nro 16 (kg),14.37,306,1800,45.0,2.1,2,25
+Ferretería Callejas,Cemento COBOCE IP-30 50kg,51.27,249,3600,85.0,6.5,2,40
+Ferretería Callejas,Pintura Latex Monopol 18L Blanco,299.83,107,360,90.0,28.0,4,8
+Ferretería Callejas,Fierro Corrugado 3/8 pulg 12m,44.35,264,3000,100.0,5.5,3,35
+Ferretería Callejas,Fierro Corrugado 1/2 pulg 12m,71.27,105,2400,120.0,9.0,3,30
+Ferretería Callejas,Clavos Calamina 2.5 pulg (kg),15.8,44,1400,40.0,2.4,2,20
+Ferretería Callejas,Tuberia PVC Tigre Desague 2 pulg 6m,32.32,155,960,70.0,4.8,4,15
+Comercial Téllez,Fierro Corrugado 3/8 pulg 12m,43.51,234,3000,100.0,5.5,3,35
+Comercial Téllez,Alambre de Amarre Nro 16 (kg),14.48,259,1800,45.0,2.1,2,25
+Comercial Téllez,Fierro Corrugado 1/2 pulg 12m,71.71,34,2400,120.0,9.0,3,30
+Comercial Téllez,Yeso Cochabamba Bolsa 35kg,21.3,206,4200,60.0,3.2,2,50
+Comercial Téllez,Cemento COBOCE IP-30 50kg,51.6,179,3600,85.0,6.5,2,40
+Comercial Téllez,Tuberia PVC Tigre Desague 2 pulg 6m,35.39,286,960,70.0,4.8,4,15
+Ferroplom,Cemento COBOCE IP-30 50kg,51.18,174,3600,85.0,6.5,2,40
+Ferroplom,Clavos Calamina 2.5 pulg (kg),15.45,211,1400,40.0,2.4,2,20
+Ferroplom,Pintura Latex Monopol 18L Blanco,313.22,171,360,90.0,28.0,4,8
+Ferroplom,Fierro Corrugado 1/2 pulg 12m,69.84,38,2400,120.0,9.0,3,30
+Ferroplom,Alambre de Amarre Nro 16 (kg),14.29,163,1800,45.0,2.1,2,25
+Ferroplom,Fierro Corrugado 3/8 pulg 12m,42.7,281,3000,100.0,5.5,3,35
+Ferretería Guayacán,Tuberia PVC Tigre Desague 2 pulg 6m,32.97,221,960,70.0,4.8,4,15
+Ferretería Guayacán,Clavos Calamina 2.5 pulg (kg),15.24,129,1400,40.0,2.4,2,20
+Ferretería Guayacán,Fierro Corrugado 1/2 pulg 12m,74.68,82,2400,120.0,9.0,3,30
+Ferretería Guayacán,Fierro Corrugado 3/8 pulg 12m,41.45,26,3000,100.0,5.5,3,35
+Ferretería Guayacán,Yeso Cochabamba Bolsa 35kg,21.44,101,4200,60.0,3.2,2,50
+Ferretería Guayacán,Pintura Latex Monopol 18L Blanco,299.08,34,360,90.0,28.0,4,8
+Ferretería Guayacán,Cemento COBOCE IP-30 50kg,48.26,145,3600,85.0,6.5,2,40
+Distribuidora Campero,Cemento COBOCE IP-30 50kg,50.09,228,3600,85.0,6.5,2,40
+Distribuidora Campero,Clavos Calamina 2.5 pulg (kg),16.05,78,1400,40.0,2.4,2,20
+Distribuidora Campero,Pintura Latex Monopol 18L Blanco,314.86,257,360,90.0,28.0,4,8
+Distribuidora Campero,Tuberia PVC Tigre Desague 2 pulg 6m,35.16,120,960,70.0,4.8,4,15
+Distribuidora Campero,Alambre de Amarre Nro 16 (kg),14.98,19,1800,45.0,2.1,2,25
+Ferreteria  Maxfral,Tuberia PVC Tigre Desague 2 pulg 6m,34.01,68,960,70.0,4.8,4,15
+Ferreteria  Maxfral,Clavos Calamina 2.5 pulg (kg),16.18,75,1400,40.0,2.4,2,20
+Ferreteria  Maxfral,Cemento COBOCE IP-30 50kg,47.72,69,3600,85.0,6.5,2,40
+Ferreteria  Maxfral,Alambre de Amarre Nro 16 (kg),14.64,117,1800,45.0,2.1,2,25
+Ferreteria  Maxfral,Fierro Corrugado 3/8 pulg 12m,44.34,282,3000,100.0,5.5,3,35
+Ferreteria  Maxfral,Yeso Cochabamba Bolsa 35kg,22.4,198,4200,60.0,3.2,2,50
+Ferreteria  Maxfral,Pintura Latex Monopol 18L Blanco,320.67,166,360,90.0,28.0,4,8
+Ferreteria Cañoto,Cemento COBOCE IP-30 50kg,47.44,21,3600,85.0,6.5,2,40
+Ferreteria Cañoto,Alambre de Amarre Nro 16 (kg),14.94,71,1800,45.0,2.1,2,25
+Ferreteria Cañoto,Yeso Cochabamba Bolsa 35kg,22.05,267,4200,60.0,3.2,2,50
+Ferreteria Cañoto,Fierro Corrugado 1/2 pulg 12m,69.69,61,2400,120.0,9.0,3,30
+Ferreteria Cañoto,Clavos Calamina 2.5 pulg (kg),16.7,53,1400,40.0,2.4,2,20
+Ferreteria Cañoto,Tuberia PVC Tigre Desague 2 pulg 6m,35.25,66,960,70.0,4.8,4,15
+Salqui,Yeso Cochabamba Bolsa 35kg,22.0,35,4200,60.0,3.2,2,50
+Salqui,Pintura Latex Monopol 18L Blanco,326.2,199,360,90.0,28.0,4,8
+Salqui,Fierro Corrugado 3/8 pulg 12m,44.46,175,3000,100.0,5.5,3,35
+Salqui,Clavos Calamina 2.5 pulg (kg),16.02,74,1400,40.0,2.4,2,20
+Salqui,Tuberia PVC Tigre Desague 2 pulg 6m,32.69,38,960,70.0,4.8,4,15
+Salqui,Cemento COBOCE IP-30 50kg,46.13,85,3600,85.0,6.5,2,40
+Salqui,Alambre de Amarre Nro 16 (kg),14.93,102,1800,45.0,2.1,2,25

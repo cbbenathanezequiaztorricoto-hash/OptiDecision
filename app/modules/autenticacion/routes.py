@@ -6,7 +6,7 @@ import io
 from urllib.parse import urlencode
 from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.shared.database import obtener_conexion
@@ -439,7 +439,31 @@ async def resumen_ferreterias_admin(admin: Dict[str, Any] = Depends(requerir_adm
     finally:
         conn.close()
 
+@router.get("/ferreterias/plantilla-catalogo", summary="Generar plantilla CSV dinámica con las ferreterías registradas")
+async def descargar_plantilla_catalogo_admin(admin: Dict[str, Any] = Depends(requerir_admin)):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT nombre FROM ferreterias ORDER BY nombre ASC;")
+            ferreterias = [r["nombre"] for r in cur.fetchall()]
 
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow([
+            "ferreteria", "nombre", "precio_bob", "stock_actual",
+            "demanda_anual_D", "costo_pedido_K", "costo_mantenimiento_H",
+            "tiempo_entrega_dias_L", "stock_seguridad_SS"
+        ])
+        for nombre_ferr in ferreterias:
+            writer.writerow([nombre_ferr, "", "", "", "", "", "", "", ""])
+
+        return Response(
+            content="\ufeff" + buffer.getvalue(),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="plantilla_ferreterias_cbba.csv"'}
+        )
+    finally:
+        conn.close()
 @router.post("/ferreterias/carga-masiva", summary="Carga masiva CSV de ferreterías reales (Solo Admin/Desarrollador)")
 async def carga_masiva_ferreterias_admin(
     archivo: UploadFile = File(...),

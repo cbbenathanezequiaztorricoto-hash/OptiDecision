@@ -683,15 +683,22 @@ const cargarResumenAdmin = async () => {
         }
     };
 
-    document.getElementById('btnPlantillaCatalogoAdmin')?.addEventListener('click', () => {
-        const encabezado = "ferreteria,nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS\n";
-        const blob = new Blob([encabezado], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'plantilla_catalogo_multisucursal.csv';
-        a.click();
-        URL.revokeObjectURL(url);
+    document.getElementById('btnPlantillaCatalogoAdmin')?.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/auth/ferreterias/plantilla-catalogo', {
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('No se pudo generar la plantilla desde la base de datos');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_ferreterias_cbba.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            notificar('Error en Plantilla', err.message, 'error');
+        }
     });
 
     document.getElementById('inputCsvFerreterias')?.addEventListener('change', async (e) => {
