@@ -14,7 +14,7 @@ def evaluar_toma_decisiones(datos: DecisionInput) -> Dict[str, Any]:
     alts = datos.alternativas
     estados = datos.estados_naturaleza
     matriz_A = np.array(datos.matriz_pagos, dtype=float)  # Dimensión: (num_alts, num_estados)
-    alpha = datos.alpha_hurwicz
+    alpha = datos.coeficiente_alpha
 
     num_alts, num_estados = matriz_A.shape
 

@@ -533,10 +533,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const navBadge = document.getElementById('navUserBadge');
         if (navBadge) {
             navBadge.classList.toggle('d-none', !autenticado);
-            if (autenticado) {
-                document.getElementById('navUserName').textContent = perfil.username;
-                document.getElementById('navUserRole').textContent = rol;
-            }
+            navBadge.classList.toggle('d-md-inline-flex', autenticado);
+            document.getElementById('navUserName').textContent = autenticado ? perfil.username : '';
+            document.getElementById('navUserRole').textContent = autenticado ? rol : '';
         }
 
         const esGestor = autenticado && (rol === 'ferretero' || rol === 'admin');
@@ -683,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td class="fw-medium">${u.username}</td>
                     <td>${u.email}</td>
-                    <td>${u.ferreteria_nombre || '<span class="text-muted">Sin ferretería</span>'}</td>
+                    <td>${u.nombre_ferreteria || '<span class="text-muted">Sin ferretería</span>'}</td>
                     <td>
                         <select class="form-select form-select-sm w-auto" onchange="window.cambiarRolUsuario(${u.id_usuario}, this.value)">
                             <option value="cliente" ${u.rol === 'cliente' ? 'selected' : ''}>cliente</option>
