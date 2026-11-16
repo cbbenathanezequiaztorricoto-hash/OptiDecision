@@ -1,23 +1,33 @@
 /* ===================================================================
-   OPTI DECISION SUITE - IOP812 | FRONTEND APP (SURGICAL FIX)
+   OPTI DECISION SUITE - IOP812 | FRONTEND APP (BLOQUE 2 COMPLETO)
    =================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
     // ---------------------------------------------------------------
-    // 1. ESTADO Y VARIABLES GLOBALES
+    // 1. ESTADO GLOBAL
     // ---------------------------------------------------------------
     const COCHABAMBA_DEFAULT = [-17.3895, -66.1568]; // Plaza 14 de Septiembre
     let map = null;
     let markersLayer = null;
     let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
+    let perfilUsuarioActual = null;
+    let topFerreteriaActual = null;
+    let productosCache = [];
+    let modoSeleccionMapa = false;
 
+    const getAuthHeaders = (conJson = false) => {
+        const headers = {};
+        if (conJson) headers['Content-Type'] = 'application/json';
+        const token = localStorage.getItem('iop812-token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+    };
     // Helper para notificaciones con SweetAlert2
     const notificar = (titulo, texto, icono = 'info') => {
         // Quitar el foco de cualquier elemento activo para evitar advertencias aria-hidden
         if (document.activeElement && typeof document.activeElement.blur === 'function') {
             document.activeElement.blur();
         }
-
         const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
         return Swal.fire({
             title: titulo,
@@ -26,14 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
             background: esOscuro ? '#1E293B' : '#FFFFFF',
             color: esOscuro ? '#F8FAFC' : '#0F172A',
             confirmButtonColor: icono === 'error' ? '#EF4444' : '#0EA5E9',
-            customClass: {
-                popup: 'rounded-4 border border-secondary-subtle shadow-lg'
-            }
+            customClass: { popup: 'rounded-4 border border-secondary-subtle shadow-lg' }
         });
     };
 
     // ---------------------------------------------------------------
-    // 2. GESTIÓN DE TEMA OSCURO / CLARO
+    // 2. TEMA OSCURO / CLARO
     // ---------------------------------------------------------------
     const themeToggleBtn = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
@@ -53,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------
-    // 3. INICIALIZACIÓN DE LEAFLET
+    // 3. MAPA LEAFLET Y GEOLOCALIZACIÓN
     // ---------------------------------------------------------------
     const actualizarMarcadorUsuario = (lat, lng, titulo) => {
         ubicacionUsuario = { lat, lng };
@@ -105,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             map = L.map('map', {
                 center: COCHABAMBA_DEFAULT,
-                zoom: 14,
+                zoom: 13,
                 zoomControl: false
             });
 
@@ -119,7 +127,24 @@ document.addEventListener('DOMContentLoaded', () => {
             markersLayer = L.layerGroup().addTo(map);
             intentoAutoGeolocalizacion();
 
-            // Resuelve la pantalla en blanco forzando el recálculo de dimensiones del canvas Leaflet
+            // Captura de coordenadas al registrar ferretería en el mapa
+            map.on('click', (e) => {
+                if (!modoSeleccionMapa) return;
+                modoSeleccionMapa = false;
+                document.getElementById('map')?.classList.remove('cursor-crosshair');
+                document.getElementById('mapPickerBanner')?.classList.add('d-none');
+
+                const latInput = document.getElementById('regFerrLat');
+                const lngInput = document.getElementById('regFerrLng');
+                if (latInput) latInput.value = e.latlng.lat.toFixed(6);
+                if (lngInput) lngInput.value = e.latlng.lng.toFixed(6);
+
+                const modalReg = document.getElementById('modalRegistrarFerreteria');
+                if (modalReg && typeof bootstrap !== 'undefined') {
+                    bootstrap.Modal.getOrCreateInstance(modalReg).show();
+                }
+            });
+
             setTimeout(() => { if (map) map.invalidateSize(); }, 250);
         } catch (e) {
             console.error("Error al inicializar Leaflet:", e);
@@ -127,57 +152,62 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     inicializarMapa();
-    // ---------------------------------------------------------------
-    // VINCULACIÓN SEGURA DE MODALES Y NAVEGACIÓN
-    // ---------------------------------------------------------------
-    const btnAbrirLogin = document.getElementById('btnAbrirLogin');
-    const btnAbrirCreditos = document.getElementById('btnAbrirCreditos');
-    const btnAbrirDashboard = document.getElementById('btnAbrirDashboard');
 
-    // Usar getOrCreateInstance evita errores de invocación nula en Bootstrap 5
-    btnAbrirLogin?.addEventListener('click', () => {
-         const el = document.getElementById('modalLoginAuth');
-         if (el && typeof bootstrap !== 'undefined') {
-             bootstrap.Modal.getOrCreateInstance(el).show();
-         } else {
-            alert("No se puede abrir");
-            console.log('Modal encontrado:', !!el);
-            console.log('Bootstrap disponible:', typeof bootstrap !== 'undefined');
-         }
+    // ---------------------------------------------------------------
+    // 4. MODALES Y NAVEGACIÓN
+    // ---------------------------------------------------------------
+    document.getElementById('btnAbrirLogin')?.addEventListener('click', () => {
+        const el = document.getElementById('modalLoginAuth');
+        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
     });
 
-    btnAbrirCreditos?.addEventListener('click', () => {
-         const el = document.getElementById('modalCreditos');
-         if (el && typeof bootstrap !== 'undefined') {
-             bootstrap.Modal.getOrCreateInstance(el).show();
-         } else {
-            alert("Bootstrap Modal no disponible. No se puede abrir Créditos Académicos.");
-         }
+    document.getElementById('btnAbrirCreditos')?.addEventListener('click', () => {
+        const el = document.getElementById('modalCreditos');
+        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
     });
 
-    btnAbrirDashboard?.addEventListener('click', () => {
+    document.getElementById('btnAbrirDashboard')?.addEventListener('click', () => {
         const el = document.getElementById('modalDashboardIO');
         if (el && typeof bootstrap !== 'undefined') {
             bootstrap.Modal.getOrCreateInstance(el).show();
+            cargarProductosCRUD();
+            if (perfilUsuarioActual?.rol === 'admin') cargarUsuariosAdmin();
+        }
+    });
+
+    const abrirModalRegistroFerreteria = () => {
+        const el = document.getElementById('modalRegistrarFerreteria');
+        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
+    };
+
+    document.getElementById('btnAbrirRegistroFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
+    document.getElementById('btnAdminNuevaFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
+
+    document.getElementById('btnPickMapLocation')?.addEventListener('click', () => {
+        const modalReg = document.getElementById('modalRegistrarFerreteria');
+        if (modalReg && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalReg).hide();
+        }
+        modoSeleccionMapa = true;
+        document.getElementById('mapPickerBanner')?.classList.remove('d-none');
+    });
+
+    document.getElementById('btnCancelarMapPicker')?.addEventListener('click', () => {
+        modoSeleccionMapa = false;
+        document.getElementById('mapPickerBanner')?.classList.add('d-none');
+        abrirModalRegistroFerreteria();
+    });
+
+    document.getElementById('btnToggleAHP')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const collapseAHP = document.getElementById('collapseAHP');
+        if (collapseAHP && typeof bootstrap !== 'undefined') {
+            bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false }).toggle();
         }
     });
 
     // ---------------------------------------------------------------
-    // DESPLEGABLE ACORDEÓN AHP (SAATY)
-    // ---------------------------------------------------------------
-    const btnToggleAHP = document.getElementById('btnToggleAHP');
-    const collapseAHP = document.getElementById('collapseAHP');
-    btnToggleAHP?.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (collapseAHP && typeof bootstrap !== 'undefined') {
-            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false });
-            bsCollapse.toggle();
-        } else {
-            alert("Bootstrap Collapse no disponible. No se puede alternar el panel AHP.");
-        }
-    });
-    // ---------------------------------------------------------------
-    // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
+    // 5. GEOCODIFICACIÓN Y SLIDERS AHP
     // ---------------------------------------------------------------
     const btnGPS = document.getElementById('btnGPS');
     const inputOrigen = document.getElementById('inputOrigen');
@@ -202,12 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resolverCoordenadasOrigen = async (textoOrigen) => {
         if (textoOrigen.includes("GPS")) return ubicacionUsuario;
-
         try {
             const query = encodeURIComponent(`${textoOrigen}, Cochabamba, Bolivia`);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
             const data = await res.json();
-
             if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
@@ -220,17 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return ubicacionUsuario;
     };
-
-    // ---------------------------------------------------------------
-    // 5. SLIDERS AHP (Ponderación Saaty 1-9)
-    // ---------------------------------------------------------------
+    //(Ponderación Saaty 1-9)
     const sliders = {
         precio: document.getElementById('sliderPrecio'),
         distancia: document.getElementById('sliderDistancia'),
         reputacion: document.getElementById('sliderReputacion'),
         stock: document.getElementById('sliderStock')
     };
-
     const labels = {
         precio: document.getElementById('valPrecio'),
         distancia: document.getElementById('valDistancia'),
@@ -251,19 +275,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (labels.stock) labels.stock.textContent = `${Math.round((valS / suma) * 100)}%`;
     };
 
-    Object.values(sliders).forEach(slider => {
-        slider?.addEventListener('input', actualizarPorcentajesAHP);
-    });
+    Object.values(sliders).forEach(s => s?.addEventListener('input', actualizarPorcentajesAHP));
     actualizarPorcentajesAHP();
 
     // ---------------------------------------------------------------
-    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (AHPSearchInput)
+    // 6. BÚSQUEDA MULTICRITERIO AHP + FAVORITOS E HISTORIAL
     // ---------------------------------------------------------------
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
-    const btnCloseTopResult = document.getElementById('btnCloseTopResult');
 
-    btnCloseTopResult?.addEventListener('click', () => {
+    document.getElementById('btnCloseTopResult')?.addEventListener('click', () => {
         cardTopResult?.classList.add('d-none');
     });
 
@@ -280,7 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const coordsActuales = await resolverCoordenadasOrigen(origenText || '');
-
         // Estructura exacta requerida por AHPSearchInput en app/modules/buscador_ahp/schemas.py
         const payload = {
             latitud: coordsActuales.lat,
@@ -297,23 +317,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/ahp/buscar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(true),
                 body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errData = await response.json();
-                let detalleError = 'Error en la búsqueda geoespacial';
-                if (Array.isArray(errData.detail)) {
-                    detalleError = errData.detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join('<br>');
-                } else if (typeof errData.detail === 'string') {
-                    detalleError = errData.detail;
-                }
-                throw new Error(detalleError);
+                throw new Error(typeof errData.detail === 'string' ? errData.detail : 'Error en la búsqueda geoespacial');
             }
 
             const data = await response.json();
             renderizarResultadosAHP(data);
+            if (perfilUsuarioActual) cargarHistorialYFavoritos();
         } catch (error) {
             notificar('Error en Búsqueda AHP', error.message, 'warning');
         } finally {
@@ -330,26 +345,19 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizarMarcadorUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng, "Tu Origen de Búsqueda");
 
         if (!data.ferreterias || data.ferreterias.length === 0) {
-            notificar('Búsqueda Desierta', 'No existen ferreterías registradas en la base de datos con ese producto.', 'info');
+            notificar('Búsqueda sin resultados', 'No hay ferreterías con stock disponible para ese producto.', 'info');
             return;
         }
 
         const top = data.ferreterias[0];
+        topFerreteriaActual = top;
 
-        const elNombre = document.getElementById('topFerreteriaNombre');
-        const elDireccion = document.getElementById('topFerreteriaDireccion');
-        const elPrecio = document.getElementById('topPrecioBOB');
-        const elDistancia = document.getElementById('topDistanciaKM');
-        const elReputacion = document.getElementById('topReputacion');
-        const elStock = document.getElementById('topStock');
-
-        if (elNombre) elNombre.textContent = top.nombre;
-        if (elDireccion) elDireccion.innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
-        if (elPrecio) elPrecio.textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
-        if (elDistancia) elDistancia.textContent = `${top.distancia_km} km`;
-        if (elReputacion) elReputacion.textContent = top.reputacion;
-        if (elStock) elStock.textContent = `${top.stock} un.`;
-
+        document.getElementById('topFerreteriaNombre').textContent = top.nombre;
+        document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
+        document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
+        document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
+        document.getElementById('topReputacion').textContent = top.reputacion;
+        document.getElementById('topStock').textContent = `${top.stock} un.`;
         cardTopResult?.classList.remove('d-none');
 
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
@@ -366,10 +374,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const marker = L.marker([f.latitud, f.longitud], { icon: markerIcon })
                 .addTo(markersLayer)
                 .bindPopup(`
-                    <div style="color: #0F172A;">
+                    <div style="color: #0F172A; min-width: 180px;">
                         <strong style="color: ${color};">${f.nombre}</strong><br>
                         <small>${f.direccion}</small><br>
-                        <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.
+                        <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.<br>
+                        <button class="btn btn-sm btn-warning mt-2 w-100 py-0" onclick="window.agregarFavorito(${f.id_ferreteria})">
+                            <i class="fa-solid fa-star"></i> Guardar Favorito
+                        </button>
                     </div>
                 `);
 
@@ -380,68 +391,84 @@ document.addEventListener('DOMContentLoaded', () => {
         if (map) map.fitBounds(puntosBounds, { padding: [50, 50] });
     };
 
-    // ---------------------------------------------------------------
-    // 7. AUTENTICACIÓN JWT Y SESIÓN
-    // ---------------------------------------------------------------
-    const formLogin = document.getElementById('formLogin');
-    const btnToggleAuthMode = document.getElementById('btnToggleAuthMode');
-    const usernameGroup = document.getElementById('usernameGroup');
-    const inputUsername = document.getElementById('inputUsername');
-    const btnSubmitAuth = document.getElementById('btnSubmitAuth');
-    const authModePrompt = document.getElementById('authModePrompt');
-    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-    const modalLoginTitle = document.getElementById('modalLoginAuthLabel');
-    let isRegisterMode = false;
-    // ---------------------------------------------------------------
-    // EVENTO Y MANEJO DE GOOGLE OAUTH2 (/api/auth/google)
-    // ---------------------------------------------------------------
-    const btnGoogleAuth = document.getElementById('btnGoogleAuth');
-    let googleClientId = '';
-
-    const inicializarGoogleAuth = async () => {
+    window.agregarFavorito = async (idFerreteria) => {
+        if (!perfilUsuarioActual) {
+            notificar('Inicia Sesión', 'Debes iniciar sesión para guardar ferreterías favoritas.', 'info');
+            return;
+        }
         try {
-            const res = await fetch('/api/auth/config');
-            if (res.ok) {
-                const config = await res.json();
-                googleClientId = config.google_client_id;
-                if (googleClientId && typeof google !== 'undefined' && google.accounts?.id) {
-                    google.accounts.id.initialize({
-                        client_id: googleClientId,
-                        callback: window.handleGoogleCredentialResponse
-                    });
-                }
-            }
-        } catch (e) {
-            console.warn('Error al cargar config de Google Auth:', e);
+            const res = await fetch('/api/ahp/favoritos', {
+                method: 'POST',
+                headers: getAuthHeaders(true),
+                body: JSON.stringify({ id_ferreteria: idFerreteria })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo guardar en favoritos');
+            notificar('Guardado en Favoritos', data.mensaje || 'Ferretería añadida a tu lista.', 'success');
+            cargarHistorialYFavoritos();
+        } catch (err) {
+            notificar('Favoritos', err.message, 'warning');
         }
     };
-    inicializarGoogleAuth();
 
-btnGoogleAuth?.addEventListener('click', () => {
-        // Quitar el foco del botón para no bloquear la accesibilidad ARIA
-        if (document.activeElement && typeof document.activeElement.blur === 'function') {
-            document.activeElement.blur();
-        }
-
-        // Ocultar modal de login de Bootstrap
-        const modalEl = document.getElementById('modalLoginAuth');
-        if (modalEl && typeof bootstrap !== 'undefined') {
-            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-        }
-
-        if (typeof google !== 'undefined' && google.accounts?.id && googleClientId) {
-            google.accounts.id.prompt();
-        } else {
-            notificar(
-                'Google Auth',
-                'Verifica que GOOGLE_CLIENT_ID esté guardado en tu archivo .env.',
-                'warning'
-            );
-        }
+    document.getElementById('btnFavoritoTop')?.addEventListener('click', () => {
+        if (topFerreteriaActual) window.agregarFavorito(topFerreteriaActual.id_ferreteria);
     });
 
+    const cargarHistorialYFavoritos = async () => {
+        if (!perfilUsuarioActual) return;
+        const listaHist = document.getElementById('listaHistorial');
+        const listaFav = document.getElementById('listaFavoritos');
 
-    // Callback global para procesar el token retornado por Google y enviarlo a FastAPI
+        try {
+            const [resHist, resFav] = await Promise.all([
+                fetch('/api/ahp/historial', { headers: getAuthHeaders() }),
+                fetch('/api/ahp/favoritos', { headers: getAuthHeaders() })
+            ]);
+
+            if (resHist.ok && listaHist) {
+                const historial = await resHist.json();
+                listaHist.innerHTML = historial.length === 0
+                    ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">Aún no tienes búsquedas registradas.</div>`
+                    : historial.map(h => `
+                        <button type="button" class="list-group-item list-group-item-action bg-transparent text-main small py-2"
+                            onclick="document.getElementById('inputProducto').value='${h.texto_buscado.replace(/'/g, "\\'")}'; document.getElementById('formBuscadorAHP').dispatchEvent(new Event('submit'));">
+                            <div class="fw-semibold"><i class="fa-solid fa-magnifying-glass text-primary me-2"></i>${h.texto_buscado}</div>
+                            <span class="extra-small text-muted">${new Date(h.fecha_busqueda).toLocaleString()}</span>
+                        </button>
+                    `).join('');
+            }
+
+            if (resFav.ok && listaFav) {
+                const favoritos = await resFav.json();
+                listaFav.innerHTML = favoritos.length === 0
+                    ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">No tienes ferreterías favoritas guardadas.</div>`
+                    : favoritos.map(f => `
+                        <div class="list-group-item bg-transparent text-main small py-2 d-flex justify-content-between align-items-center">
+                            <div role="button" onclick="if(window._flyToStore) window._flyToStore(${f.latitud}, ${f.longitud}, '${f.nombre.replace(/'/g, "\\'")}')">
+                                <div class="fw-semibold"><i class="fa-solid fa-star text-warning me-1"></i> ${f.nombre}</div>
+                                <span class="extra-small text-muted">${f.direccion}</span>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+        } catch (e) {
+            console.warn('Historial/Favoritos pendientes de consulta:', e);
+        }
+    };
+
+    window._flyToStore = (lat, lng, nombre) => {
+        if (map) {
+            map.flyTo([lat, lng], 16);
+            L.popup().setLatLng([lat, lng]).setContent(`<strong>${nombre}</strong>`).openOn(map);
+        }
+    };
+
+    document.getElementById('drawerGoogleMaps')?.addEventListener('show.bs.offcanvas', cargarHistorialYFavoritos);
+
+    // ---------------------------------------------------------------
+    // 7. GOOGLE OAUTH2 (GIS SDK) + JWT + ROLES
+    // ---------------------------------------------------------------
     window.handleGoogleCredentialResponse = async (response) => {
         try {
             const res = await fetch('/api/auth/google', {
@@ -449,30 +476,86 @@ btnGoogleAuth?.addEventListener('click', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ credential: response.credential })
             });
-
             const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.detail || 'Fallo en la verificación del token de Google');
-            }
+            if (!res.ok) throw new Error(data.detail || 'Error al verificar token de Google');
 
-            // Almacenar token de sesión propio del sistema
             localStorage.setItem('iop812-token', data.access_token);
-            actualizarInterfazSesion(true);
+            const perfil = await obtenerPerfil(data.access_token);
+            actualizarInterfazSesion(perfil);
 
-            const modalElement = document.getElementById('modalLoginAuth');
-            if (modalElement && typeof bootstrap !== 'undefined') {
-                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
-            }
+            const modalEl = document.getElementById('modalLoginAuth');
+            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 
-            notificar('¡Acceso Correcto!', `Bienvenido ${data.username}, iniciaste sesión con Google.`, 'success');
+            notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
         } catch (err) {
             notificar('Error en Google Auth', err.message, 'error');
         }
     };
-    const actualizarInterfazSesion = (autenticado) => {
-        btnAbrirLogin?.classList.toggle('d-none', autenticado);
-        btnCerrarSesion?.classList.toggle('d-none', !autenticado);
-        btnAbrirDashboard?.classList.toggle('d-none', !autenticado);
+
+    const inicializarGoogleSignIn = async () => {
+        const btnContainer = document.getElementById('googleBtnContainer');
+        const btnFallback = document.getElementById('btnGoogleFallback');
+
+        try {
+            const res = await fetch('/api/auth/config');
+            if (!res.ok) throw new Error('Sin endpoint /api/auth/config');
+            const cfg = await res.json();
+            const clientId = cfg.google_client_id;
+
+            if (!clientId || clientId.includes('TU_GOOGLE_CLIENT_ID')) {
+                btnFallback?.classList.remove('d-none');
+                btnFallback?.addEventListener('click', () => {
+                    notificar('Configuración Pendiente', 'Define GOOGLE_CLIENT_ID en tu archivo .env y reinicia el servidor.', 'info');
+                });
+                return;
+            }
+
+            const esperarSDK = setInterval(() => {
+                if (typeof google !== 'undefined' && google.accounts?.id && btnContainer) {
+                    clearInterval(esperarSDK);
+                    google.accounts.id.initialize({
+                        client_id: clientId,
+                        callback: window.handleGoogleCredentialResponse
+                    });
+                    google.accounts.id.renderButton(btnContainer, {
+                        theme: 'outline',
+                        size: 'large',
+                        width: 340,
+                        text: 'signin_with',
+                        shape: 'pill'
+                    });
+                }
+            }, 300);
+            setTimeout(() => clearInterval(esperarSDK), 8000);
+        } catch (e) {
+            btnFallback?.classList.remove('d-none');
+        }
+    };
+    inicializarGoogleSignIn();
+
+    const actualizarInterfazSesion = (perfil) => {
+        perfilUsuarioActual = perfil;
+        const autenticado = Boolean(perfil);
+        const rol = perfil?.rol || 'cliente';
+
+        document.getElementById('btnAbrirLogin')?.classList.toggle('d-none', autenticado);
+        document.getElementById('btnCerrarSesion')?.classList.toggle('d-none', !autenticado);
+
+        const navBadge = document.getElementById('navUserBadge');
+        if (navBadge) {
+            navBadge.classList.toggle('d-none', !autenticado);
+            if (autenticado) {
+                document.getElementById('navUserName').textContent = perfil.username;
+                document.getElementById('navUserRole').textContent = rol;
+            }
+        }
+
+        const esGestor = autenticado && (rol === 'ferretero' || rol === 'admin');
+        const puedeRegistrarFerreteria = autenticado && (rol === 'admin' || !perfil.id_ferreteria);
+
+        document.getElementById('btnAbrirDashboard')?.classList.toggle('d-none', !esGestor);
+        document.getElementById('btnAbrirRegistroFerreteria')?.classList.toggle('d-none', !puedeRegistrarFerreteria);
+        document.getElementById('navItemAdmin')?.classList.toggle('d-none', rol !== 'admin');
     };
 
     const obtenerPerfil = async (token) => {
@@ -481,7 +564,7 @@ btnGoogleAuth?.addEventListener('click', () => {
         });
         const data = await res.json();
         if (!res.ok) {
-            const error = new Error(data.detail || `No se pudo validar la sesión (${res.status})`);
+            const error = new Error(data.detail || `Sesión inválida (${res.status})`);
             error.status = res.status;
             throw error;
         }
@@ -490,45 +573,43 @@ btnGoogleAuth?.addEventListener('click', () => {
 
     const restaurarSesion = async () => {
         const token = localStorage.getItem('iop812-token');
-        if (!token) return;
-
+        if (!token) {
+            actualizarInterfazSesion(null);
+            return;
+        }
         try {
-            await obtenerPerfil(token);
-            actualizarInterfazSesion(true);
+            const perfil = await obtenerPerfil(token);
+            actualizarInterfazSesion(perfil);
         } catch (err) {
-            if (err.status === 401 || err.status === 403 || err.status === 404) {
-                localStorage.removeItem('iop812-token');
-                actualizarInterfazSesion(false);
-                return;
-            }
-            notificar('No se pudo validar la sesión', err.message, 'error');
+            localStorage.removeItem('iop812-token');
+            actualizarInterfazSesion(null);
         }
     };
     restaurarSesion();
 
-    const aplicarModoAutenticacion = (registro) => {
-        isRegisterMode = registro;
-        usernameGroup?.classList.toggle('d-none', !isRegisterMode);
-        if (inputUsername) inputUsername.required = isRegisterMode;
-        const passwordInput = document.getElementById('inputPassword');
-        passwordInput?.setAttribute('autocomplete', isRegisterMode ? 'new-password' : 'current-password');
-        if (btnSubmitAuth) btnSubmitAuth.textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
-        if (authModePrompt) authModePrompt.textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
-        if (btnToggleAuthMode) btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
-        if (modalLoginTitle) modalLoginTitle.textContent = isRegisterMode ? 'Crear cuenta ferretera' : '¡Bienvenido a la familia Opti!';
-    };
+    // Login / Registro clásico
+    let isRegisterMode = false;
+    const btnToggleAuthMode = document.getElementById('btnToggleAuthMode');
+    const usernameGroup = document.getElementById('usernameGroup');
+    const inputUsername = document.getElementById('inputUsername');
 
     btnToggleAuthMode?.addEventListener('click', () => {
-        aplicarModoAutenticacion(!isRegisterMode);
+        isRegisterMode = !isRegisterMode;
+        usernameGroup?.classList.toggle('d-none', !isRegisterMode);
+        if (inputUsername) inputUsername.required = isRegisterMode;
+        document.getElementById('btnSubmitAuth').textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
+        document.getElementById('authModePrompt').textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+        btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
+        document.getElementById('modalLoginAuthLabel').textContent = isRegisterMode ? 'Crear cuenta ferretera' : '¡Bienvenido a la familia Opti!';
     });
 
-    btnCerrarSesion?.addEventListener('click', () => {
+    document.getElementById('btnCerrarSesion')?.addEventListener('click', () => {
         localStorage.removeItem('iop812-token');
-        actualizarInterfazSesion(false);
+        actualizarInterfazSesion(null);
         notificar('Sesión cerrada', 'Has cerrado tu sesión correctamente.', 'success');
     });
 
-    formLogin?.addEventListener('submit', async (e) => {
+    document.getElementById('formLogin')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('inputEmail')?.value;
         const password = document.getElementById('inputPassword')?.value;
@@ -544,261 +625,203 @@ btnGoogleAuth?.addEventListener('click', () => {
             });
             const data = await res.json();
             if (!res.ok) {
-                const detail = Array.isArray(data.detail)
-                    ? data.detail.map((item) => item.msg).join(', ')
-                    : data.detail;
-                throw new Error(detail || `La solicitud de autenticación falló (${res.status})`);
+                const detail = Array.isArray(data.detail) ? data.detail.map(i => i.msg).join(', ') : data.detail;
+                throw new Error(detail || 'Error de autenticación');
             }
 
-            const registroCompletado = isRegisterMode;
-            await obtenerPerfil(data.access_token);
             localStorage.setItem('iop812-token', data.access_token);
-            actualizarInterfazSesion(true);
+            const perfil = await obtenerPerfil(data.access_token);
+            actualizarInterfazSesion(perfil);
 
-            const modalElement = document.getElementById('modalLoginAuth');
-            if (modalElement && typeof bootstrap !== 'undefined') {
-                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
-            }
-            formLogin.reset();
-            aplicarModoAutenticacion(false);
-            notificar(
-                registroCompletado ? 'Cuenta creada' : '¡Acceso correcto!',
-                registroCompletado ? 'Tu cuenta se creó y ya iniciaste sesión.' : 'Has iniciado sesión correctamente.',
-                'success'
-            );
+            const modalEl = document.getElementById('modalLoginAuth');
+            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+            e.target.reset();
+            notificar('¡Acceso correcto!', `Bienvenido ${perfil.username}.`, 'success');
         } catch (err) {
             notificar('Error de Autenticación', err.message, 'error');
         }
     });
 
     // ---------------------------------------------------------------
-    // 8. CALCULADORA INVENTARIOS EOQ (EOQParametrosInput)
+    // 8. REGISTRO DE FERRETERÍA Y GESTIÓN ADMIN DE ROLES
     // ---------------------------------------------------------------
-    const formEOQ = document.getElementById('formEOQ');
-    formEOQ?.addEventListener('submit', async (e) => {
+    document.getElementById('formRegistrarFerreteria')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const D = parseFloat(document.getElementById('eoqD')?.value || 0);
-        const K = parseFloat(document.getElementById('eoqK')?.value || 0);
-        const H = parseFloat(document.getElementById('eoqH')?.value || 0);
-        const L_dias = parseFloat(document.getElementById('eoqL')?.value || 0);
-
-        try {
-            const response = await fetch('/api/inventario/calcular', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    unidad_tiempo: 'Años',
-                    demanda_D: D,
-                    costo_pedido_K: K,
-                    costo_mantenimiento_H: H,
-                    tiempo_entrega_dias_L: L_dias
-                })
-            });
-
-            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ');
-
-            const data = await response.json();
-            const elQ = document.getElementById('resQOptimo');
-            const elROP = document.getElementById('resROP');
-            if (elQ) elQ.textContent = `${data.lote_optimo_Q} un.`;
-            if (elROP) elROP.textContent = `${data.punto_reorden_ROP} un.`;
-
-            notificar('Cálculo Exitoso', 'Valores de EOQ y ROP actualizados por el motor matemático.', 'success');
-        } catch (err) {
-            notificar('Error en Modelo EOQ', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 9. ESTIMACIÓN DE COLAS M/M/1 (ColasMM1Input)
-    // ---------------------------------------------------------------
-    const formColas = document.getElementById('formColas');
-    formColas?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const lambda = parseFloat(document.getElementById('colaLambda')?.value || 0);
-        const mu = parseFloat(document.getElementById('colaMu')?.value || 0);
-        const unidad = document.getElementById('colaUnidad')?.value || 'horas';
-
-        try {
-            const res = await fetch('/api/colas/mm1', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tasa_llegada_lambda: lambda,
-                    tasa_servicio_mu: mu,
-                    unidad_tiempo: unidad
-                })
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || 'Servicio saturado o parámetros inválidos');
-            }
-
-            const data = await res.json();
-            const elRho = document.getElementById('resColaRho');
-            const elWq = document.getElementById('resColaWq');
-
-            if (elRho) elRho.textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
-            
-            const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
-            if (elWq) elWq.textContent = tiempoMostrar;
-
-            notificar('Métricas M/M/1 Calculadas', 'Estimación procesada correctamente.', 'success');
-        } catch (err) {
-            notificar('Error en Colas', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 10. SIMULACIÓN CADENAS DE MARKOV (MarkovMatrixInput)
-    // ---------------------------------------------------------------
-    const formMarkov = document.getElementById('formMarkov');
-    formMarkov?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const p12 = parseFloat(document.getElementById('markovP12')?.value || 0);
-        const p2A1 = parseFloat(document.getElementById('markovP2A1')?.value || 0);
-
         const payload = {
-            estados_transitorios: ["Busqueda", "EnCarrito"],
-            estados_absorbentes: ["CompraRealizada", "Abandono"],
-            matriz_Q: [
-                [0.0, p12],
-                [0.0, 0.0]
-            ],
-            matriz_R: [
-                [0.0, 1 - p12],
-                [p2A1, 1 - p2A1]
-            ]
+            nombre: document.getElementById('regFerrNombre').value.trim(),
+            direccion: document.getElementById('regFerrDireccion').value.trim(),
+            latitud: parseFloat(document.getElementById('regFerrLat').value),
+            longitud: parseFloat(document.getElementById('regFerrLng').value),
+            superficie_almacen_m2: parseFloat(document.getElementById('regFerrSuperficie').value || 0),
+            capacidad_canales_atencion: parseInt(document.getElementById('regFerrCanales').value || 1, 10)
         };
 
         try {
-            const response = await fetch('/api/markov/simular', {
+            const res = await fetch('/api/ahp/ferreterias', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(true),
                 body: JSON.stringify(payload)
             });
-
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.detail || 'Error al simular Cadenas de Markov');
-            }
-
-            const data = await response.json();
-            const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
-            const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
-
-            const container = document.getElementById('resMarkovContainer');
-            if (container) {
-                container.innerHTML = `
-                    <div class="alert alert-success border-0 mb-0">
-                        <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
-                        <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
-                        <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
-                        <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
-                    </div>
-                `;
-            }
-
-            notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas por el motor NumPy.', 'success');
-        } catch (err) {
-            notificar('Error en Markov', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 11. EVALUACIÓN TEORÍA DE DECISIONES (Alineado con DecisionOutput)
-    // ---------------------------------------------------------------
-    const formDecisiones = document.getElementById('formDecisiones');
-    formDecisiones?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            const alt1 = document.getElementById('decAlt1')?.value || '';
-            const a1e1 = parseFloat(document.getElementById('decA1E1')?.value || 0);
-            const a1e2 = parseFloat(document.getElementById('decA1E2')?.value || 0);
-
-            const alt2 = document.getElementById('decAlt2')?.value || '';
-            const a2e1 = parseFloat(document.getElementById('decA2E1')?.value || 0);
-            const a2e2 = parseFloat(document.getElementById('decA2E2')?.value || 0);
-
-            const p1 = parseFloat(document.getElementById('decProbE1')?.value || 0);
-            const p2 = 1 - p1;
-
-            const payload = {
-                alternativas: [alt1, alt2],
-                estados_naturaleza: ["Alta Demanda", "Baja Demanda"],
-                matriz_pagos: [
-                    [a1e1, a1e2],
-                    [a2e1, a2e2]
-                ],
-                probabilidades: [p1, p2],
-                coeficiente_alpha: 0.7
-            };
-
-            const res = await fetch('/api/decisiones/evaluar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || 'Error en evaluación de decisiones');
-            }
-
             const data = await res.json();
-            
-            // Extracción corregida mapeando los contratos del schema DecisionOutput
-            const vmeOpt = data.analisis_riesgo ? data.analisis_riesgo.decision_optima_vme : 'N/A';
-            const laplaceOpt = data.criterios_incertidumbre?.["Laplace (Equiprobabilidad)"]?.alternativa_optima || 'N/A';
-            const waldOpt = data.criterios_incertidumbre?.["Wald Pesimista (MaxiMin)"]?.alternativa_optima || 'N/A';
-            const savageOpt = data.criterios_incertidumbre?.["Savage (MiniMax Arrepentimiento)"]?.alternativa_optima || 'N/A';
+            if (!res.ok) throw new Error(data.detail || 'Error al registrar ferretería');
 
-            const container = document.getElementById('resDecisionesContainer');
-            if (container) {
-                container.innerHTML = `
-                    <ul class="list-unstyled mb-0 small">
-                        <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${vmeOpt}</span></li>
-                        <li class="mb-1"><strong>Criterio Laplace:</strong> ${laplaceOpt}</li>
-                        <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${waldOpt}</li>
-                        <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${savageOpt}</li>
-                    </ul>
-                    <div class="mt-2 pt-2 border-top extra-small text-muted">${data.recomendacion_general}</div>
-                `;
-            }
-            notificar('Evaluación Completada', 'Los criterios de decisión fueron procesados exitosamente.', 'success');
+            const modalEl = document.getElementById('modalRegistrarFerreteria');
+            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+
+            const token = localStorage.getItem('iop812-token');
+            if (token) actualizarInterfazSesion(await obtenerPerfil(token));
+
+            notificar('Ferretería Registrada', data.mensaje || 'Tu ferretería ya está activa en el mapa.', 'success');
         } catch (err) {
-            notificar('Error en Decisiones', err.message, 'error');
+            notificar('Error al Registrar', err.message, 'error');
         }
     });
 
+    const cargarUsuariosAdmin = async () => {
+        const tbody = document.getElementById('tbodyUsuariosAdmin');
+        if (!tbody) return;
+        try {
+            const res = await fetch('/api/auth/usuarios', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const usuarios = await res.json();
+            tbody.innerHTML = usuarios.map(u => `
+                <tr>
+                    <td class="fw-medium">${u.username}</td>
+                    <td>${u.email}</td>
+                    <td>${u.ferreteria_nombre || '<span class="text-muted">Sin ferretería</span>'}</td>
+                    <td>
+                        <select class="form-select form-select-sm w-auto" onchange="window.cambiarRolUsuario(${u.id_usuario}, this.value)">
+                            <option value="cliente" ${u.rol === 'cliente' ? 'selected' : ''}>cliente</option>
+                            <option value="ferretero" ${u.rol === 'ferretero' ? 'selected' : ''}>ferretero</option>
+                            <option value="admin" ${u.rol === 'admin' ? 'selected' : ''}>admin</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.warn('Error cargando usuarios admin:', e);
+        }
+    };
+
+    window.cambiarRolUsuario = async (idUsuario, nuevoRol) => {
+        try {
+            const res = await fetch(`/api/auth/usuarios/${idUsuario}/rol`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(true),
+                body: JSON.stringify({ rol: nuevoRol })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al actualizar rol');
+            notificar('Rol Actualizado', data.mensaje || `Rol cambiado a ${nuevoRol}.`, 'success');
+        } catch (err) {
+            notificar('Error de Permisos', err.message, 'error');
+        }
+    };
+
     // ---------------------------------------------------------------
-    // 12. CARGA DINÁMICA DEL CATÁLOGO (Tabla productos de PostgreSQL)
+    // 9. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV
     // ---------------------------------------------------------------
+    const cardFormProducto = document.getElementById('cardFormProducto');
+    const formProductoCRUD = document.getElementById('formProductoCRUD');
+
+    document.getElementById('btnToggleFormProducto')?.addEventListener('click', () => {
+        formProductoCRUD?.reset();
+        document.getElementById('prodEditId').value = '';
+        cardFormProducto?.classList.toggle('d-none');
+    });
+
+    document.getElementById('btnCancelarProducto')?.addEventListener('click', () => {
+        cardFormProducto?.classList.add('d-none');
+    });
+
+    document.getElementById('btnDescargarPlantillaCSV')?.addEventListener('click', () => {
+        const encabezado = "nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS\n";
+        const blob = new Blob([encabezado], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_catalogo_iop812.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('inputCsvProductos')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/productos/carga-masiva', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al procesar el archivo CSV');
+
+            notificar('Carga Masiva Exitosa', data.mensaje, 'success');
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error en Carga CSV', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
+
+    formProductoCRUD?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('prodEditId').value;
+        const payload = {
+            nombre: document.getElementById('prodNombre').value.trim(),
+            precio_bob: parseFloat(document.getElementById('prodPrecio').value),
+            stock_actual: parseInt(document.getElementById('prodStock').value, 10),
+            demanda_anual_D: parseInt(document.getElementById('prodDemanda').value, 10),
+            costo_pedido_K: parseFloat(document.getElementById('prodK').value || 50),
+            costo_mantenimiento_H: parseFloat(document.getElementById('prodH').value || 5),
+            tiempo_entrega_dias_L: parseInt(document.getElementById('prodL').value || 3, 10),
+            stock_seguridad_SS: parseInt(document.getElementById('prodSS').value || 10, 10)
+        };
+
+        const url = editId ? `/api/productos/${editId}` : '/api/productos';
+        const method = editId ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: getAuthHeaders(true),
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo guardar el producto');
+
+            cardFormProducto?.classList.add('d-none');
+            notificar('Catálogo Actualizado', data.mensaje, 'success');
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error al Guardar', err.message, 'error');
+        }
+    });
+
     const cargarProductosCRUD = async () => {
         const tbody = document.getElementById('tbodyCatálogo');
         if (!tbody) return;
 
         try {
-            const token = localStorage.getItem('iop812-token');
-            const res = await fetch('/api/productos', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await fetch('/api/productos', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            productosCache = await res.json();
 
-            if (!res.ok) {
-                if (res.status === 401) return;
-                throw new Error(`Error en servidor (${res.status})`);
-            }
-
-            const productos = await res.json();
-            if (productos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-3">No hay productos registrados en el catálogo.</td></tr>`;
+            if (productosCache.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted small py-3">No hay productos registrados en el catálogo.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = productos.map(p => `
+            tbody.innerHTML = productosCache.map(p => `
                 <tr>
                     <td class="fw-medium">${p.nombre}</td>
+                    <td class="small text-muted">${p.ferreteria_nombre || '-'}</td>
                     <td class="text-success fw-bold">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</td>
                     <td><span class="badge ${p.stock_actual > 20 ? 'bg-success' : 'bg-danger'}">${p.stock_actual} un.</span></td>
                     <td>${p.demanda_anual_D} un.</td>
@@ -809,18 +832,29 @@ btnGoogleAuth?.addEventListener('click', () => {
                 </tr>
             `).join('');
         } catch (e) {
-            console.warn('Fallo al obtener el catálogo de productos:', e);
+            console.warn('Error cargando catálogo:', e);
         }
     };
 
     window.editarProducto = (id) => {
-        notificar('Editar Producto', `Abriendo edición para el producto ID: ${id}`, 'info');
+        const prod = productosCache.find(p => p.id_producto === id);
+        if (!prod) return;
+        document.getElementById('prodEditId').value = prod.id_producto;
+        document.getElementById('prodNombre').value = prod.nombre;
+        document.getElementById('prodPrecio').value = prod.precio_bob;
+        document.getElementById('prodStock').value = prod.stock_actual;
+        document.getElementById('prodDemanda').value = prod.demanda_anual_D;
+        document.getElementById('prodK').value = prod.costo_pedido_K ?? 50;
+        document.getElementById('prodH').value = prod.costo_mantenimiento_H ?? 5;
+        document.getElementById('prodL').value = prod.tiempo_entrega_dias_L ?? 3;
+        document.getElementById('prodSS').value = prod.stock_seguridad_SS ?? 10;
+        cardFormProducto?.classList.remove('d-none');
     };
 
     window.eliminarProducto = async (id) => {
         const confirmacion = await Swal.fire({
             title: '¿Eliminar producto?',
-            text: 'Esta acción no se puede deshacer en la base de datos.',
+            text: 'Esta acción eliminará el ítem del catálogo.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#EF4444',
@@ -829,12 +863,157 @@ btnGoogleAuth?.addEventListener('click', () => {
             cancelButtonText: 'Cancelar'
         });
 
-        if (confirmacion.isConfirmed) {
-            notificar('Producto Eliminado', `El producto ID ${id} fue removido.`, 'success');
+        if (!confirmacion.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/api/productos/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+            notificar('Eliminado', data.mensaje, 'success');
             cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error al Eliminar', err.message, 'error');
         }
     };
- 
-    
+
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
+
+    // ---------------------------------------------------------------
+    // 10. CALCULADORAS IO2 (EOQ, COLAS M/M/1, MARKOV, DECISIONES)
+    // ---------------------------------------------------------------
+    document.getElementById('formEOQ')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('/api/inventario/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    unidad_tiempo: 'Años',
+                    demanda_D: parseFloat(document.getElementById('eoqD')?.value || 0),
+                    costo_pedido_K: parseFloat(document.getElementById('eoqK')?.value || 0),
+                    costo_mantenimiento_H: parseFloat(document.getElementById('eoqH')?.value || 0),
+                    tiempo_entrega_dias_L: parseFloat(document.getElementById('eoqL')?.value || 0)
+                })
+            });
+            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ');
+            const data = await response.json();
+            document.getElementById('resQOptimo').textContent = `${data.lote_optimo_Q} un.`;
+            document.getElementById('resROP').textContent = `${data.punto_reorden_ROP} un.`;
+            notificar('Cálculo Exitoso', 'Valores de EOQ y ROP actualizados.', 'success');
+        } catch (err) {
+            notificar('Error en Modelo EOQ', err.message, 'error');
+        }
+    });
+
+    document.getElementById('formColas')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const unidad = document.getElementById('colaUnidad')?.value || 'horas';
+        try {
+            const res = await fetch('/api/colas/mm1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tasa_llegada_lambda: parseFloat(document.getElementById('colaLambda')?.value || 0),
+                    tasa_servicio_mu: parseFloat(document.getElementById('colaMu')?.value || 0),
+                    unidad_tiempo: unidad
+                })
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Servicio saturado o parámetros inválidos');
+            }
+            const data = await res.json();
+            document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
+            const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
+            document.getElementById('resColaWq').textContent = tiempoMostrar;
+            notificar('Métricas M/M/1 Calculadas', 'Estimación procesada correctamente.', 'success');
+        } catch (err) {
+            notificar('Error en Colas', err.message, 'error');
+        }
+    });
+
+    document.getElementById('formMarkov')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const p12 = parseFloat(document.getElementById('markovP12')?.value || 0);
+        const p2A1 = parseFloat(document.getElementById('markovP2A1')?.value || 0);
+        try {
+            const response = await fetch('/api/markov/simular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    estados_transitorios: ["Busqueda", "EnCarrito"],
+                    estados_absorbentes: ["CompraRealizada", "Abandono"],
+                    matriz_Q: [[0.0, p12], [0.0, 0.0]],
+                    matriz_R: [[0.0, 1 - p12], [p2A1, 1 - p2A1]]
+                })
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Error al simular Cadenas de Markov');
+            }
+            const data = await response.json();
+            const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
+            const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
+            document.getElementById('resMarkovContainer').innerHTML = `
+                <div class="alert alert-success border-0 mb-0">
+                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
+                    <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
+                    <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
+                    <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
+                </div>
+            `;
+            notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas.', 'success');
+        } catch (err) {
+            notificar('Error en Markov', err.message, 'error');
+        }
+    });
+
+    document.getElementById('formDecisiones')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const p1 = parseFloat(document.getElementById('decProbE1')?.value || 0);
+            const res = await fetch('/api/decisiones/evaluar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    alternativas: [
+                        document.getElementById('decAlt1')?.value || '',
+                        document.getElementById('decAlt2')?.value || ''
+                    ],
+                    estados_naturaleza: ["Alta Demanda", "Baja Demanda"],
+                    matriz_pagos: [
+                        [parseFloat(document.getElementById('decA1E1')?.value || 0), parseFloat(document.getElementById('decA1E2')?.value || 0)],
+                        [parseFloat(document.getElementById('decA2E1')?.value || 0), parseFloat(document.getElementById('decA2E2')?.value || 0)]
+                    ],
+                    probabilidades: [p1, 1 - p1],
+                    coeficiente_alpha: 0.7
+                })
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Error en evaluación de decisiones');
+            }
+            const data = await res.json();
+            const vmeOpt = data.analisis_riesgo ? data.analisis_riesgo.decision_optima_vme : 'N/A';
+            const laplaceOpt = data.criterios_incertidumbre?.["Laplace (Equiprobabilidad)"]?.alternativa_optima || 'N/A';
+            const waldOpt = data.criterios_incertidumbre?.["Wald Pesimista (MaxiMin)"]?.alternativa_optima || 'N/A';
+            const savageOpt = data.criterios_incertidumbre?.["Savage (MiniMax Arrepentimiento)"]?.alternativa_optima || 'N/A';
+
+            document.getElementById('resDecisionesContainer').innerHTML = `
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${vmeOpt}</span></li>
+                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${laplaceOpt}</li>
+                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${waldOpt}</li>
+                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${savageOpt}</li>
+                </ul>
+                <div class="mt-2 pt-2 border-top extra-small text-muted">${data.recomendacion_general}</div>
+            `;
+            notificar('Evaluación Completada', 'Criterios procesados exitosamente.', 'success');
+        } catch (err) {
+            notificar('Error en Decisiones', err.message, 'error');
+        }
+    });
 });

@@ -1,226 +1,42 @@
 ===================================================================
 ESPECIFICADOR DE PROYECTO: IOP812 - OPTIMIZADOR Y BUSCADOR FERRETERO
 ===================================================================
-Este documento es la fuente de verdad del proyecto. Cada vez que la IA 
+Este documento es la fuente de verdad del proyecto. Cada vez que la IA
 se desvíe del alcance o las reglas de negocio, se debe reingresar este especificador.
 
 ¿QUÉ HACE LA APLICACIÓN?
-Es una aplicación que busca la ferretería que tenga el producto más barato 
-en bolivianos (BOB) de Bolivia y que esté más cerca de la ubicación del usuario, 
-aplicando los algoritmos y modelos matemáticos de Investigación Operativa II.
-
-La idea principal es aplicar todos los métodos enseñados en la materia IOP812.
+Es una aplicación web geoespacial que busca la ferretería con la mejor combinación
+de precio en bolivianos (BOB), cercanía, reputación y stock en la Región Metropolitana
+Kanata de Cochabamba, Bolivia (Cercado, Sacaba, Quillacollo, Colcapirhua, Tiquipaya,
+Vinto y Sipe Sipe), aplicando los modelos matemáticos de Investigación Operativa II (IOP812).
 
 ¿QUÉ FUNCIONALIDADES TIENE LA V1?
-* Registro personal de usuarios mediante Google OAuth.
-* Vista exclusiva para administradores/ferreteros para carga masiva y actualización 
-  de catálogo, precios y stock en tiempo real.
-* Buscador geoespacial y ordenamiento multicriterio AHP (Precio, Distancia, Reputación, Stock).
-* Módulo de gestión de inventarios:
-  - Lote Económico de Pedido (EOQ) y Punto de Reorden (ROP).
-  - EOQ con Faltantes / Déficit permitido.
-  - EOQ con Descuentos por Cantidad (Rangos de precios).
-  - Lote Económico de Producción (EPQ) para productos fabricados en sitio.
-  - EOQ Multiproducto con restricción de almacenamiento (m²).
-* Módulo de Evaluación de Decisiones:
-  - Decisiones bajo incertidumbre (Laplace, Wald MaxiMin/MaxiMax, Hurwicz, Savage).
-  - Decisiones bajo riesgo mediante Árboles de Decisión (VME y VEIP).
-* Módulo de Predicción mediante Cadenas de Markov con Estados Absorbentes para simular 
-  el comportamiento de navegación y probabilidad de conversión de compradores.
+* Registro e inicio de sesión mediante Google Identity Services (OAuth2 / GIS SDK) y credenciales locales (PBKDF2 + JWT).
+* Control de acceso basado en roles (cliente, ferretero, admin):
+  - cliente: búsqueda AHP, historial de búsquedas, ferreterías favoritas y registro de su propia ferretería en el mapa.
+  - ferretero: gestión CRUD de su catálogo, precios BOB y stock, carga masiva CSV y calculadoras I.O. II.
+  - admin: gestión de roles de usuarios, registro y carga de ferreterías reales e importación masiva de catálogos.
+* Buscador geoespacial PostGIS y ordenamiento multicriterio AHP (Precio, Distancia, Reputación, Stock).
+* Módulo de gestión de inventarios determinísticos (EOQ Básico, EPQ, EOQ con Faltantes, Descuentos por Cantidad y ROP).
+* Módulo de Evaluación de Decisiones bajo Incertidumbre (Laplace, Wald, Hurwicz, Savage) y Riesgo (VME, VEIP).
+* Módulo de Predicción mediante Cadenas de Markov con Estados Absorbentes (Matriz N y Matriz de Absorción B = N*R).
 * Estimación de tiempos de espera en mostrador mediante Teoría de Colas (Modelo M/M/1).
 
+HOJA DE RUTA V1.1 (AÑADIDOS PLANIFICADOS):
+* Trazado de ruta vial óptima en tiempo real sobre el mapa Leaflet mediante el motor de enrutamiento OSRM (router.project-osrm.org) desde el origen del usuario hasta la ferretería ganadora AHP.
+
 ¿MÉTODOS DE INVESTIGACIÓN OPERATIVA II APLICADOS?
-1. AHP (Analytic Hierarchy Process): Matriz de comparación por pares, cálculo de vector de pesos W y ratio de consistencia CR.
+1. AHP (Analytic Hierarchy Process): Matriz de comparación por pares, vector de pesos W y ratio de consistencia CR = CI / RI < 0.10.
 2. Modelos de Inventarios Determinísticos:
    - EOQ Básico: Q* = sqrt((2*D*K)/H)
-   - EPQ (Producción): Q* = sqrt((2*D*K)/(H*(1 - d/p)))
-   - EOQ Faltantes: S* de déficit máximo y Q* ajustado por costo p.
-   - EOQ Descuentos: Optimización por tramos de precios.
+   - EPQ (Producción): Q* = sqrt((2*D*K)/(H*(1 - D/P)))
+   - EOQ Faltantes: S* = Q* * (H/(p+H)) y Q* ajustado por penalización p.
+   - EOQ Descuentos: Evaluación de costo total CT por tramos de cantidad.
    - ROP (Punto de Reorden): ROP = (d * L) + SS.
-3. Decisiones Bajo Incertidumbre: Criterios Laplace, Wald (Optimista/Pesimista), Hurwicz (con coeficiente alpha) y Savage (Matriz de arrepentimiento).
-4. Decisiones Bajo Riesgo: Valor Medio Esperado VME = sum(P_j * V_j) y Árboles de Decisión.
+3. Decisiones Bajo Incertidumbre: Laplace, Wald (Optimista/Pesimista), Hurwicz (alpha) y Savage (Matriz de arrepentimiento).
+4. Decisiones Bajo Riesgo: Valor Medio Esperado VME = sum(P_j * V_j), VEconIP y VEIP.
 5. Cadenas de Markov Absorbentes: Matriz fundamental N = (I - Q)^-1 y Matriz de Absorción B = N * R.
-6. Teoría de Colas (M/M/1): Tasa de llegada lambda, tasa de servicio mu, uso del sistema rho = lambda/mu y tiempo en cola Wq = lambda / (mu * (mu - lambda)).
-
-7.
-8.
-9.
-
-¿QUÉ DATOS MANEJA Y QUÉ TECNOLOGÍAS SE USARÁ?
-Los datos que manejamos
-<BD>
-1. Usuario (
-    id_usuario PK, google_id VARCHAR NULL, email VARCHAR, username VARCHAR, 
-    password_hash VARCHAR NULL, fecha_registro DATETIME
-)
-
-2. Ferreteria (
-    id_ferreteria PK, id_usuario_propietario FK, nombre VARCHAR, direccion VARCHAR, 
-    latitud DECIMAL(10,8), longitud DECIMAL(11,8), reputacion DECIMAL(3,2), 
-    superficie_almacen_m2 DECIMAL(10,2), capacidad_canales_atencion INT
-)
-
-3. Categoria (id_categoria PK, nombre VARCHAR, descripcion TEXT)
-
-4. Marca (id_marca PK, nombre VARCHAR)
-
-5. Producto (
-    id_producto PK, id_ferreteria FK, id_categoria FK, id_marca FK, 
-    nombre VARCHAR, precio_bob DECIMAL(10,2), stock_actual INT, foto_url VARCHAR, 
-    volumen_m3 DECIMAL(8,4), demanda_anual_D INT, tasa_produccion_p INT NULL, 
-    costo_pedido_K DECIMAL(10,2), costo_mantenimiento_H DECIMAL(10,2), 
-    costo_faltante_p DECIMAL(10,2) NULL, tiempo_entrega_dias_L INT, stock_seguridad_SS INT
-)
-
-6. TramoDescuento (
-    id_tramo PK, id_producto FK, cantidad_minima INT, cantidad_maxima INT, 
-    precio_unitario_descuento DECIMAL(10,2)
-)
-
-7. HistorialBusqueda (
-    id_busqueda PK, id_usuario FK, texto_buscado VARCHAR, latitud_usuario DECIMAL(10,8), 
-    longitud_usuario DECIMAL(11,8), fecha_busqueda DATETIME
-)
-
-8. FerreteriaFavorita (id_favorito PK, id_ferreteria FK, id_usuario FK)
-
-9. LogNavegacionMarkov (
-    id_log PK, id_usuario FK, estado_origen VARCHAR, estado_destino VARCHAR, timestamp DATETIME
-) -- Estados: Busqueda, VistaProducto, EnCarrito, CompraRealizada (Absorbente), Abandono (Absorbente)
-
-10. EscenarioIncertidumbre (
-    id_escenario PK, id_producto FK, alternativa VARCHAR, estado_naturaleza VARCHAR, 
-    probabilidad DECIMAL(4,3) NULL, pago_estimado DECIMAL(12,2)
-) -- Para VME, VEIP, Laplace, Wald, Hurwicz, Savage
-
-11. RegistroColaAtencion (
-    id_registro PK, id_ferreteria FK, tasa_llegada_lambda DECIMAL(8,2), 
-    tasa_servicio_mu DECIMAL(8,2), fecha_registro DATETIME
-) -- Para métricas M/M/1
-</BD>
-BD ya creada en el proyecto
-<init_db>
--- init_db.sql
--- Script completo de creación de base de datos e índices geoespaciales para IOP812.
-
--- Habilitar extensión geoespacial PostGIS
-CREATE EXTENSION IF NOT EXISTS postgis;
-
--- 1. Tabla Usuario
-CREATE TABLE IF NOT EXISTS usuarios (
-    id_usuario SERIAL PRIMARY KEY,
-    google_id VARCHAR(255) UNIQUE NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    username VARCHAR(100) NOT NULL,
-    password_hash VARCHAR(255) NULL,
-    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Tabla Ferreteria (Con coordenadas y PostGIS)
-CREATE TABLE IF NOT EXISTS ferreterias (
-    id_ferreteria SERIAL PRIMARY KEY,
-    id_usuario_propietario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    nombre VARCHAR(150) NOT NULL,
-    direccion TEXT NOT NULL,
-    latitud DECIMAL(10,8) NOT NULL,
-    longitud DECIMAL(11,8) NOT NULL,
-    ubicacion GEOMETRY(Point, 4326),
-    reputacion DECIMAL(3,2) DEFAULT 5.00,
-    superficie_almacen_m2 DECIMAL(10,2) DEFAULT 0.00,
-    capacidad_canales_atencion INT DEFAULT 1
-);
---- Índice geoespacial GIST para consultas por proximidad rápida
-CREATE INDEX IF NOT EXISTS idx_ferreterias_ubicacion ON ferreterias USING GIST (ubicacion);
-
--- 3. Tabla Categoria
-CREATE TABLE IF NOT EXISTS categorias (
-    id_categoria SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    descripcion TEXT NULL
-);
-
--- 4. Tabla Marca
-CREATE TABLE IF NOT EXISTS marcas (
-    id_marca SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL
-);
-
--- 5. Tabla Producto (Modelos EOQ / EPQ / ROP)
-CREATE TABLE IF NOT EXISTS productos (
-    id_producto SERIAL PRIMARY KEY,
-    id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
-    id_categoria INT REFERENCES categorias(id_categoria) ON DELETE SET NULL,
-    id_marca INT REFERENCES marcas(id_marca) ON DELETE SET NULL,
-    nombre VARCHAR(150) NOT NULL,
-    precio_bob DECIMAL(10,2) NOT NULL,
-    stock_actual INT DEFAULT 0,
-    foto_url VARCHAR(255) NULL,
-    volumen_m3 DECIMAL(8,4) DEFAULT 0.0000,
-    demanda_anual_D INT DEFAULT 0,
-    tasa_produccion_p INT NULL,
-    costo_pedido_K DECIMAL(10,2) DEFAULT 0.00,
-    costo_mantenimiento_H DECIMAL(10,2) DEFAULT 0.00,
-    costo_faltante_p DECIMAL(10,2) NULL,
-    tiempo_entrega_dias_L INT DEFAULT 0,
-    stock_seguridad_SS INT DEFAULT 0
-);
-
--- 6. Tabla TramoDescuento (EOQ con Descuento por Cantidad)
-CREATE TABLE IF NOT EXISTS tramos_descuento (
-    id_tramo SERIAL PRIMARY KEY,
-    id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
-    cantidad_minima INT NOT NULL,
-    cantidad_maxima INT NOT NULL,
-    precio_unitario_descuento DECIMAL(10,2) NOT NULL
-);
-
--- 7. Tabla HistorialBusqueda
-CREATE TABLE IF NOT EXISTS historial_busquedas (
-    id_busqueda SERIAL PRIMARY KEY,
-    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    texto_buscado VARCHAR(255) NOT NULL,
-    latitud_usuario DECIMAL(10,8) NOT NULL,
-    longitud_usuario DECIMAL(11,8) NOT NULL,
-    fecha_busqueda TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- 8. Tabla FerreteriaFavorita
-CREATE TABLE IF NOT EXISTS ferreterias_favoritas (
-    id_favorito SERIAL PRIMARY KEY,
-    id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
-    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    CONSTRAINT uq_usuario_ferreteria UNIQUE(id_usuario, id_ferreteria)
-);
-
--- 9. Tabla LogNavegacionMarkov (Predicción de Conversión)
-CREATE TABLE IF NOT EXISTS log_navegacion_markov (
-    id_log SERIAL PRIMARY KEY,
-    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    estado_origen VARCHAR(50) NOT NULL,
-    estado_destino VARCHAR(50) NOT NULL,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- 10. Tabla EscenarioIncertidumbre (Matriz de Decisiones / Riesgo)
-CREATE TABLE IF NOT EXISTS escenarios_incertidumbre (
-    id_escenario SERIAL PRIMARY KEY,
-    id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
-    alternativa VARCHAR(100) NOT NULL,
-    estado_naturaleza VARCHAR(100) NOT NULL,
-    probabilidad DECIMAL(4,3) NULL,
-    pago_estimado DECIMAL(12,2) NOT NULL
-);
-
--- 11. Tabla RegistroColaAtencion (Simulación M/M/1)
-CREATE TABLE IF NOT EXISTS registro_colas_atencion (
-    id_registro SERIAL PRIMARY KEY,
-    id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
-    tasa_llegada_lambda DECIMAL(8,2) NOT NULL,
-    tasa_servicio_mu DECIMAL(8,2) NOT NULL,
-    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-</init_db>
-
+6. Teoría de Colas (M/M/1): Uso rho = lambda/mu, L, Lq, W, Wq = lambda / (mu * (mu - lambda)) y P0 = 1 - rho.
 REGLAS DE NEGOCIO DEL SISTEMA:
 1. Ordenamiento AHP: Valida que la matriz de comparación entre Precio, Distancia, Reputación y Stock cumpla CR = CI / RI < 0.10 para asegurar consistencia en la decisión.
 2. Gestión de Inventarios:
@@ -235,37 +51,40 @@ REGLAS DE NEGOCIO DEL SISTEMA:
 5. Tiempos de Espera (Colas M/M/1):
    - Muestra el tiempo estimado de espera en mostrador Wq para recomendar el mejor momento de visita presencial.
 <TECNOLOGIAS>
-* Backend: Python 3.12 con FastAPI
-* Librerías Matemáticas (IO2): NumPy (álgebra lineal, matrices AHP y Markov) y SciPy
-* Base de Datos: PostgreSQL 16 con extensión PostGIS (almacenamiento y consultas geoespaciales ST_DWithin / ST_DistanceSphere)
-* Frontend: HTML5, CSS3, JavaScript Vanilla (Fetch API para consumo de endpoints)
-* Mapas e Interfaz Geoespacial: Leaflet.js + OpenStreetMap (Renderizado de mapa de Bolivia y geolocalización)
-* Autenticación: OAuth2 / Google Sign-In + JWT (JSON Web Tokens)
-</TECNOLOGIAS> 
+* Backend: Python 3.12 con FastAPI y Uvicorn
+* Librerías Matemáticas (IO2): NumPy y SciPy
+* Base de Datos: PostgreSQL 16 con extensión PostGIS (ST_DistanceSphere, GEOMETRY(Point, 4326), índice GIST)
+* Frontend: HTML5, CSS3, JavaScript Vanilla (Fetch API), Bootstrap 5.3, FontAwesome 6, SweetAlert2
+* Mapas y Geocodificación: Leaflet.js + OpenStreetMap + Nominatim OSM (y OSRM en V1.1)
+* Autenticación: Google Identity Services (google-auth) + JWT (PyJWT) + PBKDF2-HMAC-SHA256
+* Ingesta de Datos Reales: Importación masiva mediante archivos CSV (python-multipart) sin datos semilla ficticios
+* Despliegue en Nube: Render (render.yaml + variable DATABASE_URL + ADMIN_EMAIL)
+</TECNOLOGIAS>
 
 ¿ARQUITECTURA?
-La arquitectura del proyecto será una arquitectura vertical por dominio / Módulos de I.O. (Feature-First / Vertical Slices) 
+Arquitectura vertical por dominio / Módulos de I.O. (Vertical Slices):
 IOP812/
 ├── app/
 │   ├── modules/
-│   │   ├── autenticacion/     # Engine PBKDF2/JWT, schemas, routes (PostgreSQL)
-│   │   ├── buscador_ahp/      # PostGIS ST_DistanceSphere, algoritmo AHP, CRUD Ferreterías
-│   │   ├── inventarios_eoq/   # EOQ, EPQ, Faltantes, Descuentos, ROP, CRUD Productos
-│   │   ├── decisiones/        # Decisiones bajo Incertidumbre y Riesgo VME/VEIP
-│   │   ├── markov/            # Transiciones y Matriz de Absorción B = N*R
+│   │   ├── autenticacion/     # Google OAuth2, PBKDF2/JWT, gestión de roles
+│   │   ├── buscador_ahp/      # PostGIS ST_DistanceSphere, AHP, ferreterías, favoritos e historial
+│   │   ├── inventarios_eoq/   # EOQ, EPQ, Faltantes, ROP, CRUD Productos y carga masiva CSV
+│   │   ├── decisiones/        # Incertidumbre y Riesgo VME/VEIP
+│   │   ├── markov/            # Cadenas de Markov Absorbentes B = N*R
 │   │   └── colas_mm1/         # Modelación M/M/1 de colas en mostrador
-│   ├── shared/    
-│   │   └── database.py        # Pool de conexión psycopg2 a PostgreSQL/PostGIS
-│   └── main.py                # FastAPI app y montaje de endpoints static/
+│   ├── shared/
+│   │   └── database.py        # Conexión PostgreSQL/PostGIS e inicialización limpia de esquema
+│   └── main.py                # FastAPI app, lifespan y montaje de frontend estático
 ├── frontend/
 │   ├── assets/
-│   │   ├── css/               # Bootstrap 5, Leaflet.css, style.css, responsive.css
-│   │   ├── js/                # Leaflet.js, app.js (Fetch API), theme.js
-│   │   └── images/            # Marcadores de mapa, logos
-│   └── index.html             # Interfaz Híbrida (Google Maps + Plantilla Made)
-├── .env                       # Variables DB_HOST, SECRET_KEY, ALGORITHM
-├── init_db.sql                # Script con las 11 tablas relacionales e índice PostGIS GIST
-└── requirements.txt           # fastapi, uvicorn, pydantic, email-validator, PyJWT, psycopg2-binary
+│   │   ├── css/               # style.css (Dark/Light Slate Pro)
+│   │   ├── js/                # app.js (Leaflet, Google GIS, Fetch API)
+│   │   └── images/            # favicon.ico
+│   └── index.html
+├── .env
+├── init_db.sql
+├── render.yaml
+└── requirements.txt
 Donde cada método (o tema del temario) tiene su propia carpeta dedicada, y dentro de ella habitan los archivos necesarios para hacer funcionar ese método de forma independiente.
 app/modules/markov/
 ├── __init__.py        # Indica que es un paquete de Python
@@ -278,6 +97,7 @@ En lugar de tener un solo archivo gigante como app.py o carpetas gigantescas glo
 
 Copia vigente del codigo que implementa la arquitectura propuesta.
 Cada archivo se conserva completo dentro de un delimitador XML; la ruta identifica su rama.
+👇
 
 <archivo ruta="app/modules/autenticacion/__init__.py">
 <![CDATA[
@@ -291,8 +111,8 @@ __all__ = ["auth_router"]
 <![CDATA[
 # app/modules/autenticacion/routes.py
 # Endpoints HTTP para registro, login, Google OAuth2 y perfil con persistencia PostgreSQL.
-
-from typing import Dict, Any
+import os
+from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -302,9 +122,12 @@ from app.modules.autenticacion.schemas import (
     UsuarioLoginInput,
     GoogleAuthInput,
     TokenOutput,
-    UsuarioPerfilOutput
+    UsuarioPerfilOutput,
+    RegistroFerreteriaInput,
+    CambioRolInput
 )
 from app.modules.autenticacion.engine import (
+    GOOGLE_CLIENT_ID,
     generar_salt_y_hash,
     verificar_password,
     crear_access_token,
@@ -312,18 +135,28 @@ from app.modules.autenticacion.engine import (
     verificar_token_google
 )
 
-router = APIRouter(prefix="/api/auth", tags=["Autenticación y Usuarios (OAuth / JWT)"])
+router = APIRouter(prefix="/api/auth", tags=["Autenticación, Google OAuth y Roles"])
 security = HTTPBearer()
+security_opcional = HTTPBearer(auto_error=False)
+
+
+def _determinar_rol_inicial(cur, email: str) -> str:
+    admin_env = os.getenv("ADMIN_EMAIL", "").strip().lower()
+    if admin_env and email.strip().lower() == admin_env:
+        return "admin"
+    cur.execute("SELECT COUNT(*) AS total FROM usuarios WHERE rol = 'admin';")
+    if cur.fetchone()["total"] == 0:
+        return "admin"
+    return "cliente"
 
 
 def obtener_usuario_actual(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
-    """Middleware de dependencia que valida el JWT contra la base de datos PostgreSQL."""
     token = credentials.credentials
     payload = decodificar_access_token(token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de acceso inválido o expirado. Por favor, inicie sesión nuevamente."
+            detail="Token de acceso inválido o expirado. Inicie sesión nuevamente."
         )
 
     email = payload.get("sub")
@@ -331,26 +164,52 @@ def obtener_usuario_actual(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id_usuario, email, username, google_id, fecha_registro FROM usuarios WHERE email = %s;",
+                """
+                SELECT u.id_usuario, u.email, u.username, COALESCE(u.rol, 'cliente') AS rol,
+                       u.google_id, u.fecha_registro,
+                       f.id_ferreteria, f.nombre AS nombre_ferreteria
+                FROM usuarios u
+                LEFT JOIN ferreterias f ON f.id_usuario_propietario = u.id_usuario
+                WHERE u.email = %s
+                LIMIT 1;
+                """,
                 (email,)
             )
             usuario = cur.fetchone()
             if not usuario:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="El usuario asociado al token ya no existe."
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
             return dict(usuario)
     finally:
         conn.close()
 
 
-@router.post(
-    "/registro",
-    response_model=TokenOutput,
-    status_code=status.HTTP_201_CREATED,
-    summary="Registrar un usuario en PostgreSQL"
-)
+def obtener_usuario_opcional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_opcional)
+) -> Optional[Dict[str, Any]]:
+    if not credentials:
+        return None
+    try:
+        return obtener_usuario_actual(credentials)
+    except HTTPException:
+        return None
+
+
+def requerir_admin(usuario: Dict[str, Any] = Depends(obtener_usuario_actual)) -> Dict[str, Any]:
+    if usuario.get("rol") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso restringido a administradores del sistema."
+        )
+    return usuario
+
+
+@router.get("/config", summary="Configuración pública de Google OAuth2")
+async def obtener_config_oauth():
+    client_id = GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID != "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com" else ""
+    return {"google_client_id": client_id}
+
+
+@router.post("/registro", response_model=TokenOutput, status_code=status.HTTP_201_CREATED)
 async def registrar_usuario(datos: UsuarioRegistroInput):
     password_hash = generar_salt_y_hash(datos.password)
     conn = obtener_conexion()
@@ -358,99 +217,87 @@ async def registrar_usuario(datos: UsuarioRegistroInput):
         with conn.cursor() as cur:
             cur.execute("SELECT id_usuario FROM usuarios WHERE email = %s;", (datos.email,))
             if cur.fetchone():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="El correo electrónico ya se encuentra registrado."
-                )
+                raise HTTPException(status_code=400, detail="El correo electrónico ya se encuentra registrado.")
 
+            rol = _determinar_rol_inicial(cur, datos.email)
             cur.execute(
                 """
-                INSERT INTO usuarios (email, username, password_hash)
-                VALUES (%s, %s, %s)
-                RETURNING id_usuario;
+                INSERT INTO usuarios (email, username, password_hash, rol)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id_usuario, rol;
                 """,
-                (datos.email, datos.username, password_hash)
+                (datos.email, datos.username, password_hash, rol)
             )
+            nuevo = cur.fetchone()
             conn.commit()
 
-        token = crear_access_token({"sub": datos.email, "username": datos.username})
+        token = crear_access_token({"sub": datos.email, "username": datos.username, "rol": nuevo["rol"]})
         return {
             "access_token": token,
             "token_type": "bearer",
             "username": datos.username,
-            "email": datos.email
+            "email": datos.email,
+            "rol": nuevo["rol"]
         }
     except HTTPException:
         conn.rollback()
         raise
     except Exception as e:
         conn.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en base de datos: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error en base de datos: {str(e)}")
     finally:
         conn.close()
 
 
-@router.post(
-    "/login",
-    response_model=TokenOutput,
-    status_code=status.HTTP_200_OK,
-    summary="Iniciar sesión verificando hash en PostgreSQL"
-)
+@router.post("/login", response_model=TokenOutput, status_code=status.HTTP_200_OK, summary="Login con correo y contraseña")
 async def login_usuario(datos: UsuarioLoginInput):
     conn = obtener_conexion()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id_usuario, email, username, password_hash FROM usuarios WHERE email = %s;",
+                """
+                SELECT id_usuario, email, username, password_hash, COALESCE(rol, 'cliente') AS rol
+                FROM usuarios WHERE email = %s;
+                """,
                 (datos.email,)
             )
             usuario = cur.fetchone()
             if not usuario or not usuario["password_hash"] or not verificar_password(datos.password, usuario["password_hash"]):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Credenciales incorrectas."
-                )
+                    detail="Credenciales incorrectas.")
 
-        token = crear_access_token({"sub": usuario["email"], "username": usuario["username"]})
+        token = crear_access_token({"sub": usuario["email"], "username": usuario["username"], "rol": usuario["rol"]})
         return {
             "access_token": token,
             "token_type": "bearer",
             "username": usuario["username"],
-            "email": usuario["email"]
+            "email": usuario["email"],
+            "rol": usuario["rol"]
         }
     finally:
         conn.close()
 
 
-@router.post(
-    "/google",
-    response_model=TokenOutput,
-    status_code=status.HTTP_200_OK,
-    summary="Autenticar o registrar usuario mediante Google OAuth2 / GIS"
-)
+@router.post("/google", response_model=TokenOutput, status_code=status.HTTP_200_OK, summary="Login o registro con Google OAuth2")
 async def login_con_google(datos: GoogleAuthInput):
     token_raw = datos.credential or datos.id_token
     if not token_raw:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se proporcionó la credencial o ID Token de Google."
-        )
+            detail="No se proporcionó la credencial de Google.")
 
     google_info = verificar_token_google(token_raw)
     if not google_info:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de Google inválido, expirado o no verificado."
-        )
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Token de Google inválido, expirado o Client ID no coincide.")
 
     google_id = google_info.get("sub")
     email = google_info.get("email")
     if not email or not google_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_400_BAD_REQUEST, 
             detail="El token de Google no contiene un correo electrónico o ID de usuario válido."
         )
 
@@ -461,7 +308,10 @@ async def login_con_google(datos: GoogleAuthInput):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id_usuario, email, username, google_id FROM usuarios WHERE google_id = %s OR email = %s;",
+                """
+                SELECT id_usuario, email, username, google_id, COALESCE(rol, 'cliente') AS rol
+                FROM usuarios WHERE google_id = %s OR email = %s;
+                """,
                 (google_id, email)
             )
             usuario = cur.fetchone()
@@ -469,39 +319,33 @@ async def login_con_google(datos: GoogleAuthInput):
             if not usuario:
                 # Generar username único en caso de colisión
                 cur.execute("SELECT id_usuario FROM usuarios WHERE username = %s;", (username_base,))
-                if cur.fetchone():
-                    username_final = f"{username_base}_{google_id[:5]}"
-                else:
-                    username_final = username_base
+                username_final = f"{username_base}_{google_id[:5]}" if cur.fetchone() else username_base
+                rol = _determinar_rol_inicial(cur, email)
 
                 cur.execute(
                     """
-                    INSERT INTO usuarios (email, username, google_id, password_hash)
-                    VALUES (%s, %s, %s, NULL)
-                    RETURNING id_usuario, email, username;
+                    INSERT INTO usuarios (email, username, google_id, password_hash, rol)
+                    VALUES (%s, %s, %s, NULL, %s)
+                    RETURNING id_usuario, email, username, rol;
                     """,
-                    (email, username_final, google_id)
+                    (email, username_final, google_id, rol)
                 )
                 conn.commit()
                 usuario_db = cur.fetchone()
-                username_actual = usuario_db["username"]
-                email_actual = usuario_db["email"]
+                username_actual, email_actual, rol_actual = usuario_db["username"], usuario_db["email"], usuario_db["rol"]
             else:
                 if not usuario["google_id"]:
-                    cur.execute(
-                        "UPDATE usuarios SET google_id = %s WHERE id_usuario = %s;",
-                        (google_id, usuario["id_usuario"])
-                    )
+                    cur.execute("UPDATE usuarios SET google_id = %s WHERE id_usuario = %s;", (google_id, usuario["id_usuario"]))
                     conn.commit()
-                username_actual = usuario["username"]
-                email_actual = usuario["email"]
+                username_actual, email_actual, rol_actual = usuario["username"], usuario["email"], usuario["rol"]
 
-        token = crear_access_token({"sub": email_actual, "username": username_actual})
+        token = crear_access_token({"sub": email_actual, "username": username_actual, "rol": rol_actual})
         return {
             "access_token": token,
             "token_type": "bearer",
             "username": username_actual,
-            "email": email_actual
+            "email": email_actual,
+            "rol": rol_actual
         }
     except HTTPException:
         conn.rollback()
@@ -509,7 +353,7 @@ async def login_con_google(datos: GoogleAuthInput):
     except Exception as e:
         conn.rollback()
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=f"Error en base de datos al autenticar con Google: {str(e)}"
         )
     finally:
@@ -517,13 +361,110 @@ async def login_con_google(datos: GoogleAuthInput):
 
 
 @router.get(
-    "/perfil",
+    "/perfil", 
     response_model=UsuarioPerfilOutput,
     status_code=status.HTTP_200_OK,
-    summary="Obtener información del usuario autenticado"
+    summary="Obtener perfil del usuario autenticado"
 )
 async def obtener_perfil(usuario_actual: Dict[str, Any] = Depends(obtener_usuario_actual)):
     return usuario_actual
+
+
+@router.post("/registrar-ferreteria", response_model=TokenOutput)
+async def registrar_ferreteria_propietario(
+    datos: RegistroFerreteriaInput,
+    usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
+):
+    """Permite a un usuario registrar su ferretería en el mapa y obtener permisos de Ferretero."""
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id_ferreteria FROM ferreterias WHERE id_usuario_propietario = %s;", (usuario["id_usuario"],))
+            if cur.fetchone():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ya tienes una ferretería registrada a tu nombre."
+                )
+
+            cur.execute(
+                """
+                INSERT INTO ferreterias (
+                    id_usuario_propietario, nombre, direccion, latitud, longitud,
+                    ubicacion, superficie_almacen_m2, capacidad_canales_atencion
+                )
+                VALUES (%s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s);
+                """,
+                (
+                    usuario["id_usuario"], datos.nombre, datos.direccion,
+                    datos.latitud, datos.longitud, datos.longitud, datos.latitud,
+                    datos.superficie_almacen_m2, datos.capacidad_canales_atencion
+                )
+            )
+
+            nuevo_rol = "admin" if usuario["rol"] == "admin" else "ferretero"
+            cur.execute("UPDATE usuarios SET rol = %s WHERE id_usuario = %s;", (nuevo_rol, usuario["id_usuario"]))
+            conn.commit()
+
+        token = crear_access_token({"sub": usuario["email"], "username": usuario["username"], "rol": nuevo_rol})
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "username": usuario["username"],
+            "email": usuario["email"],
+            "rol": nuevo_rol
+        }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error registrando ferretería: {str(e)}")
+    finally:
+        conn.close()
+
+
+@router.get("/usuarios", summary="Listar usuarios y roles (Solo Admin)")
+async def listar_usuarios_admin(admin: Dict[str, Any] = Depends(requerir_admin)) -> List[Dict[str, Any]]:
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT u.id_usuario, u.username, u.email, COALESCE(u.rol, 'cliente') AS rol,
+                       u.fecha_registro, f.nombre AS nombre_ferreteria
+                FROM usuarios u
+                LEFT JOIN ferreterias f ON f.id_usuario_propietario = u.id_usuario
+                ORDER BY u.id_usuario ASC;
+                """
+            )
+            return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@router.patch("/usuarios/{id_usuario}/rol", summary="Cambiar rol de un usuario (Solo Admin)")
+async def cambiar_rol_usuario(
+    id_usuario: int,
+    datos: CambioRolInput,
+    admin: Dict[str, Any] = Depends(requerir_admin)
+):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE usuarios SET rol = %s WHERE id_usuario = %s RETURNING id_usuario, username, rol;",
+                (datos.rol, id_usuario)
+            )
+            actualizado = cur.fetchone()
+            if not actualizado:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Usuario no encontrado."
+                )
+            conn.commit()
+            return {"mensaje": f"Rol de {actualizado['username']} actualizado a {actualizado['rol']}."}
+    finally:
+        conn.close()
 ]]>
 </archivo>
 
@@ -626,7 +567,7 @@ def verificar_token_google(credential_token: str) -> Optional[Dict[str, Any]]:
 # app/modules/autenticacion/schemas.py
 # Esquemas Pydantic para Autenticación, Registro y JWT.
 
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -660,14 +601,31 @@ class TokenOutput(BaseModel):
     token_type: str = Field(default="bearer", description="Tipo de token de autorización")
     username: str = Field(..., description="Nombre del usuario autenticado")
     email: str = Field(..., description="Correo del usuario autenticado")
+    rol: str = Field(default="cliente", description="Rol del usuario: cliente, ferretero o admin")
 
 
 class UsuarioPerfilOutput(BaseModel):
-    id_usuario: int = Field(..., description="ID único del usuario en base de datos")
-    email: str = Field(..., description="Correo electrónico registrado")
+    id_usuario: int= Field(..., description="ID único del usuario en base de datos")
+    email: str = Field(..., description="Correo del usuario")
     username: str = Field(..., description="Nombre de usuario")
-    google_id: Optional[str] = Field(default=None, description="ID único de Google (si aplica)")
-    fecha_registro: datetime = Field(..., description="Fecha de creación de la cuenta")
+    rol: str = Field(default="cliente", description="Rol del usuario")
+    google_id: Optional[str] = Field(default=None, description="ID de Google del usuario")
+    id_ferreteria: Optional[int] = Field(default=None, description="ID de la ferreteria asociada")
+    nombre_ferreteria: Optional[str] = Field(default=None, description="Nombre de la ferreteria asociada")
+    fecha_registro: datetime = Field(..., description="Fecha de registro del usuario")
+
+
+class RegistroFerreteriaInput(BaseModel):
+    nombre: str = Field(..., min_length=3, max_length=150)
+    direccion: str = Field(..., min_length=5)
+    latitud: float = Field(..., ge=-90, le=90)
+    longitud: float = Field(..., ge=-180, le=180)
+    superficie_almacen_m2: float = Field(default=150.0, ge=0)
+    capacidad_canales_atencion: int = Field(default=1, ge=1)
+
+
+class CambioRolInput(BaseModel):
+    rol: Literal["cliente", "ferretero", "admin"] = Field(..., description="Nuevo rol del usuario")
 ]]>
 </archivo>
 
@@ -683,22 +641,21 @@ __all__ = ["ahp_router"]
 <![CDATA[
 # app/modules/buscador_ahp/routes.py
 # Controlador HTTP para el Algoritmo AHP de Selección y Buscador Multicriterio.
-
-from fastapi import APIRouter, HTTPException, status
+from typing import Optional, Dict, Any, List
+from fastapi import APIRouter, HTTPException, Depends, status
 from app.modules.buscador_ahp.schemas import AHPSearchInput, AHPMatrizCriteriosInput, AHPResultadoOutput
 from app.modules.buscador_ahp.engine import calcular_proceso_ahp
+from app.modules.autenticacion.routes import obtener_usuario_actual, obtener_usuario_opcional
 from app.shared.database import obtener_conexion
 
-router = APIRouter(prefix="/api/ahp", tags=["Buscador AHP Geoespacial"])
+router = APIRouter(prefix="/api/ahp", tags=["Buscador AHP Geoespacial, Favoritos e Historial"])
 
 
-@router.post(
-    "/buscar",
-    response_model=AHPResultadoOutput,
-    status_code=status.HTTP_200_OK,
-    summary="Busca ferreterías optimizadas por AHP y PostGIS"
-)
-async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
+@router.post("/buscar", response_model=AHPResultadoOutput)
+async def buscar_ferreterias_ahp(
+    datos: AHPSearchInput,
+    usuario: Optional[Dict[str, Any]] = Depends(obtener_usuario_opcional)
+) -> AHPResultadoOutput:
     try:
         # 1. Construir matriz recíproca 4x4 desde los sliders
         v = [datos.pesos.precio, datos.pesos.distancia, datos.pesos.reputacion, datos.pesos.stock]
@@ -709,24 +666,37 @@ async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
             criterios=["Precio", "Distancia", "Reputación", "Stock"],
             matriz_comparacion=matriz
         )
-
         # 2. Calcular consistencia matemática (NumPy)
         res_math = calcular_proceso_ahp(entrada_ahp)
-
+        
         # 3. Consulta Geoespacial a PostgreSQL con PostGIS
         ferreterias_ordenadas = []
         conn = obtener_conexion()
-        if conn:
+        try:
             with conn.cursor() as cur:
+                # Registrar en historial si el usuario está autenticado
+                if usuario:
+                    cur.execute(
+                        """
+                        INSERT INTO historial_busquedas (id_usuario, texto_buscado, latitud_usuario, longitud_usuario)
+                        VALUES (%s, %s, %s, %s);
+                        """,
+                        (usuario["id_usuario"], datos.producto.strip(), datos.latitud, datos.longitud)
+                    )
+                    conn.commit()
+
                 sql = """
                     SELECT 
                         f.id_ferreteria, f.nombre, f.direccion, f.latitud, f.longitud,
                         p.precio_bob, p.stock_actual, f.reputacion,
-                        (ST_DistanceSphere(f.ubicacion, ST_MakePoint(%s, %s)) / 1000.0) AS distancia_km
+                        (ST_DistanceSphere(
+                            COALESCE(f.ubicacion, ST_SetSRID(ST_MakePoint(f.longitud, f.latitud), 4326)),
+                            ST_SetSRID(ST_MakePoint(%s, %s), 4326)
+                        ) / 1000.0) AS distancia_km
                     FROM ferreterias f
                     JOIN productos p ON f.id_ferreteria = p.id_ferreteria
                     WHERE LOWER(p.nombre) LIKE LOWER(%s) AND p.stock_actual > 0
-                    LIMIT 20;
+                    LIMIT 25;
                 """
                 cur.execute(sql, (datos.longitud, datos.latitud, f"%{datos.producto}%"))
                 filas = cur.fetchall()
@@ -770,6 +740,7 @@ async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
                         })
 
                     ferreterias_ordenadas.sort(key=lambda x: x["puntuacion_ahp"], reverse=True)
+        finally:
             conn.close()
 
         return AHPResultadoOutput(
@@ -782,11 +753,90 @@ async def buscar_ferreterias_ahp(datos: AHPSearchInput) -> AHPResultadoOutput:
             mensaje_consistencia=res_math["mensaje_consistencia"],
             ferreterias=ferreterias_ordenadas
         )
-
     except ValueError as err:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(err)
+        )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error en consulta PostGIS/AHP: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Error en consulta PostGIS/AHP: {str(e)}"
+        )
+
+
+@router.get("/historial", summary="Obtener historial de búsquedas del usuario")
+async def obtener_historial(usuario: Dict[str, Any] = Depends(obtener_usuario_actual)) -> List[Dict[str, Any]]:
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id_busqueda, texto_buscado, latitud_usuario, longitud_usuario, fecha_busqueda
+                FROM historial_busquedas
+                WHERE id_usuario = %s
+                ORDER BY fecha_busqueda DESC
+                LIMIT 15;
+                """,
+                (usuario["id_usuario"],)
+            )
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@router.get("/favoritos", summary="Listar ferreterías favoritas del usuario")
+async def listar_favoritos(usuario: Dict[str, Any] = Depends(obtener_usuario_actual)) -> List[Dict[str, Any]]:
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT ff.id_favorito, f.id_ferreteria, f.nombre, f.direccion, f.latitud, f.longitud, f.reputacion
+                FROM ferreterias_favoritas ff
+                JOIN ferreterias f ON f.id_ferreteria = ff.id_ferreteria
+                WHERE ff.id_usuario = %s
+                ORDER BY ff.id_favorito DESC;
+                """,
+                (usuario["id_usuario"],)
+            )
+            return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@router.post("/favoritos/{id_ferreteria}", summary="Guardar ferretería en favoritos")
+async def agregar_favorito(id_ferreteria: int, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO ferreterias_favoritas (id_ferreteria, id_usuario)
+                VALUES (%s, %s)
+                ON CONFLICT (id_usuario, id_ferreteria) DO NOTHING;
+                """,
+                (id_ferreteria, usuario["id_usuario"])
+            )
+            conn.commit()
+            return {"mensaje": "Ferretería guardada en tus favoritos."}
+    finally:
+        conn.close()
+
+
+@router.delete("/favoritos/{id_ferreteria}", summary="Eliminar ferretería de favoritos")
+async def eliminar_favorito(id_ferreteria: int, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM ferreterias_favoritas WHERE id_usuario = %s AND id_ferreteria = %s;",
+                (usuario["id_usuario"], id_ferreteria)
+            )
+            conn.commit()
+            return {"mensaje": "Ferretería eliminada de favoritos."}
+    finally:
+        conn.close()
 ]]>
 </archivo>
 
@@ -961,26 +1011,64 @@ __all__ = ["inventarios_router"]
 <![CDATA[
 # app/modules/inventarios_eoq/routes.py
 # Controlador de endpoints HTTP para la Gestión de Inventarios y Catálogo.
+import csv
+import io
+from typing import List, Dict, Any, Optional
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
+from pydantic import BaseModel, Field
 
-from fastapi import APIRouter, HTTPException, status
-from typing import List, Dict, Any
 from app.modules.inventarios_eoq.schemas import EOQParametrosInput, EOQResultadoOutput
 from app.modules.inventarios_eoq.engine import calcular_modelo_inventario
+from app.modules.autenticacion.routes import obtener_usuario_actual, obtener_usuario_opcional
 from app.shared.database import obtener_conexion
 
-router = APIRouter(tags=["Gestión de Inventarios (EOQ/EPQ) y Catálogo"])
+router = APIRouter(tags=["Gestión de Inventarios (EOQ/EPQ) y Carga Masiva"])
+
+
+class ProductoCRUDInput(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=150)
+    precio_bob: float = Field(..., gt=0)
+    stock_actual: int = Field(default=0, ge=0)
+    demanda_anual_D: int = Field(default=100, ge=0)
+    costo_pedido_K: float = Field(default=50.0, ge=0)
+    costo_mantenimiento_H: float = Field(default=5.0, ge=0)
+    tiempo_entrega_dias_L: int = Field(default=3, ge=0)
+    stock_seguridad_SS: int = Field(default=10, ge=0)
+    tasa_produccion_p: Optional[int] = Field(default=None)
+    id_ferreteria: Optional[int] = Field(default=None)
+
+
+def _resolver_ferreteria_destino(cur, usuario: Dict[str, Any], id_ferreteria_req: Optional[int]) -> int:
+    rol = usuario.get("rol")
+    if rol not in ("ferretero", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los usuarios con rol Ferretero o Administrador pueden modificar el catálogo."
+        )
+
+    if rol == "admin" and id_ferreteria_req:
+        return id_ferreteria_req
+
+    if usuario.get("id_ferreteria"):
+        return usuario["id_ferreteria"]
+
+    # Si es admin sin ferretería propia, toma la primera ferretería registrada
+    cur.execute("SELECT id_ferreteria FROM ferreterias ORDER BY id_ferreteria ASC LIMIT 1;")
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=400, detail="No existe ninguna ferretería registrada.")
+    return row["id_ferreteria"]
 
 
 @router.post(
-    "/api/inventario/calcular",
+    "/api/inventario/calcular", 
     response_model=EOQResultadoOutput,
     status_code=status.HTTP_200_OK,
-    summary="Calcular lote óptimo Q*, ROP y costos para EOQ Básico, EPQ o Faltantes"
+    summary="Calcular inventario óptimo EOQ/EPQ para un producto"
 )
 async def calcular_inventario_optimo(datos: EOQParametrosInput):
     try:
-        resultado = calcular_modelo_inventario(datos)
-        return resultado
+        return calcular_modelo_inventario(datos)
     except ValueError as err:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -991,49 +1079,283 @@ async def calcular_inventario_optimo(datos: EOQParametrosInput):
 @router.get(
     "/api/productos",
     status_code=status.HTTP_200_OK,
-    summary="Obtener lista de productos del catálogo desde PostgreSQL"
+    summary="Obtener listado de productos del catálogo (con precios BOB y stock)"
 )
-async def obtener_productos() -> List[Dict[str, Any]]:
-    productos = []
+async def obtener_productos(
+    usuario: Optional[Dict[str, Any]] = Depends(obtener_usuario_opcional)
+) -> List[Dict[str, Any]]:
     conn = obtener_conexion()
-    
-    if not conn:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se pudo establecer conexión con la base de datos PostgreSQL."
-        )
-
     try:
         with conn.cursor() as cur:
-            sql = """
-                SELECT id_producto, nombre, precio_bob, stock_actual, demanda_anual_D 
-                FROM productos 
-                ORDER BY id_producto ASC;
-            """
-            cur.execute(sql)
-            filas = cur.fetchall()
+            if usuario and usuario.get("rol") == "ferretero" and usuario.get("id_ferreteria"):
+                cur.execute(
+                    """
+                    SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual,
+                           p.demanda_anual_D, p.costo_pedido_K, p.costo_mantenimiento_H,
+                           p.tiempo_entrega_dias_L, p.stock_seguridad_SS, p.tasa_produccion_p,
+                           f.nombre AS ferreteria_nombre
+                    FROM productos p
+                    JOIN ferreterias f ON f.id_ferreteria = p.id_ferreteria
+                    WHERE p.id_ferreteria = %s
+                    ORDER BY p.id_producto DESC;
+                    """,
+                    (usuario["id_ferreteria"],)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual,
+                           p.demanda_anual_D, p.costo_pedido_K, p.costo_mantenimiento_H,
+                           p.tiempo_entrega_dias_L, p.stock_seguridad_SS, p.tasa_produccion_p,
+                           f.nombre AS ferreteria_nombre
+                    FROM productos p
+                    JOIN ferreterias f ON f.id_ferreteria = p.id_ferreteria
+                    ORDER BY p.id_producto DESC
+                    LIMIT 100;
+                    """
+                )
 
-            for f in filas:
-                productos.append({
+            return [
+                {
                     "id_producto": f["id_producto"],
                     "nombre": f["nombre"],
                     "precio_bob": float(f["precio_bob"]),
                     "stock_actual": int(f["stock_actual"]),
-                    "demanda_anual_D": int(f["demanda_anual_D"])
-                })
-        conn.close()
-        return productos
+                    "demanda_anual_D": int(f["demanda_anual_D"]),
+                    "costo_pedido_K": float(f["costo_pedido_K"]),
+                    "costo_mantenimiento_H": float(f["costo_mantenimiento_H"]),
+                    "tiempo_entrega_dias_L": int(f["tiempo_entrega_dias_L"]),
+                    "stock_seguridad_SS": int(f["stock_seguridad_SS"]),
+                    "tasa_produccion_p": f["tasa_produccion_p"],
+                    "ferreteria_nombre": f["ferreteria_nombre"]
+                }
+                for f in cur.fetchall()
+            ]
+    except HTTPException:
+        raise
     except Exception as e:
-        if conn:
-            conn.close()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al consultar la tabla productos: {str(e)}"
         )
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/api/productos", 
+    status_code=status.HTTP_201_CREATED
+)
+async def crear_producto(datos: ProductoCRUDInput, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            id_ferr = _resolver_ferreteria_destino(cur, usuario, datos.id_ferreteria)
+            cur.execute(
+                """
+                INSERT INTO productos (
+                    id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
+                    costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L,
+                    stock_seguridad_SS, tasa_produccion_p
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id_producto;
+                """,
+                (
+                    id_ferr, datos.nombre, datos.precio_bob, datos.stock_actual,
+                    datos.demanda_anual_D, datos.costo_pedido_K, datos.costo_mantenimiento_H,
+                    datos.tiempo_entrega_dias_L, datos.stock_seguridad_SS, datos.tasa_produccion_p
+                )
+            )
+            nuevo_id = cur.fetchone()["id_producto"]
+            conn.commit()
+            return {"id_producto": nuevo_id, "mensaje": "Producto agregado al catálogo correctamente."}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error en base de datos: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+@router.put(
+    "/api/productos/{id_producto}",
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar información de un producto del catálogo"
+)
+async def actualizar_producto(
+    id_producto: int,
+    datos: ProductoCRUDInput,
+    usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
+):
+    if usuario.get("rol") not in ("ferretero", "admin"):
+        raise HTTPException(status_code=403, detail="Sin permisos para editar productos.")
+
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE productos
+                SET nombre = %s, precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
+                    costo_pedido_K = %s, costo_mantenimiento_H = %s, tiempo_entrega_dias_L = %s,
+                    stock_seguridad_SS = %s, tasa_produccion_p = %s
+                WHERE id_producto = %s
+                RETURNING id_producto;
+                """,
+                (
+                    datos.nombre, datos.precio_bob, datos.stock_actual, datos.demanda_anual_D,
+                    datos.costo_pedido_K, datos.costo_mantenimiento_H, datos.tiempo_entrega_dias_L,
+                    datos.stock_seguridad_SS, datos.tasa_produccion_p, id_producto
+                )
+            )
+            if not cur.fetchone():
+                raise HTTPException(status_code=404, detail="Producto no encontrado.")
+            conn.commit()
+            return {"mensaje": "Producto actualizado correctamente."}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error en base de datos: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+@router.delete(
+    "/api/productos/{id_producto}",
+    status_code=status.HTTP_200_OK,
+    summary="Eliminar un producto del catálogo"
+)
+async def eliminar_producto(id_producto: int, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
+    if usuario.get("rol") not in ("ferretero", "admin"):
+        raise HTTPException(status_code=403, detail="Sin permisos para eliminar productos.")
+
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM productos WHERE id_producto = %s RETURNING id_producto;", (id_producto,))
+            if not cur.fetchone():
+                raise HTTPException(status_code=404, detail="Producto no encontrado.")
+            conn.commit()
+            return {"mensaje": "Producto eliminado del catálogo."}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error en base de datos: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/api/productos/carga-masiva", 
+    status_code=status.HTTP_200_OK,
+    summary="Carga masiva CSV de catálogo, precios BOB y stock"
+)
+async def carga_masiva_productos(
+    archivo: UploadFile = File(...),
+    usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
+):
+    """
+    Columnas CSV aceptadas (con encabezado):
+    nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
+    """
+    contenido = await archivo.read()
+    texto = contenido.decode("utf-8-sig", errors="replace")
+    delimitador = ";" if ";" in texto.splitlines()[0] else ","
+    lector = csv.DictReader(io.StringIO(texto), delimiter=delimitador)
+
+    conn = obtener_conexion()
+    insertados = 0
+    actualizados = 0
+    errores = []
+
+    try:
+        with conn.cursor() as cur:
+            id_ferr = _resolver_ferreteria_destino(cur, usuario, None)
+
+            for num_fila, fila in enumerate(lector, start=2):
+                try:
+                    nombre = (fila.get("nombre") or "").strip()
+                    if not nombre:
+                        continue
+                    precio = float(fila.get("precio_bob") or 0)
+                    stock = int(float(fila.get("stock_actual") or 0))
+                    demanda = int(float(fila.get("demanda_anual_D") or 120))
+                    costo_k = float(fila.get("costo_pedido_K") or 50.0)
+                    costo_h = float(fila.get("costo_mantenimiento_H") or 5.0)
+                    lead_l = int(float(fila.get("tiempo_entrega_dias_L") or 3))
+                    ss = int(float(fila.get("stock_seguridad_SS") or 10))
+
+                    cur.execute(
+                        "SELECT id_producto FROM productos WHERE id_ferreteria = %s AND LOWER(nombre) = LOWER(%s);",
+                        (id_ferr, nombre)
+                    )
+                    existente = cur.fetchone()
+                    if existente:
+                        cur.execute(
+                            """
+                            UPDATE productos
+                            SET precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
+                                costo_pedido_K = %s, costo_mantenimiento_H = %s,
+                                tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s
+                            WHERE id_producto = %s;
+                            """,
+                            (precio, stock, demanda, costo_k, costo_h, lead_l, ss, existente["id_producto"])
+                        )
+                        actualizados += 1
+                    else:
+                        cur.execute(
+                            """
+                            INSERT INTO productos (
+                                id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
+                                costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L, stock_seguridad_SS
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                            """,
+                            (id_ferr, nombre, precio, stock, demanda, costo_k, costo_h, lead_l, ss)
+                        )
+                        insertados += 1
+                except Exception as row_err:
+                    errores.append(f"Fila {num_fila}: {str(row_err)}")
+
+            conn.commit()
+            return {
+                "mensaje": f"Carga masiva completada: {insertados} nuevos, {actualizados} actualizados.",
+                "insertados": insertados,
+                "actualizados": actualizados,
+                "errores": errores
+            }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error en base de datos: {str(e)}"
+        )
+    finally:
+        conn.close()
 ]]>
 </archivo>
 
 <archivo ruta="app/modules/inventarios_eoq/engine.py">
+<![CDATA[
 # app/modules/inventarios_eoq/engine.py
 # Motor de cálculo determinístico de inventarios (EOQ Básico, EPQ, EOQ con Faltantes y ROP).
 
@@ -1152,6 +1474,7 @@ def calcular_modelo_inventario(datos: EOQParametrosInput) -> Dict[str, Any]:
         "deficit_maximo_S": round(deficit_maximo_S, 2) if deficit_maximo_S is not None else None,
         "inventario_maximo_Imax": round(inventario_maximo_Imax, 2) if inventario_maximo_Imax is not None else None,
     }
+]]
 </archivo>
 
 <archivo ruta="app/modules/inventarios_eoq/schemas.py">
@@ -1915,6 +2238,7 @@ def calcular_colas_mm1(datos: ColasMM1Input) -> Dict[str, Any]:
 ]]>
 </archivo>
 <archivo ruta="app/modules/colas_mm1/schemas.py">
+<![CDATA[
 # app/modules/colas_mm1/schemas.py
 # Validaciones para el modelo de colas M/M/1.
 
@@ -1958,6 +2282,7 @@ class ColasMM1Output(BaseModel):
     tiempo_total_sistema_Ws_minutos: float = Field(..., description="Tiempo total en el establecimiento")
     probabilidades_estado_estacionario: Dict[str, float] = Field(..., description="Probabilidades por número de clientes")
     recomendacion_cliente: str = Field(..., description="Recomendación final para la toma de decisiones")
+]]
 </archivo>
 
 <archivo ruta="app/main.py">
@@ -1966,10 +2291,12 @@ class ColasMM1Output(BaseModel):
 # Orquestador Principal FastAPI de la Aplicación IOP812.
 
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from app.shared.database import inicializar_base_datos
 from app.modules.autenticacion.routes import router as auth_router
 from app.modules.buscador_ahp.routes import router as ahp_router
 from app.modules.inventarios_eoq.routes import router as inventarios_router
@@ -1977,10 +2304,18 @@ from app.modules.decisiones.routes import router as decisiones_router
 from app.modules.markov.routes import router as markov_router
 from app.modules.colas_mm1.routes import router as colas_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    inicializar_base_datos()
+    yield
+
+
 app = FastAPI(
     title="OptiDecision Suite - IOP812",
     description="API Modular para Optimización Ferretera y Análisis Geoespacial AHP",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Registrar routers de backend (Vertical Slices)
@@ -1995,9 +2330,9 @@ app.include_router(colas_router)
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 assets_path = os.path.join(frontend_path, "assets")
 
-# Montar assets si la carpeta existe
 if os.path.exists(assets_path):
     app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+
 
 @app.get("/api/estado", tags=["Estado del Sistema"])
 def estado_sistema():
@@ -2013,6 +2348,7 @@ def estado_sistema():
             "colas_mm1"
         ]
     }
+
 
 @app.get("/", response_class=FileResponse)
 async def servir_index():
@@ -2046,26 +2382,28 @@ if __name__ == "__main__":
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- 1. Bootstrap 5.3 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" crossorigin="anonymous">
 
     <!-- 2. Leaflet.js CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
 
     <!-- 3. FontAwesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <!-- 4. SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    <!-- 5. Estilos Personalizados -->
+    <!-- 5. Google Identity Services (GIS SDK) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- 6. Estilos Personalizados -->
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <!-- NAV BAR SUPERIOR HÍBRIDA (HAMBURGUESA UNIVERSAL PC Y MÓVIL) -->
+    <!-- NAV BAR SUPERIOR HÍBRIDA -->
     <nav class="navbar sticky-top border-bottom" id="topNav">
         <div class="container-fluid px-3 px-lg-4">
             <div class="d-flex align-items-center gap-2">
-                <!-- Botón Hamburguesa que abre el Menú Lateral Estilo Google Maps -->
                 <button class="btn btn-outline-secondary border-0 fs-5" type="button" data-bs-toggle="offcanvas" data-bs-target="#drawerGoogleMaps" aria-controls="drawerGoogleMaps" title="Menú Principal & Historial">
                     <i class="fa-solid fa-bars text-main"></i>
                 </button>
@@ -2076,28 +2414,43 @@ if __name__ == "__main__":
             </div>
 
             <div class="d-flex align-items-center gap-2">
+                <!-- Indicador de usuario y rol activo -->
+                <span class="badge bg-secondary-subtle text-main border rounded-pill px-3 py-2 d-none d-md-inline-flex align-items-center gap-2 d-none" id="navUserBadge">
+                    <i class="fa-solid fa-user-check text-primary"></i>
+                    <span id="navUserName">Usuario</span>
+                    <span class="badge bg-primary text-uppercase" id="navUserRole">cliente</span>
+                </span>
+
                 <!-- Toggle Modo Oscuro / Claro -->
                 <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
                     <i class="fa-solid fa-moon" id="themeIcon"></i>
                 </button>
-                <!-- Botón Acceso Ferretero -->
-                <div id="authStatusContainer">
+
+                <!-- Botones de Sesión -->
+                <div id="authStatusContainer" class="d-flex align-items-center gap-2">
                     <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" id="btnAbrirLogin">
                         <i class="fa-solid fa-right-to-bracket"></i>
                         <span class="d-none d-sm-inline">Acceso</span>
                     </button>
-                    <button class="btn btn-outline-secondary rounded-pill px-3 fw-medium d-none" id="btnCerrarSesion" type="button">
-                        Cerrar sesión
+                    <button class="btn btn-outline-danger rounded-pill px-3 fw-medium d-none" id="btnCerrarSesion" type="button">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Salir
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
+    <!-- BANNER FLOTANTE PARA SELECCIÓN DE UBICACIÓN EN MAPA -->
+    <div id="mapPickerBanner" class="position-fixed top-0 start-50 translate-middle-x mt-5 pt-3 z-3 d-none">
+        <div class="alert alert-primary shadow-lg rounded-pill px-4 py-2 d-flex align-items-center gap-3 border">
+            <i class="fa-solid fa-map-pin fa-bounce"></i>
+            <span class="small fw-semibold">Haz clic en el mapa sobre la ubicación exacta de la ferretería</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" id="btnCancelarMapPicker">Cancelar</button>
+        </div>
+    </div>
+
     <!-- SECCIÓN PRINCIPAL: MAPA INTERACTIVO CON BUSCADOR FLOTANTE -->
     <main id="mapa-ahp" class="position-relative w-100 overflow-hidden">
-        
-        <!-- CANVAS DEL MAPA LEAFLET -->
         <div id="map"></div>
 
         <!-- HUD BUSCADOR FLOTANTE UX -->
@@ -2112,7 +2465,7 @@ if __name__ == "__main__":
                 <!-- Campo Origen -->
                 <div class="input-group mb-2">
                     <span class="input-group-text bg-body border-end-0 text-primary"><i class="fa-solid fa-location-dot"></i></span>
-                    <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Origen (ej. Cala Cala, Quillacollo)" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
+                    <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Origen (ej. Cala Cala, Quillacollo, Sacaba)" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
                     <button class="btn btn-outline-secondary border-start-0" type="button" id="btnGPS" title="Usar mi ubicación GPS actual">
                         <i class="fa-solid fa-crosshairs text-primary"></i>
                     </button>
@@ -2176,29 +2529,34 @@ if __name__ == "__main__":
         <div class="floating-results-card shadow-lg rounded-4 p-3 border d-none" id="cardTopResult">
             <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
                 <span class="badge bg-warning text-dark font-monospace fw-bold"><i class="fa-solid fa-crown me-1"></i> OPCIÓN ÓPTIMA AHP</span>
-                <button type="button" class="btn-close small" id="btnCloseTopResult" aria-label="Cerrar"></button>
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-warning py-0 px-2" id="btnFavoritoTop" title="Guardar ferretería en favoritos">
+                        <i class="fa-regular fa-star"></i>
+                    </button>
+                    <button type="button" class="btn-close small" id="btnCloseTopResult" aria-label="Cerrar"></button>
+                </div>
             </div>
-            <h6 class="fw-bold mb-1 text-main" id="topFerreteriaNombre">Ferretería El Castor</h6>
-            <p class="small text-muted mb-2" id="topFerreteriaDireccion"><i class="fa-solid fa-location-pin me-1"></i> Av. Blanco Galindo Km 3</p>
+            <h6 class="fw-bold mb-1 text-main" id="topFerreteriaNombre">Ferretería</h6>
+            <p class="small text-muted mb-2" id="topFerreteriaDireccion"><i class="fa-solid fa-location-pin me-1"></i> Dirección</p>
             
             <div class="row g-2 text-center my-2">
                 <div class="col-6">
                     <div class="p-2 rounded-3 bg-body-tertiary border">
                         <span class="d-block extra-small text-muted text-uppercase">Precio BOB</span>
-                        <strong class="text-success fs-6" id="topPrecioBOB">Bs. 45.00</strong>
+                        <strong class="text-success fs-6" id="topPrecioBOB">Bs. 0.00</strong>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="p-2 rounded-3 bg-body-tertiary border">
                         <span class="d-block extra-small text-muted text-uppercase">Distancia</span>
-                        <strong class="text-primary fs-6" id="topDistanciaKM">1.2 km</strong>
+                        <strong class="text-primary fs-6" id="topDistanciaKM">0.0 km</strong>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex align-items-center justify-content-between small text-muted mt-2">
-                <span><i class="fa-solid fa-star text-warning me-1"></i> <span id="topReputacion">4.8</span></span>
-                <span><i class="fa-solid fa-boxes-stacked text-info me-1"></i> Stock: <strong id="topStock">120 un.</strong></span>
+                <span><i class="fa-solid fa-star text-warning me-1"></i> <span id="topReputacion">5.0</span></span>
+                <span><i class="fa-solid fa-boxes-stacked text-info me-1"></i> Stock: <strong id="topStock">0 un.</strong></span>
             </div>
         </div>
     </main>
@@ -2212,7 +2570,6 @@ if __name__ == "__main__":
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <!-- Se carga el formulario para autenticación -->
                     <form id="formLogin" onsubmit="event.preventDefault();">
                         <div class="mb-3 d-none" id="usernameGroup">
                             <label for="inputUsername" class="form-label small fw-medium text-muted">Nombre de usuario</label>
@@ -2227,19 +2584,20 @@ if __name__ == "__main__":
                             <input type="password" class="form-control rounded-3" id="inputPassword" autocomplete="current-password" required>
                         </div>
                         <button type="submit" id="btnSubmitAuth" class="btn btn-primary w-100 rounded-3 py-2 fw-medium mb-3">Iniciar Sesión</button>
-                        <!-- Separador visual 'O ingresa con' -->
+                        
                         <div class="position-relative text-center my-3">
                             <hr class="text-muted">
                             <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
                         </div>
 
-                        <!-- Botón Google OAuth2 -->
-                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2" id="btnGoogleAuth">
+                        <!-- Contenedor oficial Google GIS SDK -->
+                        <div id="googleBtnContainer" class="d-flex justify-content-center w-100 my-2"></div>
+                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2 d-none" id="btnGoogleFallback">
                             <i class="fa-brands fa-google text-danger"></i>
                             <span>Iniciar sesión con Google</span>
                         </button>
-                                            </form>
-                    <p class="text-center small mb-0">
+                    </form>
+                    <p class="text-center small mt-3 mb-0">
                         <span id="authModePrompt">¿No tienes cuenta?</span>
                         <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="btnToggleAuthMode">Crear cuenta</button>
                     </p>
@@ -2248,7 +2606,61 @@ if __name__ == "__main__":
         </div>
     </div>
 
-    <!-- MODAL DASHBOARD / CALCULADORAS DE I.O. -->
+    <!-- MODAL REGISTRO DE FERRETERÍA (PARA CLIENTES O ADMIN) -->
+    <div class="modal fade" id="modalRegistrarFerreteria" tabindex="-1" aria-labelledby="modalRegistrarFerreteriaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold" id="modalRegistrarFerreteriaLabel">
+                        <i class="fa-solid fa-store text-primary me-2"></i>Registrar Ferretería en Cochabamba
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formRegistrarFerreteria" onsubmit="event.preventDefault();">
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-muted">Nombre de la Ferretería</label>
+                            <input type="text" class="form-control rounded-3" id="regFerrNombre" placeholder="Ej. Ferretería San Jorge" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-muted">Dirección / Referencia (Municipio)</label>
+                            <input type="text" class="form-control rounded-3" id="regFerrDireccion" placeholder="Ej. Av. Blanco Galindo Km 4, Colcapirhua" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-5">
+                                <label class="form-label small fw-medium text-muted">Latitud</label>
+                                <input type="number" step="any" class="form-control form-control-sm" id="regFerrLat" value="-17.3895" required>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-medium text-muted">Longitud</label>
+                                <input type="number" step="any" class="form-control form-control-sm" id="regFerrLng" value="-66.1568" required>
+                            </div>
+                            <div class="col-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-primary btn-sm w-100" id="btnPickMapLocation" title="Marcar ubicación en el mapa">
+                                    <i class="fa-solid fa-map-location-dot"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-medium text-muted">Almacén (m²)</label>
+                                <input type="number" step="0.1" class="form-control form-control-sm" id="regFerrSuperficie" value="120.0" min="0">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-medium text-muted">Canales de Atención</label>
+                                <input type="number" class="form-control form-control-sm" id="regFerrCanales" value="1" min="1">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-semibold">
+                            <i class="fa-solid fa-check-circle me-1"></i> Guardar Ferretería y Habilitar Panel
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DASHBOARD / CALCULADORAS DE I.O. & ADMIN -->
     <div class="modal fade" id="modalDashboardIO" tabindex="-1" aria-labelledby="modalDashboardIOLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg rounded-4">
@@ -2257,7 +2669,7 @@ if __name__ == "__main__":
                         <i class="fa-solid fa-sliders text-primary fs-4"></i>
                         <div>
                             <h5 class="modal-title fw-bold mb-0" id="modalDashboardIOLabel">Panel de Administración & Calculadoras I.O. II</h5>
-                            <span class="small text-muted">Gestión de Catálogo y Algoritmos Avanzados (IOP812)</span>
+                            <span class="small text-muted" id="dashboardSubtitulo">Gestión de Catálogo y Algoritmos Avanzados (IOP812)</span>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -2281,37 +2693,92 @@ if __name__ == "__main__":
                         <li class="nav-item" role="presentation">
                             <button class="nav-link fw-medium" id="tab-colas-tab" data-bs-toggle="tab" data-bs-target="#tab-colas" type="button" role="tab"><i class="fa-solid fa-users-line me-1"></i> Colas M/M/1</button>
                         </li>
+                        <li class="nav-item d-none" id="navItemAdmin" role="presentation">
+                            <button class="nav-link fw-medium text-warning" id="tab-admin-tab" data-bs-toggle="tab" data-bs-target="#tab-admin" type="button" role="tab"><i class="fa-solid fa-shield-halved me-1"></i> Administración</button>
+                        </li>
                     </ul>
+
                     <!-- Tab Content -->
                     <div class="tab-content p-4" id="tabsDashboardContent">
                         
-                        <!-- TAB 1: CRUD CATÁLOGO -->
+                        <!-- TAB 1: CRUD CATÁLOGO & CARGA MASIVA CSV -->
                         <div class="tab-pane fade show active" id="tab-crud" role="tabpanel">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0 text-main">Mis Productos e Insumos Registrados</h6>
-                                <button class="btn btn-sm btn-primary rounded-pill"><i class="fa-solid fa-plus me-1"></i> Nuevo Producto</button>
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                <h6 class="fw-bold mb-0 text-main">Productos e Insumos Registrados</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill" id="btnDescargarPlantillaCSV" type="button">
+                                        <i class="fa-solid fa-file-csv me-1"></i> Plantilla CSV
+                                    </button>
+                                    <label class="btn btn-sm btn-outline-success rounded-pill mb-0" for="inputCsvProductos">
+                                        <i class="fa-solid fa-upload me-1"></i> Importar CSV
+                                    </label>
+                                    <input type="file" id="inputCsvProductos" accept=".csv" class="d-none">
+                                    <button class="btn btn-sm btn-primary rounded-pill" id="btnToggleFormProducto" type="button">
+                                        <i class="fa-solid fa-plus me-1"></i> Nuevo Producto
+                                    </button>
+                                </div>
                             </div>
+
+                            <!-- Formulario Inline para Crear / Editar Producto -->
+                            <div id="cardFormProducto" class="p-3 mb-3 border rounded-3 bg-body-tertiary d-none">
+                                <form id="formProductoCRUD" onsubmit="event.preventDefault();">
+                                    <input type="hidden" id="prodEditId">
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label extra-small text-muted">Nombre del Producto</label>
+                                            <input type="text" class="form-control form-control-sm" id="prodNombre" placeholder="Ej. Cemento COBOCE IP-30 50kg" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Precio (BOB)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="prodPrecio" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Stock Actual</label>
+                                            <input type="number" class="form-control form-control-sm" id="prodStock" value="50" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Demanda Anual (D)</label>
+                                            <input type="number" class="form-control form-control-sm" id="prodDemanda" value="600" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Costo Pedido (K)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="prodK" value="50">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Mant. Anual (H)</label>
+                                            <input type="number" step="0.01" class="form-control form-control-sm" id="prodH" value="8">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Entrega (L días)</label>
+                                            <input type="number" class="form-control form-control-sm" id="prodL" value="3">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label extra-small text-muted">Stock Seg. (SS)</label>
+                                            <input type="number" class="form-control form-control-sm" id="prodSS" value="10">
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCancelarProducto">Cancelar</button>
+                                            <button type="submit" class="btn btn-sm btn-primary" id="btnGuardarProducto">Guardar en Catálogo</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle border">
                                     <thead class="table-dark">
                                         <tr>
                                             <th>Producto</th>
+                                            <th>Ferretería</th>
                                             <th>Precio (BOB)</th>
-                                            <th>Stock Actual</th>
-                                            <th>Demanda Anual (D)</th>
+                                            <th>Stock</th>
+                                            <th>Demanda (D)</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbodyCatálogo">
                                         <tr>
-                                            <td class="fw-medium">Fierro Corrugado 1/2"</td>
-                                            <td class="text-success fw-bold">Bs. 48.00</td>
-                                            <td><span class="badge bg-success">150 un.</span></td>
-                                            <td>1,200 un.</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i></button>
-                                                <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
-                                            </td>
+                                            <td colspan="6" class="text-center text-muted small py-3">Cargando catálogo...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2478,6 +2945,33 @@ if __name__ == "__main__":
                             </div>
                         </div>
 
+                        <!-- TAB 6: ADMINISTRACIÓN GLOBAL (SOLO ROL ADMIN) -->
+                        <div class="tab-pane fade" id="tab-admin" role="tabpanel">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                <h6 class="fw-bold mb-0 text-main">Gestión de Usuarios, Roles y Ferreterías</h6>
+                                <button class="btn btn-sm btn-primary rounded-pill" id="btnAdminNuevaFerreteria" type="button">
+                                    <i class="fa-solid fa-store me-1"></i> Registrar Ferretería
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Correo</th>
+                                            <th>Ferretería Asociada</th>
+                                            <th>Rol</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyUsuariosAdmin">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted small py-3">Sin datos de usuarios cargados.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -2512,7 +3006,8 @@ if __name__ == "__main__":
             </div>
         </div>
     </div>
-<!-- PANEL LATERAL TIPO GOOGLE MAPS (HISTORIAL Y FAVORITOS) -->
+
+    <!-- PANEL LATERAL TIPO GOOGLE MAPS (HISTORIAL, FAVORITOS Y ACCESOS POR ROL) -->
     <div class="offcanvas offcanvas-start bg-body text-main" tabindex="-1" id="drawerGoogleMaps" aria-labelledby="drawerGoogleMapsLabel">
         <div class="offcanvas-header border-bottom">
             <h5 class="offcanvas-title fw-bold" id="drawerGoogleMapsLabel">
@@ -2520,7 +3015,7 @@ if __name__ == "__main__":
             </h5>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div class="offcanvas-body p-0">
+        <div class="offcanvas-body p-0 d-flex flex-column">
             <!-- Nav Tabs para Historial y Favoritos -->
             <ul class="nav nav-tabs nav-justified border-bottom" id="tabsDrawer" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -2535,14 +3030,14 @@ if __name__ == "__main__":
                 </li>
             </ul>
 
-            <div class="tab-content p-3" id="tabsDrawerContent">
+            <div class="tab-content p-3 flex-grow-1 overflow-auto" id="tabsDrawerContent">
                 <!-- TAB 1: HISTORIAL DE BÚSQUEDAS -->
                 <div class="tab-pane fade show active" id="tab-historial" role="tabpanel">
                     <h6 class="extra-small text-uppercase fw-bold text-muted mb-3">Búsquedas Recientes</h6>
                     <div class="list-group list-group-flush border rounded-3" id="listaHistorial">
                         <div class="list-group-item bg-transparent text-muted small py-3 text-center">
                             <i class="fa-solid fa-magnifying-glass mb-1 d-block fs-5"></i>
-                            Las búsquedas guardadas en `historial_busquedas` se mostrarán aquí.
+                            Inicia sesión para consultar tus búsquedas recientes.
                         </div>
                     </div>
                 </div>
@@ -2553,30 +3048,32 @@ if __name__ == "__main__":
                     <div class="list-group list-group-flush border rounded-3" id="listaFavoritos">
                         <div class="list-group-item bg-transparent text-muted small py-3 text-center">
                             <i class="fa-solid fa-star mb-1 d-block fs-5 text-warning"></i>
-                            Las ferreterías de `ferreterias_favoritas` aparecerán en este panel.
+                            Guarda tus ferreterías favoritas desde el mapa.
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Accesos Rápidos adicionales del Menú -->
+            <!-- Accesos Rápidos según Rol -->
             <div class="p-3 border-top mt-auto d-flex flex-column gap-2">
-                <!-- Panel I.O. visible únicamente tras autenticación -->
+                <button class="btn btn-outline-success w-100 rounded-3 text-start small d-none" id="btnAbrirRegistroFerreteria">
+                    <i class="fa-solid fa-store me-2"></i> Registrar mi Ferretería
+                </button>
                 <button class="btn btn-outline-primary w-100 rounded-3 text-start small d-none" id="btnAbrirDashboard">
                     <i class="fa-solid fa-calculator me-2"></i> Panel I.O. Ferretero
                 </button>
-                <!-- Créditos Académicos -->
                 <button class="btn btn-outline-secondary w-100 rounded-3 text-start small" id="btnAbrirCreditos">
                     <i class="fa-solid fa-graduation-cap me-2"></i> Acerca de Opti
                 </button>
             </div>
         </div>
     </div>
+
     <!-- JS Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="/assets/js/app.js"></script>
 </body>
 </html>
 
@@ -2849,25 +3346,35 @@ body {
 <archivo ruta="frontend/assets/js/app.js">
 <![CDATA[
 /* ===================================================================
-   OPTI DECISION SUITE - IOP812 | FRONTEND APP (SURGICAL FIX)
+   OPTI DECISION SUITE - IOP812 | FRONTEND APP (BLOQUE 2 COMPLETO)
    =================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
     // ---------------------------------------------------------------
-    // 1. ESTADO Y VARIABLES GLOBALES
+    // 1. ESTADO GLOBAL
     // ---------------------------------------------------------------
     const COCHABAMBA_DEFAULT = [-17.3895, -66.1568]; // Plaza 14 de Septiembre
     let map = null;
     let markersLayer = null;
     let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
+    let perfilUsuarioActual = null;
+    let topFerreteriaActual = null;
+    let productosCache = [];
+    let modoSeleccionMapa = false;
 
+    const getAuthHeaders = (conJson = false) => {
+        const headers = {};
+        if (conJson) headers['Content-Type'] = 'application/json';
+        const token = localStorage.getItem('iop812-token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+    };
     // Helper para notificaciones con SweetAlert2
     const notificar = (titulo, texto, icono = 'info') => {
         // Quitar el foco de cualquier elemento activo para evitar advertencias aria-hidden
         if (document.activeElement && typeof document.activeElement.blur === 'function') {
             document.activeElement.blur();
         }
-
         const esOscuro = document.documentElement.getAttribute('data-theme') !== 'light';
         return Swal.fire({
             title: titulo,
@@ -2876,14 +3383,12 @@ document.addEventListener('DOMContentLoaded', () => {
             background: esOscuro ? '#1E293B' : '#FFFFFF',
             color: esOscuro ? '#F8FAFC' : '#0F172A',
             confirmButtonColor: icono === 'error' ? '#EF4444' : '#0EA5E9',
-            customClass: {
-                popup: 'rounded-4 border border-secondary-subtle shadow-lg'
-            }
+            customClass: { popup: 'rounded-4 border border-secondary-subtle shadow-lg' }
         });
     };
 
     // ---------------------------------------------------------------
-    // 2. GESTIÓN DE TEMA OSCURO / CLARO
+    // 2. TEMA OSCURO / CLARO
     // ---------------------------------------------------------------
     const themeToggleBtn = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
@@ -2903,7 +3408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---------------------------------------------------------------
-    // 3. INICIALIZACIÓN DE LEAFLET
+    // 3. MAPA LEAFLET Y GEOLOCALIZACIÓN
     // ---------------------------------------------------------------
     const actualizarMarcadorUsuario = (lat, lng, titulo) => {
         ubicacionUsuario = { lat, lng };
@@ -2955,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             map = L.map('map', {
                 center: COCHABAMBA_DEFAULT,
-                zoom: 14,
+                zoom: 13,
                 zoomControl: false
             });
 
@@ -2969,7 +3474,24 @@ document.addEventListener('DOMContentLoaded', () => {
             markersLayer = L.layerGroup().addTo(map);
             intentoAutoGeolocalizacion();
 
-            // Resuelve la pantalla en blanco forzando el recálculo de dimensiones del canvas Leaflet
+            // Captura de coordenadas al registrar ferretería en el mapa
+            map.on('click', (e) => {
+                if (!modoSeleccionMapa) return;
+                modoSeleccionMapa = false;
+                document.getElementById('map')?.classList.remove('cursor-crosshair');
+                document.getElementById('mapPickerBanner')?.classList.add('d-none');
+
+                const latInput = document.getElementById('regFerrLat');
+                const lngInput = document.getElementById('regFerrLng');
+                if (latInput) latInput.value = e.latlng.lat.toFixed(6);
+                if (lngInput) lngInput.value = e.latlng.lng.toFixed(6);
+
+                const modalReg = document.getElementById('modalRegistrarFerreteria');
+                if (modalReg && typeof bootstrap !== 'undefined') {
+                    bootstrap.Modal.getOrCreateInstance(modalReg).show();
+                }
+            });
+
             setTimeout(() => { if (map) map.invalidateSize(); }, 250);
         } catch (e) {
             console.error("Error al inicializar Leaflet:", e);
@@ -2977,57 +3499,62 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     inicializarMapa();
-    // ---------------------------------------------------------------
-    // VINCULACIÓN SEGURA DE MODALES Y NAVEGACIÓN
-    // ---------------------------------------------------------------
-    const btnAbrirLogin = document.getElementById('btnAbrirLogin');
-    const btnAbrirCreditos = document.getElementById('btnAbrirCreditos');
-    const btnAbrirDashboard = document.getElementById('btnAbrirDashboard');
 
-    // Usar getOrCreateInstance evita errores de invocación nula en Bootstrap 5
-    btnAbrirLogin?.addEventListener('click', () => {
-         const el = document.getElementById('modalLoginAuth');
-         if (el && typeof bootstrap !== 'undefined') {
-             bootstrap.Modal.getOrCreateInstance(el).show();
-         } else {
-            alert("No se puede abrir");
-            console.log('Modal encontrado:', !!el);
-            console.log('Bootstrap disponible:', typeof bootstrap !== 'undefined');
-         }
+    // ---------------------------------------------------------------
+    // 4. MODALES Y NAVEGACIÓN
+    // ---------------------------------------------------------------
+    document.getElementById('btnAbrirLogin')?.addEventListener('click', () => {
+        const el = document.getElementById('modalLoginAuth');
+        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
     });
 
-    btnAbrirCreditos?.addEventListener('click', () => {
-         const el = document.getElementById('modalCreditos');
-         if (el && typeof bootstrap !== 'undefined') {
-             bootstrap.Modal.getOrCreateInstance(el).show();
-         } else {
-            alert("Bootstrap Modal no disponible. No se puede abrir Créditos Académicos.");
-         }
+    document.getElementById('btnAbrirCreditos')?.addEventListener('click', () => {
+        const el = document.getElementById('modalCreditos');
+        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
     });
 
-    btnAbrirDashboard?.addEventListener('click', () => {
+    document.getElementById('btnAbrirDashboard')?.addEventListener('click', () => {
         const el = document.getElementById('modalDashboardIO');
         if (el && typeof bootstrap !== 'undefined') {
             bootstrap.Modal.getOrCreateInstance(el).show();
+            cargarProductosCRUD();
+            if (perfilUsuarioActual?.rol === 'admin') cargarUsuariosAdmin();
+        }
+    });
+
+    const abrirModalRegistroFerreteria = () => {
+        const el = document.getElementById('modalRegistrarFerreteria');
+        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
+    };
+
+    document.getElementById('btnAbrirRegistroFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
+    document.getElementById('btnAdminNuevaFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
+
+    document.getElementById('btnPickMapLocation')?.addEventListener('click', () => {
+        const modalReg = document.getElementById('modalRegistrarFerreteria');
+        if (modalReg && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalReg).hide();
+        }
+        modoSeleccionMapa = true;
+        document.getElementById('mapPickerBanner')?.classList.remove('d-none');
+    });
+
+    document.getElementById('btnCancelarMapPicker')?.addEventListener('click', () => {
+        modoSeleccionMapa = false;
+        document.getElementById('mapPickerBanner')?.classList.add('d-none');
+        abrirModalRegistroFerreteria();
+    });
+
+    document.getElementById('btnToggleAHP')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const collapseAHP = document.getElementById('collapseAHP');
+        if (collapseAHP && typeof bootstrap !== 'undefined') {
+            bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false }).toggle();
         }
     });
 
     // ---------------------------------------------------------------
-    // DESPLEGABLE ACORDEÓN AHP (SAATY)
-    // ---------------------------------------------------------------
-    const btnToggleAHP = document.getElementById('btnToggleAHP');
-    const collapseAHP = document.getElementById('collapseAHP');
-    btnToggleAHP?.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (collapseAHP && typeof bootstrap !== 'undefined') {
-            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false });
-            bsCollapse.toggle();
-        } else {
-            alert("Bootstrap Collapse no disponible. No se puede alternar el panel AHP.");
-        }
-    });
-    // ---------------------------------------------------------------
-    // 4. GEOCODIFICACIÓN DE ORIGEN (Nominatim OpenStreetMap)
+    // 5. GEOCODIFICACIÓN Y SLIDERS AHP
     // ---------------------------------------------------------------
     const btnGPS = document.getElementById('btnGPS');
     const inputOrigen = document.getElementById('inputOrigen');
@@ -3052,12 +3579,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resolverCoordenadasOrigen = async (textoOrigen) => {
         if (textoOrigen.includes("GPS")) return ubicacionUsuario;
-
         try {
             const query = encodeURIComponent(`${textoOrigen}, Cochabamba, Bolivia`);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
             const data = await res.json();
-
             if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
@@ -3070,17 +3595,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return ubicacionUsuario;
     };
-
-    // ---------------------------------------------------------------
-    // 5. SLIDERS AHP (Ponderación Saaty 1-9)
-    // ---------------------------------------------------------------
+    //(Ponderación Saaty 1-9)
     const sliders = {
         precio: document.getElementById('sliderPrecio'),
         distancia: document.getElementById('sliderDistancia'),
         reputacion: document.getElementById('sliderReputacion'),
         stock: document.getElementById('sliderStock')
     };
-
     const labels = {
         precio: document.getElementById('valPrecio'),
         distancia: document.getElementById('valDistancia'),
@@ -3101,19 +3622,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (labels.stock) labels.stock.textContent = `${Math.round((valS / suma) * 100)}%`;
     };
 
-    Object.values(sliders).forEach(slider => {
-        slider?.addEventListener('input', actualizarPorcentajesAHP);
-    });
+    Object.values(sliders).forEach(s => s?.addEventListener('input', actualizarPorcentajesAHP));
     actualizarPorcentajesAHP();
 
     // ---------------------------------------------------------------
-    // 6. BÚSQUEDA FERRETERÍAS MULTICRITERIO AHP (AHPSearchInput)
+    // 6. BÚSQUEDA MULTICRITERIO AHP + FAVORITOS E HISTORIAL
     // ---------------------------------------------------------------
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
-    const btnCloseTopResult = document.getElementById('btnCloseTopResult');
 
-    btnCloseTopResult?.addEventListener('click', () => {
+    document.getElementById('btnCloseTopResult')?.addEventListener('click', () => {
         cardTopResult?.classList.add('d-none');
     });
 
@@ -3130,7 +3648,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const coordsActuales = await resolverCoordenadasOrigen(origenText || '');
-
         // Estructura exacta requerida por AHPSearchInput en app/modules/buscador_ahp/schemas.py
         const payload = {
             latitud: coordsActuales.lat,
@@ -3147,23 +3664,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/ahp/buscar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(true),
                 body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errData = await response.json();
-                let detalleError = 'Error en la búsqueda geoespacial';
-                if (Array.isArray(errData.detail)) {
-                    detalleError = errData.detail.map(err => `${err.loc.join('.')}: ${err.msg}`).join('<br>');
-                } else if (typeof errData.detail === 'string') {
-                    detalleError = errData.detail;
-                }
-                throw new Error(detalleError);
+                throw new Error(typeof errData.detail === 'string' ? errData.detail : 'Error en la búsqueda geoespacial');
             }
 
             const data = await response.json();
             renderizarResultadosAHP(data);
+            if (perfilUsuarioActual) cargarHistorialYFavoritos();
         } catch (error) {
             notificar('Error en Búsqueda AHP', error.message, 'warning');
         } finally {
@@ -3180,26 +3692,19 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizarMarcadorUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng, "Tu Origen de Búsqueda");
 
         if (!data.ferreterias || data.ferreterias.length === 0) {
-            notificar('Búsqueda Desierta', 'No existen ferreterías registradas en la base de datos con ese producto.', 'info');
+            notificar('Búsqueda sin resultados', 'No hay ferreterías con stock disponible para ese producto.', 'info');
             return;
         }
 
         const top = data.ferreterias[0];
+        topFerreteriaActual = top;
 
-        const elNombre = document.getElementById('topFerreteriaNombre');
-        const elDireccion = document.getElementById('topFerreteriaDireccion');
-        const elPrecio = document.getElementById('topPrecioBOB');
-        const elDistancia = document.getElementById('topDistanciaKM');
-        const elReputacion = document.getElementById('topReputacion');
-        const elStock = document.getElementById('topStock');
-
-        if (elNombre) elNombre.textContent = top.nombre;
-        if (elDireccion) elDireccion.innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
-        if (elPrecio) elPrecio.textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
-        if (elDistancia) elDistancia.textContent = `${top.distancia_km} km`;
-        if (elReputacion) elReputacion.textContent = top.reputacion;
-        if (elStock) elStock.textContent = `${top.stock} un.`;
-
+        document.getElementById('topFerreteriaNombre').textContent = top.nombre;
+        document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
+        document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
+        document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
+        document.getElementById('topReputacion').textContent = top.reputacion;
+        document.getElementById('topStock').textContent = `${top.stock} un.`;
         cardTopResult?.classList.remove('d-none');
 
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
@@ -3216,10 +3721,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const marker = L.marker([f.latitud, f.longitud], { icon: markerIcon })
                 .addTo(markersLayer)
                 .bindPopup(`
-                    <div style="color: #0F172A;">
+                    <div style="color: #0F172A; min-width: 180px;">
                         <strong style="color: ${color};">${f.nombre}</strong><br>
                         <small>${f.direccion}</small><br>
-                        <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.
+                        <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.<br>
+                        <button class="btn btn-sm btn-warning mt-2 w-100 py-0" onclick="window.agregarFavorito(${f.id_ferreteria})">
+                            <i class="fa-solid fa-star"></i> Guardar Favorito
+                        </button>
                     </div>
                 `);
 
@@ -3230,45 +3738,84 @@ document.addEventListener('DOMContentLoaded', () => {
         if (map) map.fitBounds(puntosBounds, { padding: [50, 50] });
     };
 
-    // ---------------------------------------------------------------
-    // 7. AUTENTICACIÓN JWT Y SESIÓN
-    // ---------------------------------------------------------------
-    const formLogin = document.getElementById('formLogin');
-    const btnToggleAuthMode = document.getElementById('btnToggleAuthMode');
-    const usernameGroup = document.getElementById('usernameGroup');
-    const inputUsername = document.getElementById('inputUsername');
-    const btnSubmitAuth = document.getElementById('btnSubmitAuth');
-    const authModePrompt = document.getElementById('authModePrompt');
-    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-    const modalLoginTitle = document.getElementById('modalLoginAuthLabel');
-    let isRegisterMode = false;
-    // ---------------------------------------------------------------
-    // EVENTO Y MANEJO DE GOOGLE OAUTH2 (/api/auth/google)
-    // ---------------------------------------------------------------
-    const btnGoogleAuth = document.getElementById('btnGoogleAuth');
-
-    btnGoogleAuth?.addEventListener('click', async () => {
-        // 1. Ocultar el modal de login primero
-        const modalEl = document.getElementById('modalLoginAuth');
-        if (modalEl && typeof bootstrap !== 'undefined') {
-            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-        }
-
-        // 2. Si el SDK oficial de Google está cargado, abrir la pasarela
-        if (typeof google !== 'undefined' && google.accounts?.id) {
-            google.accounts.id.prompt();
+    window.agregarFavorito = async (idFerreteria) => {
+        if (!perfilUsuarioActual) {
+            notificar('Inicia Sesión', 'Debes iniciar sesión para guardar ferreterías favoritas.', 'info');
             return;
         }
+        try {
+            const res = await fetch('/api/ahp/favoritos', {
+                method: 'POST',
+                headers: getAuthHeaders(true),
+                body: JSON.stringify({ id_ferreteria: idFerreteria })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo guardar en favoritos');
+            notificar('Guardado en Favoritos', data.mensaje || 'Ferretería añadida a tu lista.', 'success');
+            cargarHistorialYFavoritos();
+        } catch (err) {
+            notificar('Favoritos', err.message, 'warning');
+        }
+    };
 
-        // 3. Notificación alternativa si no hay CLIENT_ID configurado
-        notificar(
-            'Google Sign-In',
-            'Iniciando pasarela de autenticación con Google... Revisa la consola o configura tu GOOGLE_CLIENT_ID.',
-            'info'
-        );
+    document.getElementById('btnFavoritoTop')?.addEventListener('click', () => {
+        if (topFerreteriaActual) window.agregarFavorito(topFerreteriaActual.id_ferreteria);
     });
 
-    // Callback global para procesar el token retornado por Google y enviarlo a FastAPI
+    const cargarHistorialYFavoritos = async () => {
+        if (!perfilUsuarioActual) return;
+        const listaHist = document.getElementById('listaHistorial');
+        const listaFav = document.getElementById('listaFavoritos');
+
+        try {
+            const [resHist, resFav] = await Promise.all([
+                fetch('/api/ahp/historial', { headers: getAuthHeaders() }),
+                fetch('/api/ahp/favoritos', { headers: getAuthHeaders() })
+            ]);
+
+            if (resHist.ok && listaHist) {
+                const historial = await resHist.json();
+                listaHist.innerHTML = historial.length === 0
+                    ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">Aún no tienes búsquedas registradas.</div>`
+                    : historial.map(h => `
+                        <button type="button" class="list-group-item list-group-item-action bg-transparent text-main small py-2"
+                            onclick="document.getElementById('inputProducto').value='${h.texto_buscado.replace(/'/g, "\\'")}'; document.getElementById('formBuscadorAHP').dispatchEvent(new Event('submit'));">
+                            <div class="fw-semibold"><i class="fa-solid fa-magnifying-glass text-primary me-2"></i>${h.texto_buscado}</div>
+                            <span class="extra-small text-muted">${new Date(h.fecha_busqueda).toLocaleString()}</span>
+                        </button>
+                    `).join('');
+            }
+
+            if (resFav.ok && listaFav) {
+                const favoritos = await resFav.json();
+                listaFav.innerHTML = favoritos.length === 0
+                    ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">No tienes ferreterías favoritas guardadas.</div>`
+                    : favoritos.map(f => `
+                        <div class="list-group-item bg-transparent text-main small py-2 d-flex justify-content-between align-items-center">
+                            <div role="button" onclick="if(window._flyToStore) window._flyToStore(${f.latitud}, ${f.longitud}, '${f.nombre.replace(/'/g, "\\'")}')">
+                                <div class="fw-semibold"><i class="fa-solid fa-star text-warning me-1"></i> ${f.nombre}</div>
+                                <span class="extra-small text-muted">${f.direccion}</span>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+        } catch (e) {
+            console.warn('Historial/Favoritos pendientes de consulta:', e);
+        }
+    };
+
+    window._flyToStore = (lat, lng, nombre) => {
+        if (map) {
+            map.flyTo([lat, lng], 16);
+            L.popup().setLatLng([lat, lng]).setContent(`<strong>${nombre}</strong>`).openOn(map);
+        }
+    };
+
+    document.getElementById('drawerGoogleMaps')?.addEventListener('show.bs.offcanvas', cargarHistorialYFavoritos);
+
+    // ---------------------------------------------------------------
+    // 7. GOOGLE OAUTH2 (GIS SDK) + JWT + ROLES
+    // ---------------------------------------------------------------
     window.handleGoogleCredentialResponse = async (response) => {
         try {
             const res = await fetch('/api/auth/google', {
@@ -3276,30 +3823,86 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ credential: response.credential })
             });
-
             const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.detail || 'Fallo en la verificación del token de Google');
-            }
+            if (!res.ok) throw new Error(data.detail || 'Error al verificar token de Google');
 
-            // Almacenar token de sesión propio del sistema
             localStorage.setItem('iop812-token', data.access_token);
-            actualizarInterfazSesion(true);
+            const perfil = await obtenerPerfil(data.access_token);
+            actualizarInterfazSesion(perfil);
 
-            const modalElement = document.getElementById('modalLoginAuth');
-            if (modalElement && typeof bootstrap !== 'undefined') {
-                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
-            }
+            const modalEl = document.getElementById('modalLoginAuth');
+            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 
-            notificar('¡Acceso Correcto!', `Bienvenido ${data.username}, iniciaste sesión con Google.`, 'success');
+            notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
         } catch (err) {
             notificar('Error en Google Auth', err.message, 'error');
         }
     };
-    const actualizarInterfazSesion = (autenticado) => {
-        btnAbrirLogin?.classList.toggle('d-none', autenticado);
-        btnCerrarSesion?.classList.toggle('d-none', !autenticado);
-        btnAbrirDashboard?.classList.toggle('d-none', !autenticado);
+
+    const inicializarGoogleSignIn = async () => {
+        const btnContainer = document.getElementById('googleBtnContainer');
+        const btnFallback = document.getElementById('btnGoogleFallback');
+
+        try {
+            const res = await fetch('/api/auth/config');
+            if (!res.ok) throw new Error('Sin endpoint /api/auth/config');
+            const cfg = await res.json();
+            const clientId = cfg.google_client_id;
+
+            if (!clientId || clientId.includes('TU_GOOGLE_CLIENT_ID')) {
+                btnFallback?.classList.remove('d-none');
+                btnFallback?.addEventListener('click', () => {
+                    notificar('Configuración Pendiente', 'Define GOOGLE_CLIENT_ID en tu archivo .env y reinicia el servidor.', 'info');
+                });
+                return;
+            }
+
+            const esperarSDK = setInterval(() => {
+                if (typeof google !== 'undefined' && google.accounts?.id && btnContainer) {
+                    clearInterval(esperarSDK);
+                    google.accounts.id.initialize({
+                        client_id: clientId,
+                        callback: window.handleGoogleCredentialResponse
+                    });
+                    google.accounts.id.renderButton(btnContainer, {
+                        theme: 'outline',
+                        size: 'large',
+                        width: 340,
+                        text: 'signin_with',
+                        shape: 'pill'
+                    });
+                }
+            }, 300);
+            setTimeout(() => clearInterval(esperarSDK), 8000);
+        } catch (e) {
+            btnFallback?.classList.remove('d-none');
+        }
+    };
+    inicializarGoogleSignIn();
+
+    const actualizarInterfazSesion = (perfil) => {
+        perfilUsuarioActual = perfil;
+        const autenticado = Boolean(perfil);
+        const rol = perfil?.rol || 'cliente';
+
+        document.getElementById('btnAbrirLogin')?.classList.toggle('d-none', autenticado);
+        document.getElementById('btnCerrarSesion')?.classList.toggle('d-none', !autenticado);
+
+        const navBadge = document.getElementById('navUserBadge');
+        if (navBadge) {
+            navBadge.classList.toggle('d-none', !autenticado);
+            if (autenticado) {
+                document.getElementById('navUserName').textContent = perfil.username;
+                document.getElementById('navUserRole').textContent = rol;
+            }
+        }
+
+        const esGestor = autenticado && (rol === 'ferretero' || rol === 'admin');
+        const puedeRegistrarFerreteria = autenticado && (rol === 'admin' || !perfil.id_ferreteria);
+
+        document.getElementById('btnAbrirDashboard')?.classList.toggle('d-none', !esGestor);
+        document.getElementById('btnAbrirRegistroFerreteria')?.classList.toggle('d-none', !puedeRegistrarFerreteria);
+        document.getElementById('navItemAdmin')?.classList.toggle('d-none', rol !== 'admin');
     };
 
     const obtenerPerfil = async (token) => {
@@ -3308,7 +3911,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         if (!res.ok) {
-            const error = new Error(data.detail || `No se pudo validar la sesión (${res.status})`);
+            const error = new Error(data.detail || `Sesión inválida (${res.status})`);
             error.status = res.status;
             throw error;
         }
@@ -3317,45 +3920,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const restaurarSesion = async () => {
         const token = localStorage.getItem('iop812-token');
-        if (!token) return;
-
+        if (!token) {
+            actualizarInterfazSesion(null);
+            return;
+        }
         try {
-            await obtenerPerfil(token);
-            actualizarInterfazSesion(true);
+            const perfil = await obtenerPerfil(token);
+            actualizarInterfazSesion(perfil);
         } catch (err) {
-            if (err.status === 401 || err.status === 403 || err.status === 404) {
-                localStorage.removeItem('iop812-token');
-                actualizarInterfazSesion(false);
-                return;
-            }
-            notificar('No se pudo validar la sesión', err.message, 'error');
+            localStorage.removeItem('iop812-token');
+            actualizarInterfazSesion(null);
         }
     };
     restaurarSesion();
 
-    const aplicarModoAutenticacion = (registro) => {
-        isRegisterMode = registro;
-        usernameGroup?.classList.toggle('d-none', !isRegisterMode);
-        if (inputUsername) inputUsername.required = isRegisterMode;
-        const passwordInput = document.getElementById('inputPassword');
-        passwordInput?.setAttribute('autocomplete', isRegisterMode ? 'new-password' : 'current-password');
-        if (btnSubmitAuth) btnSubmitAuth.textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
-        if (authModePrompt) authModePrompt.textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
-        if (btnToggleAuthMode) btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
-        if (modalLoginTitle) modalLoginTitle.textContent = isRegisterMode ? 'Crear cuenta ferretera' : '¡Bienvenido a la familia Opti!';
-    };
+    // Login / Registro clásico
+    let isRegisterMode = false;
+    const btnToggleAuthMode = document.getElementById('btnToggleAuthMode');
+    const usernameGroup = document.getElementById('usernameGroup');
+    const inputUsername = document.getElementById('inputUsername');
 
     btnToggleAuthMode?.addEventListener('click', () => {
-        aplicarModoAutenticacion(!isRegisterMode);
+        isRegisterMode = !isRegisterMode;
+        usernameGroup?.classList.toggle('d-none', !isRegisterMode);
+        if (inputUsername) inputUsername.required = isRegisterMode;
+        document.getElementById('btnSubmitAuth').textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
+        document.getElementById('authModePrompt').textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+        btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
+        document.getElementById('modalLoginAuthLabel').textContent = isRegisterMode ? 'Crear cuenta ferretera' : '¡Bienvenido a la familia Opti!';
     });
 
-    btnCerrarSesion?.addEventListener('click', () => {
+    document.getElementById('btnCerrarSesion')?.addEventListener('click', () => {
         localStorage.removeItem('iop812-token');
-        actualizarInterfazSesion(false);
+        actualizarInterfazSesion(null);
         notificar('Sesión cerrada', 'Has cerrado tu sesión correctamente.', 'success');
     });
 
-    formLogin?.addEventListener('submit', async (e) => {
+    document.getElementById('formLogin')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('inputEmail')?.value;
         const password = document.getElementById('inputPassword')?.value;
@@ -3371,261 +3972,203 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (!res.ok) {
-                const detail = Array.isArray(data.detail)
-                    ? data.detail.map((item) => item.msg).join(', ')
-                    : data.detail;
-                throw new Error(detail || `La solicitud de autenticación falló (${res.status})`);
+                const detail = Array.isArray(data.detail) ? data.detail.map(i => i.msg).join(', ') : data.detail;
+                throw new Error(detail || 'Error de autenticación');
             }
 
-            const registroCompletado = isRegisterMode;
-            await obtenerPerfil(data.access_token);
             localStorage.setItem('iop812-token', data.access_token);
-            actualizarInterfazSesion(true);
+            const perfil = await obtenerPerfil(data.access_token);
+            actualizarInterfazSesion(perfil);
 
-            const modalElement = document.getElementById('modalLoginAuth');
-            if (modalElement && typeof bootstrap !== 'undefined') {
-                bootstrap.Modal.getOrCreateInstance(modalElement).hide();
-            }
-            formLogin.reset();
-            aplicarModoAutenticacion(false);
-            notificar(
-                registroCompletado ? 'Cuenta creada' : '¡Acceso correcto!',
-                registroCompletado ? 'Tu cuenta se creó y ya iniciaste sesión.' : 'Has iniciado sesión correctamente.',
-                'success'
-            );
+            const modalEl = document.getElementById('modalLoginAuth');
+            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+            e.target.reset();
+            notificar('¡Acceso correcto!', `Bienvenido ${perfil.username}.`, 'success');
         } catch (err) {
             notificar('Error de Autenticación', err.message, 'error');
         }
     });
 
     // ---------------------------------------------------------------
-    // 8. CALCULADORA INVENTARIOS EOQ (EOQParametrosInput)
+    // 8. REGISTRO DE FERRETERÍA Y GESTIÓN ADMIN DE ROLES
     // ---------------------------------------------------------------
-    const formEOQ = document.getElementById('formEOQ');
-    formEOQ?.addEventListener('submit', async (e) => {
+    document.getElementById('formRegistrarFerreteria')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const D = parseFloat(document.getElementById('eoqD')?.value || 0);
-        const K = parseFloat(document.getElementById('eoqK')?.value || 0);
-        const H = parseFloat(document.getElementById('eoqH')?.value || 0);
-        const L_dias = parseFloat(document.getElementById('eoqL')?.value || 0);
-
-        try {
-            const response = await fetch('/api/inventario/calcular', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    unidad_tiempo: 'Años',
-                    demanda_D: D,
-                    costo_pedido_K: K,
-                    costo_mantenimiento_H: H,
-                    tiempo_entrega_dias_L: L_dias
-                })
-            });
-
-            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ');
-
-            const data = await response.json();
-            const elQ = document.getElementById('resQOptimo');
-            const elROP = document.getElementById('resROP');
-            if (elQ) elQ.textContent = `${data.lote_optimo_Q} un.`;
-            if (elROP) elROP.textContent = `${data.punto_reorden_ROP} un.`;
-
-            notificar('Cálculo Exitoso', 'Valores de EOQ y ROP actualizados por el motor matemático.', 'success');
-        } catch (err) {
-            notificar('Error en Modelo EOQ', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 9. ESTIMACIÓN DE COLAS M/M/1 (ColasMM1Input)
-    // ---------------------------------------------------------------
-    const formColas = document.getElementById('formColas');
-    formColas?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const lambda = parseFloat(document.getElementById('colaLambda')?.value || 0);
-        const mu = parseFloat(document.getElementById('colaMu')?.value || 0);
-        const unidad = document.getElementById('colaUnidad')?.value || 'horas';
-
-        try {
-            const res = await fetch('/api/colas/mm1', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tasa_llegada_lambda: lambda,
-                    tasa_servicio_mu: mu,
-                    unidad_tiempo: unidad
-                })
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || 'Servicio saturado o parámetros inválidos');
-            }
-
-            const data = await res.json();
-            const elRho = document.getElementById('resColaRho');
-            const elWq = document.getElementById('resColaWq');
-
-            if (elRho) elRho.textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
-            
-            const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
-            if (elWq) elWq.textContent = tiempoMostrar;
-
-            notificar('Métricas M/M/1 Calculadas', 'Estimación procesada correctamente.', 'success');
-        } catch (err) {
-            notificar('Error en Colas', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 10. SIMULACIÓN CADENAS DE MARKOV (MarkovMatrixInput)
-    // ---------------------------------------------------------------
-    const formMarkov = document.getElementById('formMarkov');
-    formMarkov?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const p12 = parseFloat(document.getElementById('markovP12')?.value || 0);
-        const p2A1 = parseFloat(document.getElementById('markovP2A1')?.value || 0);
-
         const payload = {
-            estados_transitorios: ["Busqueda", "EnCarrito"],
-            estados_absorbentes: ["CompraRealizada", "Abandono"],
-            matriz_Q: [
-                [0.0, p12],
-                [0.0, 0.0]
-            ],
-            matriz_R: [
-                [0.0, 1 - p12],
-                [p2A1, 1 - p2A1]
-            ]
+            nombre: document.getElementById('regFerrNombre').value.trim(),
+            direccion: document.getElementById('regFerrDireccion').value.trim(),
+            latitud: parseFloat(document.getElementById('regFerrLat').value),
+            longitud: parseFloat(document.getElementById('regFerrLng').value),
+            superficie_almacen_m2: parseFloat(document.getElementById('regFerrSuperficie').value || 0),
+            capacidad_canales_atencion: parseInt(document.getElementById('regFerrCanales').value || 1, 10)
         };
 
         try {
-            const response = await fetch('/api/markov/simular', {
+            const res = await fetch('/api/ahp/ferreterias', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(true),
                 body: JSON.stringify(payload)
             });
-
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.detail || 'Error al simular Cadenas de Markov');
-            }
-
-            const data = await response.json();
-            const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
-            const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
-
-            const container = document.getElementById('resMarkovContainer');
-            if (container) {
-                container.innerHTML = `
-                    <div class="alert alert-success border-0 mb-0">
-                        <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
-                        <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
-                        <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
-                        <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
-                    </div>
-                `;
-            }
-
-            notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas por el motor NumPy.', 'success');
-        } catch (err) {
-            notificar('Error en Markov', err.message, 'error');
-        }
-    });
-
-    // ---------------------------------------------------------------
-    // 11. EVALUACIÓN TEORÍA DE DECISIONES (Alineado con DecisionOutput)
-    // ---------------------------------------------------------------
-    const formDecisiones = document.getElementById('formDecisiones');
-    formDecisiones?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            const alt1 = document.getElementById('decAlt1')?.value || '';
-            const a1e1 = parseFloat(document.getElementById('decA1E1')?.value || 0);
-            const a1e2 = parseFloat(document.getElementById('decA1E2')?.value || 0);
-
-            const alt2 = document.getElementById('decAlt2')?.value || '';
-            const a2e1 = parseFloat(document.getElementById('decA2E1')?.value || 0);
-            const a2e2 = parseFloat(document.getElementById('decA2E2')?.value || 0);
-
-            const p1 = parseFloat(document.getElementById('decProbE1')?.value || 0);
-            const p2 = 1 - p1;
-
-            const payload = {
-                alternativas: [alt1, alt2],
-                estados_naturaleza: ["Alta Demanda", "Baja Demanda"],
-                matriz_pagos: [
-                    [a1e1, a1e2],
-                    [a2e1, a2e2]
-                ],
-                probabilidades: [p1, p2],
-                coeficiente_alpha: 0.7
-            };
-
-            const res = await fetch('/api/decisiones/evaluar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || 'Error en evaluación de decisiones');
-            }
-
             const data = await res.json();
-            
-            // Extracción corregida mapeando los contratos del schema DecisionOutput
-            const vmeOpt = data.analisis_riesgo ? data.analisis_riesgo.decision_optima_vme : 'N/A';
-            const laplaceOpt = data.criterios_incertidumbre?.["Laplace (Equiprobabilidad)"]?.alternativa_optima || 'N/A';
-            const waldOpt = data.criterios_incertidumbre?.["Wald Pesimista (MaxiMin)"]?.alternativa_optima || 'N/A';
-            const savageOpt = data.criterios_incertidumbre?.["Savage (MiniMax Arrepentimiento)"]?.alternativa_optima || 'N/A';
+            if (!res.ok) throw new Error(data.detail || 'Error al registrar ferretería');
 
-            const container = document.getElementById('resDecisionesContainer');
-            if (container) {
-                container.innerHTML = `
-                    <ul class="list-unstyled mb-0 small">
-                        <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${vmeOpt}</span></li>
-                        <li class="mb-1"><strong>Criterio Laplace:</strong> ${laplaceOpt}</li>
-                        <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${waldOpt}</li>
-                        <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${savageOpt}</li>
-                    </ul>
-                    <div class="mt-2 pt-2 border-top extra-small text-muted">${data.recomendacion_general}</div>
-                `;
-            }
-            notificar('Evaluación Completada', 'Los criterios de decisión fueron procesados exitosamente.', 'success');
+            const modalEl = document.getElementById('modalRegistrarFerreteria');
+            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+
+            const token = localStorage.getItem('iop812-token');
+            if (token) actualizarInterfazSesion(await obtenerPerfil(token));
+
+            notificar('Ferretería Registrada', data.mensaje || 'Tu ferretería ya está activa en el mapa.', 'success');
         } catch (err) {
-            notificar('Error en Decisiones', err.message, 'error');
+            notificar('Error al Registrar', err.message, 'error');
         }
     });
 
+    const cargarUsuariosAdmin = async () => {
+        const tbody = document.getElementById('tbodyUsuariosAdmin');
+        if (!tbody) return;
+        try {
+            const res = await fetch('/api/auth/usuarios', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const usuarios = await res.json();
+            tbody.innerHTML = usuarios.map(u => `
+                <tr>
+                    <td class="fw-medium">${u.username}</td>
+                    <td>${u.email}</td>
+                    <td>${u.ferreteria_nombre || '<span class="text-muted">Sin ferretería</span>'}</td>
+                    <td>
+                        <select class="form-select form-select-sm w-auto" onchange="window.cambiarRolUsuario(${u.id_usuario}, this.value)">
+                            <option value="cliente" ${u.rol === 'cliente' ? 'selected' : ''}>cliente</option>
+                            <option value="ferretero" ${u.rol === 'ferretero' ? 'selected' : ''}>ferretero</option>
+                            <option value="admin" ${u.rol === 'admin' ? 'selected' : ''}>admin</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.warn('Error cargando usuarios admin:', e);
+        }
+    };
+
+    window.cambiarRolUsuario = async (idUsuario, nuevoRol) => {
+        try {
+            const res = await fetch(`/api/auth/usuarios/${idUsuario}/rol`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(true),
+                body: JSON.stringify({ rol: nuevoRol })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al actualizar rol');
+            notificar('Rol Actualizado', data.mensaje || `Rol cambiado a ${nuevoRol}.`, 'success');
+        } catch (err) {
+            notificar('Error de Permisos', err.message, 'error');
+        }
+    };
+
     // ---------------------------------------------------------------
-    // 12. CARGA DINÁMICA DEL CATÁLOGO (Tabla productos de PostgreSQL)
+    // 9. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV
     // ---------------------------------------------------------------
+    const cardFormProducto = document.getElementById('cardFormProducto');
+    const formProductoCRUD = document.getElementById('formProductoCRUD');
+
+    document.getElementById('btnToggleFormProducto')?.addEventListener('click', () => {
+        formProductoCRUD?.reset();
+        document.getElementById('prodEditId').value = '';
+        cardFormProducto?.classList.toggle('d-none');
+    });
+
+    document.getElementById('btnCancelarProducto')?.addEventListener('click', () => {
+        cardFormProducto?.classList.add('d-none');
+    });
+
+    document.getElementById('btnDescargarPlantillaCSV')?.addEventListener('click', () => {
+        const encabezado = "nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS\n";
+        const blob = new Blob([encabezado], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_catalogo_iop812.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('inputCsvProductos')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/productos/carga-masiva', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al procesar el archivo CSV');
+
+            notificar('Carga Masiva Exitosa', data.mensaje, 'success');
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error en Carga CSV', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
+
+    formProductoCRUD?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('prodEditId').value;
+        const payload = {
+            nombre: document.getElementById('prodNombre').value.trim(),
+            precio_bob: parseFloat(document.getElementById('prodPrecio').value),
+            stock_actual: parseInt(document.getElementById('prodStock').value, 10),
+            demanda_anual_D: parseInt(document.getElementById('prodDemanda').value, 10),
+            costo_pedido_K: parseFloat(document.getElementById('prodK').value || 50),
+            costo_mantenimiento_H: parseFloat(document.getElementById('prodH').value || 5),
+            tiempo_entrega_dias_L: parseInt(document.getElementById('prodL').value || 3, 10),
+            stock_seguridad_SS: parseInt(document.getElementById('prodSS').value || 10, 10)
+        };
+
+        const url = editId ? `/api/productos/${editId}` : '/api/productos';
+        const method = editId ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: getAuthHeaders(true),
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo guardar el producto');
+
+            cardFormProducto?.classList.add('d-none');
+            notificar('Catálogo Actualizado', data.mensaje, 'success');
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error al Guardar', err.message, 'error');
+        }
+    });
+
     const cargarProductosCRUD = async () => {
         const tbody = document.getElementById('tbodyCatálogo');
         if (!tbody) return;
 
         try {
-            const token = localStorage.getItem('iop812-token');
-            const res = await fetch('/api/productos', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await fetch('/api/productos', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            productosCache = await res.json();
 
-            if (!res.ok) {
-                if (res.status === 401) return;
-                throw new Error(`Error en servidor (${res.status})`);
-            }
-
-            const productos = await res.json();
-            if (productos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-3">No hay productos registrados en el catálogo.</td></tr>`;
+            if (productosCache.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted small py-3">No hay productos registrados en el catálogo.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = productos.map(p => `
+            tbody.innerHTML = productosCache.map(p => `
                 <tr>
                     <td class="fw-medium">${p.nombre}</td>
+                    <td class="small text-muted">${p.ferreteria_nombre || '-'}</td>
                     <td class="text-success fw-bold">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</td>
                     <td><span class="badge ${p.stock_actual > 20 ? 'bg-success' : 'bg-danger'}">${p.stock_actual} un.</span></td>
                     <td>${p.demanda_anual_D} un.</td>
@@ -3636,18 +4179,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `).join('');
         } catch (e) {
-            console.warn('Fallo al obtener el catálogo de productos:', e);
+            console.warn('Error cargando catálogo:', e);
         }
     };
 
     window.editarProducto = (id) => {
-        notificar('Editar Producto', `Abriendo edición para el producto ID: ${id}`, 'info');
+        const prod = productosCache.find(p => p.id_producto === id);
+        if (!prod) return;
+        document.getElementById('prodEditId').value = prod.id_producto;
+        document.getElementById('prodNombre').value = prod.nombre;
+        document.getElementById('prodPrecio').value = prod.precio_bob;
+        document.getElementById('prodStock').value = prod.stock_actual;
+        document.getElementById('prodDemanda').value = prod.demanda_anual_D;
+        document.getElementById('prodK').value = prod.costo_pedido_K ?? 50;
+        document.getElementById('prodH').value = prod.costo_mantenimiento_H ?? 5;
+        document.getElementById('prodL').value = prod.tiempo_entrega_dias_L ?? 3;
+        document.getElementById('prodSS').value = prod.stock_seguridad_SS ?? 10;
+        cardFormProducto?.classList.remove('d-none');
     };
 
     window.eliminarProducto = async (id) => {
         const confirmacion = await Swal.fire({
             title: '¿Eliminar producto?',
-            text: 'Esta acción no se puede deshacer en la base de datos.',
+            text: 'Esta acción eliminará el ítem del catálogo.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#EF4444',
@@ -3656,14 +4210,159 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelButtonText: 'Cancelar'
         });
 
-        if (confirmacion.isConfirmed) {
-            notificar('Producto Eliminado', `El producto ID ${id} fue removido.`, 'success');
+        if (!confirmacion.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/api/productos/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+            notificar('Eliminado', data.mensaje, 'success');
             cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error al Eliminar', err.message, 'error');
         }
     };
- 
-    
+
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
+
+    // ---------------------------------------------------------------
+    // 10. CALCULADORAS IO2 (EOQ, COLAS M/M/1, MARKOV, DECISIONES)
+    // ---------------------------------------------------------------
+    document.getElementById('formEOQ')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('/api/inventario/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    unidad_tiempo: 'Años',
+                    demanda_D: parseFloat(document.getElementById('eoqD')?.value || 0),
+                    costo_pedido_K: parseFloat(document.getElementById('eoqK')?.value || 0),
+                    costo_mantenimiento_H: parseFloat(document.getElementById('eoqH')?.value || 0),
+                    tiempo_entrega_dias_L: parseFloat(document.getElementById('eoqL')?.value || 0)
+                })
+            });
+            if (!response.ok) throw new Error('Falló el procesamiento en el motor EOQ');
+            const data = await response.json();
+            document.getElementById('resQOptimo').textContent = `${data.lote_optimo_Q} un.`;
+            document.getElementById('resROP').textContent = `${data.punto_reorden_ROP} un.`;
+            notificar('Cálculo Exitoso', 'Valores de EOQ y ROP actualizados.', 'success');
+        } catch (err) {
+            notificar('Error en Modelo EOQ', err.message, 'error');
+        }
+    });
+
+    document.getElementById('formColas')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const unidad = document.getElementById('colaUnidad')?.value || 'horas';
+        try {
+            const res = await fetch('/api/colas/mm1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tasa_llegada_lambda: parseFloat(document.getElementById('colaLambda')?.value || 0),
+                    tasa_servicio_mu: parseFloat(document.getElementById('colaMu')?.value || 0),
+                    unidad_tiempo: unidad
+                })
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Servicio saturado o parámetros inválidos');
+            }
+            const data = await res.json();
+            document.getElementById('resColaRho').textContent = `${(data.factor_uso_rho * 100).toFixed(1)}%`;
+            const tiempoMostrar = unidad === 'horas' ? (data.tiempo_espera_cola_Wq * 60).toFixed(1) + ' min' : data.tiempo_espera_cola_Wq.toFixed(1) + ' min';
+            document.getElementById('resColaWq').textContent = tiempoMostrar;
+            notificar('Métricas M/M/1 Calculadas', 'Estimación procesada correctamente.', 'success');
+        } catch (err) {
+            notificar('Error en Colas', err.message, 'error');
+        }
+    });
+
+    document.getElementById('formMarkov')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const p12 = parseFloat(document.getElementById('markovP12')?.value || 0);
+        const p2A1 = parseFloat(document.getElementById('markovP2A1')?.value || 0);
+        try {
+            const response = await fetch('/api/markov/simular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    estados_transitorios: ["Busqueda", "EnCarrito"],
+                    estados_absorbentes: ["CompraRealizada", "Abandono"],
+                    matriz_Q: [[0.0, p12], [0.0, 0.0]],
+                    matriz_R: [[0.0, 1 - p12], [p2A1, 1 - p2A1]]
+                })
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Error al simular Cadenas de Markov');
+            }
+            const data = await response.json();
+            const probConversion = data.matriz_absorcion_B?.Busqueda?.CompraRealizada ?? 0.0;
+            const interpretacion = data.interpretacion_humana ? data.interpretacion_humana.join('<br>') : '';
+            document.getElementById('resMarkovContainer').innerHTML = `
+                <div class="alert alert-success border-0 mb-0">
+                    <h6 class="fw-bold mb-1"><i class="fa-solid fa-chart-line me-1"></i> Tasa Probable de Conversión</h6>
+                    <p class="mb-1 small">Probabilidad de absorción final desde <strong>Búsqueda</strong> hasta <strong>CompraRealizada</strong>:</p>
+                    <h3 class="fw-bold text-success mb-2">${(probConversion * 100).toFixed(2)}%</h3>
+                    <div class="extra-small text-muted border-top pt-2 mt-2">${interpretacion}</div>
+                </div>
+            `;
+            notificar('Simulación Markov Exitosa', 'Matriz N y B calculadas.', 'success');
+        } catch (err) {
+            notificar('Error en Markov', err.message, 'error');
+        }
+    });
+
+    document.getElementById('formDecisiones')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const p1 = parseFloat(document.getElementById('decProbE1')?.value || 0);
+            const res = await fetch('/api/decisiones/evaluar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    alternativas: [
+                        document.getElementById('decAlt1')?.value || '',
+                        document.getElementById('decAlt2')?.value || ''
+                    ],
+                    estados_naturaleza: ["Alta Demanda", "Baja Demanda"],
+                    matriz_pagos: [
+                        [parseFloat(document.getElementById('decA1E1')?.value || 0), parseFloat(document.getElementById('decA1E2')?.value || 0)],
+                        [parseFloat(document.getElementById('decA2E1')?.value || 0), parseFloat(document.getElementById('decA2E2')?.value || 0)]
+                    ],
+                    probabilidades: [p1, 1 - p1],
+                    coeficiente_alpha: 0.7
+                })
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || 'Error en evaluación de decisiones');
+            }
+            const data = await res.json();
+            const vmeOpt = data.analisis_riesgo ? data.analisis_riesgo.decision_optima_vme : 'N/A';
+            const laplaceOpt = data.criterios_incertidumbre?.["Laplace (Equiprobabilidad)"]?.alternativa_optima || 'N/A';
+            const waldOpt = data.criterios_incertidumbre?.["Wald Pesimista (MaxiMin)"]?.alternativa_optima || 'N/A';
+            const savageOpt = data.criterios_incertidumbre?.["Savage (MiniMax Arrepentimiento)"]?.alternativa_optima || 'N/A';
+
+            document.getElementById('resDecisionesContainer').innerHTML = `
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${vmeOpt}</span></li>
+                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${laplaceOpt}</li>
+                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${waldOpt}</li>
+                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${savageOpt}</li>
+                </ul>
+                <div class="mt-2 pt-2 border-top extra-small text-muted">${data.recomendacion_general}</div>
+            `;
+            notificar('Evaluación Completada', 'Criterios procesados exitosamente.', 'success');
+        } catch (err) {
+            notificar('Error en Decisiones', err.message, 'error');
+        }
+    });
 });
 
 ]]>
@@ -3792,7 +4491,88 @@ CREATE TABLE IF NOT EXISTS registro_colas_atencion (
 );
 ]]>
 </archivo>
+<archivo ruta="app/shared/database.py">
+<![CDATA[
+# app/shared/database.py
+# Gestión de conexiones PostgreSQL/PostGIS e inicialización limpia del esquema.
 
+import os
+import logging
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+load_dotenv()
+logger = logging.getLogger(__name__)
+
+
+def obtener_conexion():
+    """
+    Abre una conexión a PostgreSQL utilizando DATABASE_URL (Render/Nube)
+    o las variables individuales del archivo .env local, devolviendo filas como diccionarios.
+    """
+    database_url = os.getenv("DATABASE_URL", "").strip()
+
+    if database_url:
+        # Render a veces entrega 'postgres://' y psycopg2 requiere 'postgresql://'
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        return psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        port=os.getenv("DB_PORT", "5432"),
+        dbname=os.getenv("DB_NAME", "iop812_db"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", ""),
+        cursor_factory=RealDictCursor
+    )
+
+
+def inicializar_base_datos():
+    """
+    Ejecuta init_db.sql para garantizar la extensión PostGIS, las 11 tablas e índices,
+    añade la columna 'rol' en usuarios y asigna permisos 'admin' al correo definido en
+    ADMIN_EMAIL sin insertar datos ficticios.
+    """
+    conn = None
+    try:
+        conn = obtener_conexion()
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        sql_path = os.path.join(root_dir, "init_db.sql")
+
+        with conn.cursor() as cur:
+            if os.path.exists(sql_path):
+                with open(sql_path, "r", encoding="utf-8") as f:
+                    cur.execute(f.read())
+            else:
+                logger.warning("No se encontró init_db.sql en %s", sql_path)
+
+            cur.execute("""
+                ALTER TABLE usuarios
+                ADD COLUMN IF NOT EXISTS rol VARCHAR(20) DEFAULT 'cliente';
+            """)
+
+            admin_email = os.getenv("ADMIN_EMAIL", "").strip().lower()
+            if admin_email:
+                cur.execute(
+                    "UPDATE usuarios SET rol = 'admin' WHERE LOWER(email) = %s;",
+                    (admin_email,)
+                )
+
+            conn.commit()
+            logger.info("Esquema PostgreSQL/PostGIS verificado correctamente (base limpia).")
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.error("Error al inicializar el esquema de base de datos: %s", e)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+]]>
+</archivo>
 <archivo ruta="frontend/assets/images" estado="directorio-sin-listado-en-implementacion-vigente"/>
 <archivo ruta=".env" estado="no-existe-o-no-debe-versionarse"/>
 <archivo ruta="requirements.txt">

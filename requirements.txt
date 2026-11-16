@@ -1,7 +1,4 @@
-# Para resolver el error ModuleNotFoundError: No module named 'fastapi'
-# crea el archivo requirements.txt en la raíz de tu proyecto. 
 # Esto asegurará que el entorno virtual .venv cargue los paquetes necesarios:
-
 fastapi>=0.110.0
 uvicorn>=0.28.0
 pydantic>=2.6.0
@@ -13,3 +10,4 @@ python-dotenv>=1.0.0
 psycopg2-binary>=2.9.9
 google-auth
 requests
+python-multipart
