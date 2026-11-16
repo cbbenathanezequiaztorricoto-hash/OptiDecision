@@ -1,7 +1,7 @@
 # app/modules/autenticacion/schemas.py
 # Esquemas Pydantic para Autenticación, Registro y JWT.
 
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -35,11 +35,28 @@ class TokenOutput(BaseModel):
     token_type: str = Field(default="bearer", description="Tipo de token de autorización")
     username: str = Field(..., description="Nombre del usuario autenticado")
     email: str = Field(..., description="Correo del usuario autenticado")
+    rol: str = Field(default="cliente", description="Rol del usuario: cliente, ferretero o admin")
 
 
 class UsuarioPerfilOutput(BaseModel):
-    id_usuario: int = Field(..., description="ID único del usuario en base de datos")
-    email: str = Field(..., description="Correo electrónico registrado")
+    id_usuario: int= Field(..., description="ID único del usuario en base de datos")
+    email: str = Field(..., description="Correo del usuario")
     username: str = Field(..., description="Nombre de usuario")
-    google_id: Optional[str] = Field(default=None, description="ID único de Google (si aplica)")
-    fecha_registro: datetime = Field(..., description="Fecha de creación de la cuenta")
+    rol: str = Field(default="cliente", description="Rol del usuario")
+    google_id: Optional[str] = Field(default=None, description="ID de Google del usuario")
+    id_ferreteria: Optional[int] = Field(default=None, description="ID de la ferreteria asociada")
+    nombre_ferreteria: Optional[str] = Field(default=None, description="Nombre de la ferreteria asociada")
+    fecha_registro: datetime = Field(..., description="Fecha de registro del usuario")
+
+
+class RegistroFerreteriaInput(BaseModel):
+    nombre: str = Field(..., min_length=3, max_length=150)
+    direccion: str = Field(..., min_length=5)
+    latitud: float = Field(..., ge=-90, le=90)
+    longitud: float = Field(..., ge=-180, le=180)
+    superficie_almacen_m2: float = Field(default=150.0, ge=0)
+    capacidad_canales_atencion: int = Field(default=1, ge=1)
+
+
+class CambioRolInput(BaseModel):
+    rol: Literal["cliente", "ferretero", "admin"] = Field(..., description="Nuevo rol del usuario")

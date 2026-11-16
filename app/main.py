@@ -1,11 +1,11 @@
 # app/main.py
-# Orquestador Principal FastAPI de la Aplicación IOP812.
-
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+#from app.shared.db_init import inicializar_base_datos
 from app.modules.autenticacion.routes import router as auth_router
 from app.modules.buscador_ahp.routes import router as ahp_router
 from app.modules.inventarios_eoq.routes import router as inventarios_router
@@ -13,13 +13,20 @@ from app.modules.decisiones.routes import router as decisiones_router
 from app.modules.markov.routes import router as markov_router
 from app.modules.colas_mm1.routes import router as colas_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    inicializar_base_datos()
+    yield
+
+
 app = FastAPI(
     title="OptiDecision Suite - IOP812",
     description="API Modular para Optimización Ferretera y Análisis Geoespacial AHP",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
-# Registrar routers de backend (Vertical Slices)
 app.include_router(auth_router)
 app.include_router(ahp_router)
 app.include_router(inventarios_router)
@@ -27,13 +34,12 @@ app.include_router(decisiones_router)
 app.include_router(markov_router)
 app.include_router(colas_router)
 
-# Ruta a la carpeta estática del frontend
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 assets_path = os.path.join(frontend_path, "assets")
 
-# Montar assets si la carpeta existe
 if os.path.exists(assets_path):
     app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+
 
 @app.get("/api/estado", tags=["Estado del Sistema"])
 def estado_sistema():
@@ -50,14 +56,10 @@ def estado_sistema():
         ]
     }
 
+
 @app.get("/", response_class=FileResponse)
 async def servir_index():
     index_path = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_path):
         return index_path
-    return {"status": "ok", "message": "Backend IOP812 activo. Crea frontend/index.html para cargar la interfaz."}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+    return {"status": "ok", "message": "Backend IOP812 activo."}

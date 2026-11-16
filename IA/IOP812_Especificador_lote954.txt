@@ -42,7 +42,12 @@ La idea principal es aplicar todos los métodos enseñados en la materia IOP812.
 5. Cadenas de Markov Absorbentes: Matriz fundamental N = (I - Q)^-1 y Matriz de Absorción B = N * R.
 6. Teoría de Colas (M/M/1): Tasa de llegada lambda, tasa de servicio mu, uso del sistema rho = lambda/mu y tiempo en cola Wq = lambda / (mu * (mu - lambda)).
 
-¿QUÉ DATOS MANEJA Y QUÉ TECNOLOGÍAS QUIERE USAR?
+7.
+8.
+9.
+
+¿QUÉ DATOS MANEJA Y QUÉ TECNOLOGÍAS SE USARÁ?
+Los datos que manejamos
 <BD>
 1. Usuario (
     id_usuario PK, google_id VARCHAR NULL, email VARCHAR, username VARCHAR, 
@@ -261,6 +266,15 @@ IOP812/
 ├── .env                       # Variables DB_HOST, SECRET_KEY, ALGORITHM
 ├── init_db.sql                # Script con las 11 tablas relacionales e índice PostGIS GIST
 └── requirements.txt           # fastapi, uvicorn, pydantic, email-validator, PyJWT, psycopg2-binary
+Donde cada método (o tema del temario) tiene su propia carpeta dedicada, y dentro de ella habitan los archivos necesarios para hacer funcionar ese método de forma independiente.
+app/modules/markov/
+├── __init__.py        # Indica que es un paquete de Python
+├── routes.py          # Define las rutas/endpoints (ej. POST /api/markov/simular)
+├── engine.py  # Código matemático puro 
+|              👉# (NumPy, cálculo de N = (I-Q)^-1 y B = N*R)
+└── schemas.py  # Validación de los datos JSON de entrada y salida
+En lugar de tener un solo archivo gigante como app.py o carpetas gigantescas globales, cada carpeta de módulo funciona como una mini-aplicación autónoma.
+
 
 Copia vigente del codigo que implementa la arquitectura propuesta.
 Cada archivo se conserva completo dentro de un delimitador XML; la ruta identifica su rama.
@@ -3798,12 +3812,3 @@ psycopg2-binary>=2.9.9
 google-auth
 requests
 <archivo/>
-
-Donde cada método (o tema del temario) tiene su propia carpeta dedicada, y dentro de ella habitan los archivos necesarios para hacer funcionar ese método de forma independiente.
-app/modules/markov/
-├── __init__.py        # Indica que es un paquete de Python
-├── routes.py          # Define las rutas/endpoints (ej. POST /api/markov/simular)
-├── engine.py  # Código matemático puro 
-|              👉# (NumPy, cálculo de N = (I-Q)^-1 y B = N*R)
-└── schemas.py  # Validación de los datos JSON de entrada y salida
-En lugar de tener un solo archivo gigante como app.py o carpetas gigantescas globales, cada carpeta de módulo funciona como una mini-aplicación autónoma.
