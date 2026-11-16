@@ -112,8 +112,10 @@ __all__ = ["auth_router"]
 # app/modules/autenticacion/routes.py
 # Endpoints HTTP para registro, login, Google OAuth2 y perfil con persistencia PostgreSQL.
 import os
+from urllib.parse import urlencode
 from typing import Dict, Any, Optional, List
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.shared.database import obtener_conexion
@@ -128,11 +130,16 @@ from app.modules.autenticacion.schemas import (
 )
 from app.modules.autenticacion.engine import (
     GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI,
     generar_salt_y_hash,
     verificar_password,
     crear_access_token,
     decodificar_access_token,
-    verificar_token_google
+    verificar_token_google,
+    generar_estado_oauth,
+    validar_estado_oauth,
+    intercambiar_codigo_google
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación, Google OAuth y Roles"])
@@ -140,10 +147,16 @@ security = HTTPBearer()
 security_opcional = HTTPBearer(auto_error=False)
 
 
+def _obtener_lista_admins() -> List[str]:
+    raw_admins = os.getenv("ADMIN_EMAILS") or os.getenv("ADMIN_EMAIL") or ""
+    return [e.strip().lower() for e in raw_admins.split(",") if e.strip()]
+
+
 def _determinar_rol_inicial(cur, email: str) -> str:
-    admin_env = os.getenv("ADMIN_EMAIL", "").strip().lower()
-    if admin_env and email.strip().lower() == admin_env:
-        return "admin"
+    admin_emails = _obtener_lista_admins()
+    if admin_emails:
+        return "admin" if email.strip().lower() in admin_emails else "cliente"
+
     cur.execute("SELECT COUNT(*) AS total FROM usuarios WHERE rol = 'admin';")
     if cur.fetchone()["total"] == 0:
         return "admin"
@@ -205,9 +218,11 @@ def requerir_admin(usuario: Dict[str, Any] = Depends(obtener_usuario_actual)) ->
 
 @router.get("/config", summary="Configuración pública de Google OAuth2")
 async def obtener_config_oauth():
-    client_id = GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID != "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com" else ""
-    return {"google_client_id": client_id}
-
+    client_id = GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID != "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com" else ""
+    return {
+        "google_client_id": client_id,
+        "google_oauth_enabled": bool(client_id and GOOGLE_CLIENT_SECRET)
+    }
 
 @router.post("/registro", response_model=TokenOutput, status_code=status.HTTP_201_CREATED)
 async def registrar_usuario(datos: UsuarioRegistroInput):
@@ -278,26 +293,12 @@ async def login_usuario(datos: UsuarioLoginInput):
     finally:
         conn.close()
 
-
-@router.post("/google", response_model=TokenOutput, status_code=status.HTTP_200_OK, summary="Login o registro con Google OAuth2")
-async def login_con_google(datos: GoogleAuthInput):
-    token_raw = datos.credential or datos.id_token
-    if not token_raw:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se proporcionó la credencial de Google.")
-
-    google_info = verificar_token_google(token_raw)
-    if not google_info:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Token de Google inválido, expirado o Client ID no coincide.")
-
+def _autenticar_o_crear_usuario_google(google_info: Dict[str, Any]) -> Dict[str, Any]:
     google_id = google_info.get("sub")
     email = google_info.get("email")
     if not email or not google_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="El token de Google no contiene un correo electrónico o ID de usuario válido."
         )
 
@@ -317,7 +318,6 @@ async def login_con_google(datos: GoogleAuthInput):
             usuario = cur.fetchone()
 
             if not usuario:
-                # Generar username único en caso de colisión
                 cur.execute("SELECT id_usuario FROM usuarios WHERE username = %s;", (username_base,))
                 username_final = f"{username_base}_{google_id[:5]}" if cur.fetchone() else username_base
                 rol = _determinar_rol_inicial(cur, email)
@@ -353,12 +353,79 @@ async def login_con_google(datos: GoogleAuthInput):
     except Exception as e:
         conn.rollback()
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error en base de datos al autenticar con Google: {str(e)}"
         )
     finally:
         conn.close()
 
+
+def _resolver_google_redirect_uri(request: Request) -> str:
+    if GOOGLE_REDIRECT_URI:
+        return GOOGLE_REDIRECT_URI
+    uri = str(request.url_for("google_oauth_callback"))
+    if request.headers.get("x-forwarded-proto") == "https" and uri.startswith("http://"):
+        uri = "https://" + uri[len("http://"):]
+    return uri
+
+
+@router.get("/google/login", summary="Iniciar flujo OAuth 2.0 Authorization Code con Google")
+async def iniciar_login_google(request: Request):
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return RedirectResponse(url="/?auth_error=google_not_configured", status_code=302)
+
+    redirect_uri = _resolver_google_redirect_uri(request)
+    state = generar_estado_oauth()
+    params = urlencode({
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "prompt": "select_account"
+    })
+    return RedirectResponse(url=f"https://accounts.google.com/o/oauth2/v2/auth?{params}", status_code=302)
+
+
+@router.get("/google/callback", name="google_oauth_callback", summary="Callback OAuth 2.0 de Google")
+async def callback_login_google(
+    request: Request,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None
+):
+    if error:
+        return RedirectResponse(url=f"/?auth_error={error}", status_code=302)
+    if not code or not state or not validar_estado_oauth(state):
+        return RedirectResponse(url="/?auth_error=invalid_state", status_code=302)
+
+    redirect_uri = _resolver_google_redirect_uri(request)
+    google_info = intercambiar_codigo_google(code, redirect_uri)
+    if not google_info:
+        return RedirectResponse(url="/?auth_error=google_token_exchange_failed", status_code=302)
+
+    try:
+        sesion = _autenticar_o_crear_usuario_google(google_info)
+        return RedirectResponse(url=f"/#access_token={sesion['access_token']}", status_code=302)
+    except Exception:
+        return RedirectResponse(url="/?auth_error=google_db_error", status_code=302)
+
+
+@router.post("/google", response_model=TokenOutput, status_code=status.HTTP_200_OK, summary="Login o registro con Google OAuth2 (Token directo)")
+async def login_con_google(datos: GoogleAuthInput):
+    token_raw = datos.credential or datos.id_token
+    if not token_raw:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se proporcionó la credencial de Google.")
+
+    google_info = verificar_token_google(token_raw)
+    if not google_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de Google inválido, expirado o Client ID no coincide.")
+
+    return _autenticar_o_crear_usuario_google(google_info)
 
 @router.get(
     "/perfil", 
@@ -480,6 +547,7 @@ import jwt
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
+import requests as http_requests
 from dotenv import load_dotenv
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -504,8 +572,9 @@ if not raw_expire:
     raise ValueError("Error de configuración: La variable 'ACCESS_TOKEN_EXPIRE_HOURS' es requerida en el archivo .env")
 
 ACCESS_TOKEN_EXPIRE_HOURS = int(raw_expire)
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com")
-
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
 
 def generar_salt_y_hash(password: str) -> str:
     """Genera un hash seguro utilizando PBKDF2-HMAC-SHA256 con sal aleatoria de 16 bytes."""
@@ -558,6 +627,58 @@ def verificar_token_google(credential_token: str) -> Optional[Dict[str, Any]]:
         return id_info
     except Exception as e:
         logger.warning("Error verificando token de Google: %s", e)
+        return None
+def generar_estado_oauth() -> str:
+    """Genera un token state firmado (JWT de 10 min) para protección anti-CSRF en OAuth2."""
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
+    payload = {
+        "purpose": "google_oauth_state",
+        "nonce": secrets.token_urlsafe(16),
+        "exp": expiracion
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def validar_estado_oauth(state: str) -> bool:
+    """Valida la firma y vigencia del parámetro state devuelto por Google."""
+    try:
+        payload = jwt.decode(state, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("purpose") == "google_oauth_state"
+    except Exception as exc:
+        logger.warning("Estado OAuth2 inválido o expirado: %s", exc)
+        return False
+
+
+def intercambiar_codigo_google(code: str, redirect_uri: str) -> Optional[Dict[str, Any]]:
+    """Intercambia el authorization code de Google por tokens y valida el id_token."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        logger.error("Faltan GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET en .env")
+        return None
+
+    try:
+        resp = http_requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code"
+            },
+            timeout=10
+        )
+        if resp.status_code != 200:
+            logger.warning("Error intercambiando código OAuth2 con Google (%s): %s", resp.status_code, resp.text)
+            return None
+
+        token_data = resp.json()
+        raw_id_token = token_data.get("id_token")
+        if not raw_id_token:
+            return None
+
+        return verificar_token_google(raw_id_token)
+    except Exception as exc:
+        logger.warning("Excepción en intercambio OAuth2 con Google: %s", exc)
         return None
 ]]>
 </archivo>
@@ -1121,11 +1242,11 @@ async def obtener_productos(
                     "nombre": f["nombre"],
                     "precio_bob": float(f["precio_bob"]),
                     "stock_actual": int(f["stock_actual"]),
-                    "demanda_anual_D": int(f["demanda_anual_D"]),
-                    "costo_pedido_K": float(f["costo_pedido_K"]),
-                    "costo_mantenimiento_H": float(f["costo_mantenimiento_H"]),
-                    "tiempo_entrega_dias_L": int(f["tiempo_entrega_dias_L"]),
-                    "stock_seguridad_SS": int(f["stock_seguridad_SS"]),
+                    "demanda_anual_D": int(f["demanda_anual_d"]),
+                    "costo_pedido_K": float(f["costo_pedido_k"]),
+                    "costo_mantenimiento_H": float(f["costo_mantenimiento_h"]),
+                    "tiempo_entrega_dias_L": int(f["tiempo_entrega_dias_l"]),
+                    "stock_seguridad_SS": int(f["stock_seguridad_ss"]),
                     "tasa_produccion_p": f["tasa_produccion_p"],
                     "ferreteria_nombre": f["ferreteria_nombre"]
                 }
@@ -1474,7 +1595,7 @@ def calcular_modelo_inventario(datos: EOQParametrosInput) -> Dict[str, Any]:
         "deficit_maximo_S": round(deficit_maximo_S, 2) if deficit_maximo_S is not None else None,
         "inventario_maximo_Imax": round(inventario_maximo_Imax, 2) if inventario_maximo_Imax is not None else None,
     }
-]]
+]]>
 </archivo>
 
 <archivo ruta="app/modules/inventarios_eoq/schemas.py">
@@ -2282,7 +2403,7 @@ class ColasMM1Output(BaseModel):
     tiempo_total_sistema_Ws_minutos: float = Field(..., description="Tiempo total en el establecimiento")
     probabilidades_estado_estacionario: Dict[str, float] = Field(..., description="Probabilidades por número de clientes")
     recomendacion_cliente: str = Field(..., description="Recomendación final para la toma de decisiones")
-]]
+]]>
 </archivo>
 
 <archivo ruta="app/main.py">
@@ -2331,7 +2452,10 @@ frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 assets_path = os.path.join(frontend_path, "assets")
 
 if os.path.exists(assets_path):
-    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+    app.mount("/assets", 
+        StaticFiles(directory=assets_path), 
+        name="assets"
+    )
 
 
 @app.get("/api/estado", tags=["Estado del Sistema"])
@@ -2393,9 +2517,7 @@ if __name__ == "__main__":
     <!-- 4. SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    <!-- 5. Google Identity Services (GIS SDK) -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
+    
     <!-- 6. Estilos Personalizados -->
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -2590,12 +2712,11 @@ if __name__ == "__main__":
                             <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
                         </div>
 
-                        <!-- Contenedor oficial Google GIS SDK -->
-                        <div id="googleBtnContainer" class="d-flex justify-content-center w-100 my-2"></div>
-                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2 d-none" id="btnGoogleFallback">
+                        <!-- Botón fijo OAuth 2.0 Authorization Code (Compatible con Brave, Firefox, Edge, Chrome y Safari) -->
+                        <a href="/api/auth/google/login" id="btnGoogleOAuth" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2">
                             <i class="fa-brands fa-google text-danger"></i>
-                            <span>Iniciar sesión con Google</span>
-                        </button>
+                            <span>Continuar con Google</span>
+                        </a>
                     </form>
                     <p class="text-center small mt-3 mb-0">
                         <span id="authModePrompt">¿No tienes cuenta?</span>
@@ -3073,10 +3194,9 @@ if __name__ == "__main__":
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="/assets/js/app.js"></script>
+    <script src="assets/js/app.js"></script>
 </body>
 </html>
-
 ]]>
 </archivo>
 
@@ -3814,68 +3934,58 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drawerGoogleMaps')?.addEventListener('show.bs.offcanvas', cargarHistorialYFavoritos);
 
     // ---------------------------------------------------------------
-    // 7. GOOGLE OAUTH2 (GIS SDK) + JWT + ROLES
+    // 7. GOOGLE OAUTH2 (AUTHORIZATION CODE FLOW) + JWT + ROLES
     // ---------------------------------------------------------------
-    window.handleGoogleCredentialResponse = async (response) => {
-        try {
-            const res = await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ credential: response.credential })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Error al verificar token de Google');
+    const procesarRetornoOAuth = async () => {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const queryParams = new URLSearchParams(window.location.search);
+        const oauthToken = hashParams.get('access_token');
+        const oauthError = queryParams.get('auth_error');
 
-            localStorage.setItem('iop812-token', data.access_token);
-            const perfil = await obtenerPerfil(data.access_token);
-            actualizarInterfazSesion(perfil);
-
-            const modalEl = document.getElementById('modalLoginAuth');
-            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-
-            notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
-        } catch (err) {
-            notificar('Error en Google Auth', err.message, 'error');
+        if (oauthToken) {
+            localStorage.setItem('iop812-token', oauthToken);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            try {
+                const perfil = await obtenerPerfil(oauthToken);
+                actualizarInterfazSesion(perfil);
+                notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
+                return true;
+            } catch (err) {
+                localStorage.removeItem('iop812-token');
+            }
+        } else if (oauthError) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            const mensajesError = {
+                google_not_configured: 'Faltan GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET en el archivo .env del servidor.',
+                invalid_state: 'La sesión de seguridad OAuth expiró. Intenta iniciar sesión nuevamente.',
+                access_denied: 'Cancelaste el inicio de sesión con Google.',
+                google_token_exchange_failed: 'No se pudo validar el código con Google. Verifica el Redirect URI en Google Cloud Console.'
+            };
+            notificar('Inicio con Google', mensajesError[oauthError] || `Error OAuth2: ${oauthError}`, 'warning');
         }
+        return false;
     };
 
     const inicializarGoogleSignIn = async () => {
-        const btnContainer = document.getElementById('googleBtnContainer');
-        const btnFallback = document.getElementById('btnGoogleFallback');
+        const btnGoogle = document.getElementById('btnGoogleOAuth');
+        if (!btnGoogle) return;
 
         try {
             const res = await fetch('/api/auth/config');
-            if (!res.ok) throw new Error('Sin endpoint /api/auth/config');
+            if (!res.ok) return;
             const cfg = await res.json();
-            const clientId = cfg.google_client_id;
-
-            if (!clientId || clientId.includes('TU_GOOGLE_CLIENT_ID')) {
-                btnFallback?.classList.remove('d-none');
-                btnFallback?.addEventListener('click', () => {
-                    notificar('Configuración Pendiente', 'Define GOOGLE_CLIENT_ID en tu archivo .env y reinicia el servidor.', 'info');
+            if (!cfg.google_oauth_enabled) {
+                btnGoogle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    notificar(
+                        'Configuración Pendiente',
+                        'Agrega GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en tu archivo .env y reinicia el servidor.',
+                        'info'
+                    );
                 });
-                return;
             }
-
-            const esperarSDK = setInterval(() => {
-                if (typeof google !== 'undefined' && google.accounts?.id && btnContainer) {
-                    clearInterval(esperarSDK);
-                    google.accounts.id.initialize({
-                        client_id: clientId,
-                        callback: window.handleGoogleCredentialResponse
-                    });
-                    google.accounts.id.renderButton(btnContainer, {
-                        theme: 'outline',
-                        size: 'large',
-                        width: 340,
-                        text: 'signin_with',
-                        shape: 'pill'
-                    });
-                }
-            }, 300);
-            setTimeout(() => clearInterval(esperarSDK), 8000);
         } catch (e) {
-            btnFallback?.classList.remove('d-none');
+            console.warn('No se pudo verificar /api/auth/config:', e);
         }
     };
     inicializarGoogleSignIn();
@@ -3932,7 +4042,9 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarInterfazSesion(null);
         }
     };
-    restaurarSesion();
+    procesarRetornoOAuth().then((autenticadoPorOAuth) => {
+        if (!autenticadoPorOAuth) restaurarSesion();
+    });
 
     // Login / Registro clásico
     let isRegisterMode = false;
@@ -4364,7 +4476,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
 ]]>
 </archivo>
 
@@ -4553,11 +4664,25 @@ def inicializar_base_datos():
                 ADD COLUMN IF NOT EXISTS rol VARCHAR(20) DEFAULT 'cliente';
             """)
 
-            admin_email = os.getenv("ADMIN_EMAIL", "").strip().lower()
-            if admin_email:
+            raw_admins = os.getenv("ADMIN_EMAILS") or os.getenv("ADMIN_EMAIL") or ""
+            admin_emails = [e.strip().lower() for e in raw_admins.split(",") if e.strip()]
+            if admin_emails:
                 cur.execute(
-                    "UPDATE usuarios SET rol = 'admin' WHERE LOWER(email) = %s;",
-                    (admin_email,)
+                    "UPDATE usuarios SET rol = 'admin' WHERE LOWER(email) = ANY(%s);",
+                    (admin_emails,)
+                )
+                cur.execute(
+                    """
+                    UPDATE usuarios
+                    SET rol = CASE
+                        WHEN EXISTS (
+                            SELECT 1 FROM ferreterias f WHERE f.id_usuario_propietario = usuarios.id_usuario
+                        ) THEN 'ferretero'
+                        ELSE 'cliente'
+                    END
+                    WHERE rol = 'admin' AND NOT (LOWER(email) = ANY(%s));
+                    """,
+                    (admin_emails,)
                 )
 
             conn.commit()
@@ -4570,7 +4695,6 @@ def inicializar_base_datos():
     finally:
         if conn:
             conn.close()
-
 ]]>
 </archivo>
 <archivo ruta="frontend/assets/images" estado="directorio-sin-listado-en-implementacion-vigente"/>

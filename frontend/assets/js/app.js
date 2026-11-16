@@ -397,10 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const res = await fetch('/api/ahp/favoritos', {
+            const res = await fetch(`/api/ahp/favoritos/${idFerreteria}`, {
                 method: 'POST',
-                headers: getAuthHeaders(true),
-                body: JSON.stringify({ id_ferreteria: idFerreteria })
+                headers: getAuthHeaders()
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'No se pudo guardar en favoritos');
@@ -467,68 +466,58 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drawerGoogleMaps')?.addEventListener('show.bs.offcanvas', cargarHistorialYFavoritos);
 
     // ---------------------------------------------------------------
-    // 7. GOOGLE OAUTH2 (GIS SDK) + JWT + ROLES
+    // 7. GOOGLE OAUTH2 (AUTHORIZATION CODE FLOW) + JWT + ROLES
     // ---------------------------------------------------------------
-    window.handleGoogleCredentialResponse = async (response) => {
-        try {
-            const res = await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ credential: response.credential })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Error al verificar token de Google');
+    const procesarRetornoOAuth = async () => {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const queryParams = new URLSearchParams(window.location.search);
+        const oauthToken = hashParams.get('access_token');
+        const oauthError = queryParams.get('auth_error');
 
-            localStorage.setItem('iop812-token', data.access_token);
-            const perfil = await obtenerPerfil(data.access_token);
-            actualizarInterfazSesion(perfil);
-
-            const modalEl = document.getElementById('modalLoginAuth');
-            if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-
-            notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
-        } catch (err) {
-            notificar('Error en Google Auth', err.message, 'error');
+        if (oauthToken) {
+            localStorage.setItem('iop812-token', oauthToken);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            try {
+                const perfil = await obtenerPerfil(oauthToken);
+                actualizarInterfazSesion(perfil);
+                notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
+                return true;
+            } catch (err) {
+                localStorage.removeItem('iop812-token');
+            }
+        } else if (oauthError) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            const mensajesError = {
+                google_not_configured: 'Faltan GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET en el archivo .env del servidor.',
+                invalid_state: 'La sesión de seguridad OAuth expiró. Intenta iniciar sesión nuevamente.',
+                access_denied: 'Cancelaste el inicio de sesión con Google.',
+                google_token_exchange_failed: 'No se pudo validar el código con Google. Verifica el Redirect URI en Google Cloud Console.'
+            };
+            notificar('Inicio con Google', mensajesError[oauthError] || `Error OAuth2: ${oauthError}`, 'warning');
         }
+        return false;
     };
 
     const inicializarGoogleSignIn = async () => {
-        const btnContainer = document.getElementById('googleBtnContainer');
-        const btnFallback = document.getElementById('btnGoogleFallback');
+        const btnGoogle = document.getElementById('btnGoogleOAuth');
+        if (!btnGoogle) return;
 
         try {
             const res = await fetch('/api/auth/config');
-            if (!res.ok) throw new Error('Sin endpoint /api/auth/config');
+            if (!res.ok) return;
             const cfg = await res.json();
-            const clientId = cfg.google_client_id;
-
-            if (!clientId || clientId.includes('TU_GOOGLE_CLIENT_ID')) {
-                btnFallback?.classList.remove('d-none');
-                btnFallback?.addEventListener('click', () => {
-                    notificar('Configuración Pendiente', 'Define GOOGLE_CLIENT_ID en tu archivo .env y reinicia el servidor.', 'info');
+            if (!cfg.google_oauth_enabled) {
+                btnGoogle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    notificar(
+                        'Configuración Pendiente',
+                        'Agrega GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en tu archivo .env y reinicia el servidor.',
+                        'info'
+                    );
                 });
-                return;
             }
-
-            const esperarSDK = setInterval(() => {
-                if (typeof google !== 'undefined' && google.accounts?.id && btnContainer) {
-                    clearInterval(esperarSDK);
-                    google.accounts.id.initialize({
-                        client_id: clientId,
-                        callback: window.handleGoogleCredentialResponse
-                    });
-                    google.accounts.id.renderButton(btnContainer, {
-                        theme: 'outline',
-                        size: 'large',
-                        width: 340,
-                        text: 'signin_with',
-                        shape: 'pill'
-                    });
-                }
-            }, 300);
-            setTimeout(() => clearInterval(esperarSDK), 8000);
         } catch (e) {
-            btnFallback?.classList.remove('d-none');
+            console.warn('No se pudo verificar /api/auth/config:', e);
         }
     };
     inicializarGoogleSignIn();
@@ -585,7 +574,9 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarInterfazSesion(null);
         }
     };
-    restaurarSesion();
+    procesarRetornoOAuth().then((autenticadoPorOAuth) => {
+        if (!autenticadoPorOAuth) restaurarSesion();
+    });
 
     // Login / Registro clásico
     let isRegisterMode = false;
@@ -657,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const res = await fetch('/api/ahp/ferreterias', {
+            const res = await fetch('/api/auth/registrar-ferreteria', {
                 method: 'POST',
                 headers: getAuthHeaders(true),
                 body: JSON.stringify(payload)
@@ -665,13 +656,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Error al registrar ferretería');
 
+            if (data.access_token) {
+                localStorage.setItem('iop812-token', data.access_token);
+            }
+
             const modalEl = document.getElementById('modalRegistrarFerreteria');
             if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 
             const token = localStorage.getItem('iop812-token');
             if (token) actualizarInterfazSesion(await obtenerPerfil(token));
 
-            notificar('Ferretería Registrada', data.mensaje || 'Tu ferretería ya está activa en el mapa.', 'success');
+            notificar('Ferretería Registrada', 'Tu ferretería ya está activa en el mapa y tu panel fue habilitado.', 'success');
         } catch (err) {
             notificar('Error al Registrar', err.message, 'error');
         }

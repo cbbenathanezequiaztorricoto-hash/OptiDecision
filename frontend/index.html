@@ -25,9 +25,7 @@
     <!-- 4. SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    <!-- 5. Google Identity Services (GIS SDK) -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
+    
     <!-- 6. Estilos Personalizados -->
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -222,12 +220,11 @@
                             <span class="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-muted">O ingresa con</span>
                         </div>
 
-                        <!-- Contenedor oficial Google GIS SDK -->
-                        <div id="googleBtnContainer" class="d-flex justify-content-center w-100 my-2"></div>
-                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2 d-none" id="btnGoogleFallback">
+                        <!-- Botón fijo OAuth 2.0 Authorization Code (Compatible con Brave, Firefox, Edge, Chrome y Safari) -->
+                        <a href="/api/auth/google/login" id="btnGoogleOAuth" class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium d-flex align-items-center justify-content-center gap-2">
                             <i class="fa-brands fa-google text-danger"></i>
-                            <span>Iniciar sesión con Google</span>
-                        </button>
+                            <span>Continuar con Google</span>
+                        </a>
                     </form>
                     <p class="text-center small mt-3 mb-0">
                         <span id="authModePrompt">¿No tienes cuenta?</span>

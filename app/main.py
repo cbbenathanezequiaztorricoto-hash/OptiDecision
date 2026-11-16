@@ -42,7 +42,10 @@ frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 assets_path = os.path.join(frontend_path, "assets")
 
 if os.path.exists(assets_path):
-    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+    app.mount("/assets", 
+        StaticFiles(directory=assets_path), 
+        name="assets"
+    )
 
 
 @app.get("/api/estado", tags=["Estado del Sistema"])

@@ -110,11 +110,11 @@ async def obtener_productos(
                     "nombre": f["nombre"],
                     "precio_bob": float(f["precio_bob"]),
                     "stock_actual": int(f["stock_actual"]),
-                    "demanda_anual_D": int(f["demanda_anual_D"]),
-                    "costo_pedido_K": float(f["costo_pedido_K"]),
-                    "costo_mantenimiento_H": float(f["costo_mantenimiento_H"]),
-                    "tiempo_entrega_dias_L": int(f["tiempo_entrega_dias_L"]),
-                    "stock_seguridad_SS": int(f["stock_seguridad_SS"]),
+                    "demanda_anual_D": int(f["demanda_anual_d"]),
+                    "costo_pedido_K": float(f["costo_pedido_k"]),
+                    "costo_mantenimiento_H": float(f["costo_mantenimiento_h"]),
+                    "tiempo_entrega_dias_L": int(f["tiempo_entrega_dias_l"]),
+                    "stock_seguridad_SS": int(f["stock_seguridad_ss"]),
                     "tasa_produccion_p": f["tasa_produccion_p"],
                     "ferreteria_nombre": f["ferreteria_nombre"]
                 }

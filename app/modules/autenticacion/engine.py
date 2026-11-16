@@ -8,6 +8,7 @@ import jwt
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
+import requests as http_requests
 from dotenv import load_dotenv
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -32,8 +33,9 @@ if not raw_expire:
     raise ValueError("Error de configuración: La variable 'ACCESS_TOKEN_EXPIRE_HOURS' es requerida en el archivo .env")
 
 ACCESS_TOKEN_EXPIRE_HOURS = int(raw_expire)
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com")
-
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
 
 def generar_salt_y_hash(password: str) -> str:
     """Genera un hash seguro utilizando PBKDF2-HMAC-SHA256 con sal aleatoria de 16 bytes."""
@@ -86,4 +88,56 @@ def verificar_token_google(credential_token: str) -> Optional[Dict[str, Any]]:
         return id_info
     except Exception as e:
         logger.warning("Error verificando token de Google: %s", e)
+        return None
+def generar_estado_oauth() -> str:
+    """Genera un token state firmado (JWT de 10 min) para protección anti-CSRF en OAuth2."""
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
+    payload = {
+        "purpose": "google_oauth_state",
+        "nonce": secrets.token_urlsafe(16),
+        "exp": expiracion
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def validar_estado_oauth(state: str) -> bool:
+    """Valida la firma y vigencia del parámetro state devuelto por Google."""
+    try:
+        payload = jwt.decode(state, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("purpose") == "google_oauth_state"
+    except Exception as exc:
+        logger.warning("Estado OAuth2 inválido o expirado: %s", exc)
+        return False
+
+
+def intercambiar_codigo_google(code: str, redirect_uri: str) -> Optional[Dict[str, Any]]:
+    """Intercambia el authorization code de Google por tokens y valida el id_token."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        logger.error("Faltan GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET en .env")
+        return None
+
+    try:
+        resp = http_requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code"
+            },
+            timeout=10
+        )
+        if resp.status_code != 200:
+            logger.warning("Error intercambiando código OAuth2 con Google (%s): %s", resp.status_code, resp.text)
+            return None
+
+        token_data = resp.json()
+        raw_id_token = token_data.get("id_token")
+        if not raw_id_token:
+            return None
+
+        return verificar_token_google(raw_id_token)
+    except Exception as exc:
+        logger.warning("Excepción en intercambio OAuth2 con Google: %s", exc)
         return None

@@ -58,11 +58,25 @@ def inicializar_base_datos():
                 ADD COLUMN IF NOT EXISTS rol VARCHAR(20) DEFAULT 'cliente';
             """)
 
-            admin_email = os.getenv("ADMIN_EMAIL", "").strip().lower()
-            if admin_email:
+            raw_admins = os.getenv("ADMIN_EMAILS") or os.getenv("ADMIN_EMAIL") or ""
+            admin_emails = [e.strip().lower() for e in raw_admins.split(",") if e.strip()]
+            if admin_emails:
                 cur.execute(
-                    "UPDATE usuarios SET rol = 'admin' WHERE LOWER(email) = %s;",
-                    (admin_email,)
+                    "UPDATE usuarios SET rol = 'admin' WHERE LOWER(email) = ANY(%s);",
+                    (admin_emails,)
+                )
+                cur.execute(
+                    """
+                    UPDATE usuarios
+                    SET rol = CASE
+                        WHEN EXISTS (
+                            SELECT 1 FROM ferreterias f WHERE f.id_usuario_propietario = usuarios.id_usuario
+                        ) THEN 'ferretero'
+                        ELSE 'cliente'
+                    END
+                    WHERE rol = 'admin' AND NOT (LOWER(email) = ANY(%s));
+                    """,
+                    (admin_emails,)
                 )
 
             conn.commit()

@@ -1,8 +1,10 @@
 # app/modules/autenticacion/routes.py
 # Endpoints HTTP para registro, login, Google OAuth2 y perfil con persistencia PostgreSQL.
 import os
+from urllib.parse import urlencode
 from typing import Dict, Any, Optional, List
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.shared.database import obtener_conexion
@@ -17,11 +19,16 @@ from app.modules.autenticacion.schemas import (
 )
 from app.modules.autenticacion.engine import (
     GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI,
     generar_salt_y_hash,
     verificar_password,
     crear_access_token,
     decodificar_access_token,
-    verificar_token_google
+    verificar_token_google,
+    generar_estado_oauth,
+    validar_estado_oauth,
+    intercambiar_codigo_google
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación, Google OAuth y Roles"])
@@ -29,10 +36,16 @@ security = HTTPBearer()
 security_opcional = HTTPBearer(auto_error=False)
 
 
+def _obtener_lista_admins() -> List[str]:
+    raw_admins = os.getenv("ADMIN_EMAILS") or os.getenv("ADMIN_EMAIL") or ""
+    return [e.strip().lower() for e in raw_admins.split(",") if e.strip()]
+
+
 def _determinar_rol_inicial(cur, email: str) -> str:
-    admin_env = os.getenv("ADMIN_EMAIL", "").strip().lower()
-    if admin_env and email.strip().lower() == admin_env:
-        return "admin"
+    admin_emails = _obtener_lista_admins()
+    if admin_emails:
+        return "admin" if email.strip().lower() in admin_emails else "cliente"
+
     cur.execute("SELECT COUNT(*) AS total FROM usuarios WHERE rol = 'admin';")
     if cur.fetchone()["total"] == 0:
         return "admin"
@@ -94,9 +107,11 @@ def requerir_admin(usuario: Dict[str, Any] = Depends(obtener_usuario_actual)) ->
 
 @router.get("/config", summary="Configuración pública de Google OAuth2")
 async def obtener_config_oauth():
-    client_id = GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID != "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com" else ""
-    return {"google_client_id": client_id}
-
+    client_id = GOOGLE_CLIENT_ID if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_ID != "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com" else ""
+    return {
+        "google_client_id": client_id,
+        "google_oauth_enabled": bool(client_id and GOOGLE_CLIENT_SECRET)
+    }
 
 @router.post("/registro", response_model=TokenOutput, status_code=status.HTTP_201_CREATED)
 async def registrar_usuario(datos: UsuarioRegistroInput):
@@ -167,26 +182,12 @@ async def login_usuario(datos: UsuarioLoginInput):
     finally:
         conn.close()
 
-
-@router.post("/google", response_model=TokenOutput, status_code=status.HTTP_200_OK, summary="Login o registro con Google OAuth2")
-async def login_con_google(datos: GoogleAuthInput):
-    token_raw = datos.credential or datos.id_token
-    if not token_raw:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se proporcionó la credencial de Google.")
-
-    google_info = verificar_token_google(token_raw)
-    if not google_info:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Token de Google inválido, expirado o Client ID no coincide.")
-
+def _autenticar_o_crear_usuario_google(google_info: Dict[str, Any]) -> Dict[str, Any]:
     google_id = google_info.get("sub")
     email = google_info.get("email")
     if not email or not google_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="El token de Google no contiene un correo electrónico o ID de usuario válido."
         )
 
@@ -206,7 +207,6 @@ async def login_con_google(datos: GoogleAuthInput):
             usuario = cur.fetchone()
 
             if not usuario:
-                # Generar username único en caso de colisión
                 cur.execute("SELECT id_usuario FROM usuarios WHERE username = %s;", (username_base,))
                 username_final = f"{username_base}_{google_id[:5]}" if cur.fetchone() else username_base
                 rol = _determinar_rol_inicial(cur, email)
@@ -242,12 +242,79 @@ async def login_con_google(datos: GoogleAuthInput):
     except Exception as e:
         conn.rollback()
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error en base de datos al autenticar con Google: {str(e)}"
         )
     finally:
         conn.close()
 
+
+def _resolver_google_redirect_uri(request: Request) -> str:
+    if GOOGLE_REDIRECT_URI:
+        return GOOGLE_REDIRECT_URI
+    uri = str(request.url_for("google_oauth_callback"))
+    if request.headers.get("x-forwarded-proto") == "https" and uri.startswith("http://"):
+        uri = "https://" + uri[len("http://"):]
+    return uri
+
+
+@router.get("/google/login", summary="Iniciar flujo OAuth 2.0 Authorization Code con Google")
+async def iniciar_login_google(request: Request):
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return RedirectResponse(url="/?auth_error=google_not_configured", status_code=302)
+
+    redirect_uri = _resolver_google_redirect_uri(request)
+    state = generar_estado_oauth()
+    params = urlencode({
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "prompt": "select_account"
+    })
+    return RedirectResponse(url=f"https://accounts.google.com/o/oauth2/v2/auth?{params}", status_code=302)
+
+
+@router.get("/google/callback", name="google_oauth_callback", summary="Callback OAuth 2.0 de Google")
+async def callback_login_google(
+    request: Request,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None
+):
+    if error:
+        return RedirectResponse(url=f"/?auth_error={error}", status_code=302)
+    if not code or not state or not validar_estado_oauth(state):
+        return RedirectResponse(url="/?auth_error=invalid_state", status_code=302)
+
+    redirect_uri = _resolver_google_redirect_uri(request)
+    google_info = intercambiar_codigo_google(code, redirect_uri)
+    if not google_info:
+        return RedirectResponse(url="/?auth_error=google_token_exchange_failed", status_code=302)
+
+    try:
+        sesion = _autenticar_o_crear_usuario_google(google_info)
+        return RedirectResponse(url=f"/#access_token={sesion['access_token']}", status_code=302)
+    except Exception:
+        return RedirectResponse(url="/?auth_error=google_db_error", status_code=302)
+
+
+@router.post("/google", response_model=TokenOutput, status_code=status.HTTP_200_OK, summary="Login o registro con Google OAuth2 (Token directo)")
+async def login_con_google(datos: GoogleAuthInput):
+    token_raw = datos.credential or datos.id_token
+    if not token_raw:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se proporcionó la credencial de Google.")
+
+    google_info = verificar_token_google(token_raw)
+    if not google_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de Google inválido, expirado o Client ID no coincide.")
+
+    return _autenticar_o_crear_usuario_google(google_info)
 
 @router.get(
     "/perfil", 
