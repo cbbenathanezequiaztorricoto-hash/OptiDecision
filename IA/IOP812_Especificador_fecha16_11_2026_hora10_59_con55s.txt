@@ -11,19 +11,37 @@ Kanata de Cochabamba, Bolivia (Cercado, Sacaba, Quillacollo, Colcapirhua, Tiquip
 Vinto y Sipe Sipe), aplicando los modelos matemáticos de Investigación Operativa II (IOP812).
 
 ¿QUÉ FUNCIONALIDADES TIENE LA V1?
-* Registro e inicio de sesión mediante Google Identity Services (OAuth2 / GIS SDK) y credenciales locales (PBKDF2 + JWT).
+* Registro e inicio de sesión mediante Google OAuth 2.0 (Authorization Code Flow con estado
+  anti-CSRF firmado y callback en servidor) y credenciales locales (PBKDF2-HMAC-SHA256 + JWT).
 * Control de acceso basado en roles (cliente, ferretero, admin):
-  - cliente: búsqueda AHP, historial de búsquedas, ferreterías favoritas y registro de su propia ferretería en el mapa.
-  - ferretero: gestión CRUD de su catálogo, precios BOB y stock, carga masiva CSV y calculadoras I.O. II.
-  - admin: gestión de roles de usuarios, registro y carga de ferreterías reales e importación masiva de catálogos.
-* Buscador geoespacial PostGIS y ordenamiento multicriterio AHP (Precio, Distancia, Reputación, Stock).
-* Módulo de gestión de inventarios determinísticos (EOQ Básico, EPQ, EOQ con Faltantes, Descuentos por Cantidad y ROP).
-* Módulo de Evaluación de Decisiones bajo Incertidumbre (Laplace, Wald, Hurwicz, Savage) y Riesgo (VME, VEIP).
-* Módulo de Predicción mediante Cadenas de Markov con Estados Absorbentes (Matriz N y Matriz de Absorción B = N*R).
+  - cliente: búsqueda geoespacial AHP, historial de búsquedas persistente, ferreterías
+    favoritas y registro de su propia ferretería marcando coordenadas directamente en el mapa.
+  - ferretero: gestión CRUD de su catálogo por sucursal, precios BOB, parámetros EOQ/ROP,
+    carga masiva CSV de inventario y calculadoras de Investigación Operativa II.
+  - admin / desarrollador: panel global de gestión de roles y funcionalidad exclusiva de
+    ingesta masiva CSV (importación directa de ferreterías reales desde Overpass Turbo/OSM
+    y carga masiva de catálogos multi-sucursal).
+    Mediante:
+    [out:csv(::id, name, "addr:street", "addr:city", ::lat, ::lon; true; ",")][timeout:25];
+(
+  node["shop"~"hardware|doityourself"]["name"](-17.49,-66.38,-17.31,-66.01);
+  way["shop"~"hardware|doityourself"]["name"](-17.49,-66.38,-17.31,-66.01);
+);
+out center;
+usando: https://overpass-turbo.eu/
+* Buscador geoespacial PostGIS (ST_DistanceSphere) y ordenamiento multicriterio AHP
+  (Precio, Distancia, Reputación, Stock) con validación de consistencia CR < 0.10.
+* Módulo de gestión de inventarios determinísticos (EOQ Básico, EPQ, EOQ con Faltantes,
+  Descuentos por Cantidad y Punto de Reorden ROP).
+* Módulo de Evaluación de Decisiones bajo Incertidumbre (Laplace, Wald Optimista/Pesimista,
+  Hurwicz, Savage) y Riesgo (VME, VEconIP, VEIP).
+* Módulo de Predicción mediante Cadenas de Markov con Estados Absorbentes (Matriz
+  Fundamental N = (I - Q)^-1, Matriz de Absorción B = N*R y pasos esperados t).
 * Estimación de tiempos de espera en mostrador mediante Teoría de Colas (Modelo M/M/1).
 
 HOJA DE RUTA V1.1 (AÑADIDOS PLANIFICADOS):
-* Trazado de ruta vial óptima en tiempo real sobre el mapa Leaflet mediante el motor de enrutamiento OSRM (router.project-osrm.org) desde el origen del usuario hasta la ferretería ganadora AHP.
+* Trazado de ruta vial óptima en tiempo real sobre el mapa Leaflet mediante el motor de
+  enrutamiento OSRM (router.project-osrm.org) desde el origen del usuario hasta la ferretería ganadora AHP.
 
 ¿MÉTODOS DE INVESTIGACIÓN OPERATIVA II APLICADOS?
 1. AHP (Analytic Hierarchy Process): Matriz de comparación por pares, vector de pesos W y ratio de consistencia CR = CI / RI < 0.10.
@@ -37,6 +55,7 @@ HOJA DE RUTA V1.1 (AÑADIDOS PLANIFICADOS):
 4. Decisiones Bajo Riesgo: Valor Medio Esperado VME = sum(P_j * V_j), VEconIP y VEIP.
 5. Cadenas de Markov Absorbentes: Matriz fundamental N = (I - Q)^-1 y Matriz de Absorción B = N * R.
 6. Teoría de Colas (M/M/1): Uso rho = lambda/mu, L, Lq, W, Wq = lambda / (mu * (mu - lambda)) y P0 = 1 - rho.
+
 REGLAS DE NEGOCIO DEL SISTEMA:
 1. Ordenamiento AHP: Valida que la matriz de comparación entre Precio, Distancia, Reputación y Stock cumpla CR = CI / RI < 0.10 para asegurar consistencia en la decisión.
 2. Gestión de Inventarios:
@@ -47,18 +66,21 @@ REGLAS DE NEGOCIO DEL SISTEMA:
    - Si no hay probabilidades conocidas, presenta la sugerencia según Laplace, Wald, Hurwicz (alpha=0.7) y Savage.
    - Con probabilidades estimadas, sugiere la alternativa que maximice el VME.
 4. Cadenas de Markov:
-   - Monitorea transiciones del usuario y calcula la matriz de absorción B para estimar la tasa probable de conversión a venta.
+   - Calcula la matriz fundamental N y la matriz de absorción B para estimar la tasa probable de conversión a venta.
 5. Tiempos de Espera (Colas M/M/1):
    - Muestra el tiempo estimado de espera en mostrador Wq para recomendar el mejor momento de visita presencial.
+6. Base Limpia Sin Datos Ficticios:
+   - La inicialización de la base de datos crea únicamente el esquema PostgreSQL/PostGIS; toda la población inicial de ferreterías y catálogos se realiza mediante las herramientas exclusivas de Desarrollador/Admin en CSV real.
+
 <TECNOLOGIAS>
 * Backend: Python 3.12 con FastAPI y Uvicorn
 * Librerías Matemáticas (IO2): NumPy y SciPy
 * Base de Datos: PostgreSQL 16 con extensión PostGIS (ST_DistanceSphere, GEOMETRY(Point, 4326), índice GIST)
 * Frontend: HTML5, CSS3, JavaScript Vanilla (Fetch API), Bootstrap 5.3, FontAwesome 6, SweetAlert2
 * Mapas y Geocodificación: Leaflet.js + OpenStreetMap + Nominatim OSM (y OSRM en V1.1)
-* Autenticación: Google Identity Services (google-auth) + JWT (PyJWT) + PBKDF2-HMAC-SHA256
-* Ingesta de Datos Reales: Importación masiva mediante archivos CSV (python-multipart) sin datos semilla ficticios
-* Despliegue en Nube: Render (render.yaml + variable DATABASE_URL + ADMIN_EMAIL)
+* Autenticación: Google OAuth 2.0 Authorization Code Flow (google-auth, requests) + JWT (PyJWT) + PBKDF2-HMAC-SHA256
+* Ingesta de Datos Reales: Importación masiva mediante archivos CSV (python-multipart) desde Overpass Turbo y plantillas multi-sucursal
+* Despliegue en Nube: Render (render.yaml + variable DATABASE_URL + ADMIN_EMAIL / ADMIN_EMAILS)
 </TECNOLOGIAS>
 
 ¿ARQUITECTURA?

@@ -670,8 +670,82 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('Error al Registrar', err.message, 'error');
         }
     });
+const cargarResumenAdmin = async () => {
+        const badge = document.getElementById('badgeResumenAdmin');
+        if (!badge) return;
+        try {
+            const res = await fetch('/api/auth/ferreterias/resumen', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            badge.textContent = `${data.total_ferreterias} ferreterías | ${data.total_productos} productos`;
+        } catch (e) {
+            console.warn('No se pudo cargar resumen admin:', e);
+        }
+    };
 
+    document.getElementById('btnPlantillaCatalogoAdmin')?.addEventListener('click', () => {
+        const encabezado = "ferreteria,nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS\n";
+        const blob = new Blob([encabezado], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_catalogo_multisucursal.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('inputCsvFerreterias')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/auth/ferreterias/carga-masiva', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al importar ferreterías CSV');
+
+            notificar('Ferreterías Importadas', data.mensaje, 'success');
+            cargarResumenAdmin();
+        } catch (err) {
+            notificar('Error en Carga de Ferreterías', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
+
+    document.getElementById('inputCsvCatalogoAdmin')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/productos/carga-masiva', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al importar catálogo multi-sucursal');
+
+            notificar('Catálogo Multi-Sucursal Cargado', data.mensaje, 'success');
+            cargarResumenAdmin();
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error en Carga de Catálogo', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
     const cargarUsuariosAdmin = async () => {
+        cargarResumenAdmin();
         const tbody = document.getElementById('tbodyUsuariosAdmin');
         if (!tbody) return;
         try {

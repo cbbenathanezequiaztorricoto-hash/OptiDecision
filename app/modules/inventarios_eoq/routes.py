@@ -255,17 +255,29 @@ async def eliminar_producto(id_producto: int, usuario: Dict[str, Any] = Depends(
     status_code=status.HTTP_200_OK,
     summary="Carga masiva CSV de catálogo, precios BOB y stock"
 )
+@router.post(
+    "/api/productos/carga-masiva", 
+    status_code=status.HTTP_200_OK,
+    summary="Carga masiva CSV de catálogo, precios BOB y stock (soporta multi-sucursal para Admin)"
+)
 async def carga_masiva_productos(
     archivo: UploadFile = File(...),
     usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
 ):
     """
     Columnas CSV aceptadas (con encabezado):
-    nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
+    [ferreteria],nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
+    - Si 'ferreteria' es 'TODAS' (solo Admin), aplica el producto a todas las ferreterías registradas.
+    - Si 'ferreteria' tiene el nombre de una sucursal (solo Admin), busca esa ferretería.
+    - Si se omite 'ferreteria', asigna a la ferretería del usuario actual.
     """
     contenido = await archivo.read()
     texto = contenido.decode("utf-8-sig", errors="replace")
-    delimitador = ";" if ";" in texto.splitlines()[0] else ","
+    lineas = texto.splitlines()
+    if not lineas:
+        raise HTTPException(status_code=400, detail="El archivo CSV está vacío.")
+
+    delimitador = ";" if ";" in lineas[0] else ","
     lector = csv.DictReader(io.StringIO(texto), delimiter=delimitador)
 
     conn = obtener_conexion()
@@ -275,13 +287,19 @@ async def carga_masiva_productos(
 
     try:
         with conn.cursor() as cur:
-            id_ferr = _resolver_ferreteria_destino(cur, usuario, None)
+            es_admin = usuario.get("rol") == "admin"
+            id_ferr_default = _resolver_ferreteria_destino(cur, usuario, None)
+
+            cur.execute("SELECT id_ferreteria, LOWER(nombre) AS nombre_lower FROM ferreterias;")
+            mapa_ferreterias = cur.fetchall()
+            todos_ids = [r["id_ferreteria"] for r in mapa_ferreterias]
 
             for num_fila, fila in enumerate(lector, start=2):
                 try:
                     nombre = (fila.get("nombre") or "").strip()
                     if not nombre:
                         continue
+
                     precio = float(fila.get("precio_bob") or 0)
                     stock = int(float(fila.get("stock_actual") or 0))
                     demanda = int(float(fila.get("demanda_anual_D") or 120))
@@ -290,44 +308,63 @@ async def carga_masiva_productos(
                     lead_l = int(float(fila.get("tiempo_entrega_dias_L") or 3))
                     ss = int(float(fila.get("stock_seguridad_SS") or 10))
 
-                    cur.execute(
-                        "SELECT id_producto FROM productos WHERE id_ferreteria = %s AND LOWER(nombre) = LOWER(%s);",
-                        (id_ferr, nombre)
-                    )
-                    existente = cur.fetchone()
-                    if existente:
-                        cur.execute(
-                            """
-                            UPDATE productos
-                            SET precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
-                                costo_pedido_K = %s, costo_mantenimiento_H = %s,
-                                tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s
-                            WHERE id_producto = %s;
-                            """,
-                            (precio, stock, demanda, costo_k, costo_h, lead_l, ss, existente["id_producto"])
-                        )
-                        actualizados += 1
+                    ferr_col = (fila.get("ferreteria") or "").strip()
+                    destinos: List[int] = []
+
+                    if es_admin and ferr_col:
+                        if ferr_col.upper() in ("TODAS", "*"):
+                            destinos = todos_ids
+                        else:
+                            coincidencias = [
+                                r["id_ferreteria"] for r in mapa_ferreterias
+                                if r["nombre_lower"] == ferr_col.lower()
+                            ]
+                            if not coincidencias:
+                                errores.append(f"Fila {num_fila}: Ferretería '{ferr_col}' no encontrada.")
+                                continue
+                            destinos = coincidencias
                     else:
+                        destinos = [id_ferr_default]
+
+                    for id_ferr in destinos:
                         cur.execute(
-                            """
-                            INSERT INTO productos (
-                                id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
-                                costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L, stock_seguridad_SS
-                            )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-                            """,
-                            (id_ferr, nombre, precio, stock, demanda, costo_k, costo_h, lead_l, ss)
+                            "SELECT id_producto FROM productos WHERE id_ferreteria = %s AND LOWER(nombre) = LOWER(%s);",
+                            (id_ferr, nombre)
                         )
-                        insertados += 1
+                        existente = cur.fetchone()
+                        if existente:
+                            cur.execute(
+                                """
+                                UPDATE productos
+                                SET precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
+                                    costo_pedido_K = %s, costo_mantenimiento_H = %s,
+                                    tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s
+                                WHERE id_producto = %s;
+                                """,
+                                (precio, stock, demanda, costo_k, costo_h, lead_l, ss, existente["id_producto"])
+                            )
+                            actualizados += 1
+                        else:
+                            cur.execute(
+                                """
+                                INSERT INTO productos (
+                                    id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
+                                    costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L, stock_seguridad_SS
+                                )
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                                """,
+                                (id_ferr, nombre, precio, stock, demanda, costo_k, costo_h, lead_l, ss)
+                            )
+                            insertados += 1
                 except Exception as row_err:
                     errores.append(f"Fila {num_fila}: {str(row_err)}")
 
             conn.commit()
             return {
-                "mensaje": f"Carga masiva completada: {insertados} nuevos, {actualizados} actualizados.",
+                "mensaje": f"Carga masiva completada: {insertados} registros nuevos, {actualizados} actualizados.",
                 "insertados": insertados,
                 "actualizados": actualizados,
-                "errores": errores
+                "errores": errores[:15]
             }
     except HTTPException:
         conn.rollback()

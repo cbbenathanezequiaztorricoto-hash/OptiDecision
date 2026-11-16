@@ -1,0 +1,196 @@
+@id,name,addr:street,addr:city,@lat,@lon
+2126673262,Blass,Avenida América,Cochabamba,-17.3732260,-66.1545559
+2389107243,Ferreteria,Avenida General Galindo,Cochabamba,-17.3750773,-66.1428916
+2399999494,Paul,,,-17.3885717,-66.1117724
+2543871566,San José,Avenida Blanco Galindo,,-17.3914750,-66.2320852
+2605750277,Arnez,,,-17.4110790,-66.1629978
+2630687682,Ferretería Nacional,Avenida Heroínas de la Coronilla,Cochabamba,-17.3911571,-66.1515856
+2892759429,Las Lomas,Calle Junín,Cochabamba,-17.3983112,-66.1588309
+3226495378,Multicentro Canelas,,,-17.3868949,-66.0932909
+3544971020,Ferreteria La Floresta,Avenida Ecológica,Tiquipaya,-17.3474295,-66.1988449
+3545001953,Oscar's,Avenida Simón Lopez,,-17.3652188,-66.1767245
+3545056536,Veloz,,,-17.3635938,-66.1802657
+3545069129,Comercial Cañoto,Avenida Simón Lopez,Cochabamba,-17.3590031,-66.1833832
+3548854856,San Miguel norte,Avenida Simón Lopez,,-17.3630607,-66.1809337
+3548854862,Ferretería Sucamir,Avenida Simón Lopez,Cochabamba,-17.3662667,-66.1702788
+3552731001,Lozada,Avenida Ingavi,Cochabamba,-17.4089477,-66.1749555
+3552731015,Ferretería Junior,Avenida Thunupa,,-17.3784554,-66.1883873
+3555280373,A y C,Avenida Circunvalación Beijing,,-17.3555942,-66.1786830
+3557331816,COSALCAR,Avenida Circunvalación Beijing,,-17.3560362,-66.1780827
+3577523878,Diper,Avenida República,,-17.4133807,-66.1514119
+3577524695,Emily,Avenida Petrolera,,-17.4427817,-66.1412245
+3579426664,Copacabana,Avenida Melchor Pérez de Olguín,,-17.3983814,-66.1824261
+3579426682,Gamboa,Avenida 6 de Agosto,,-17.4128200,-66.1603510
+3618565694,Jardin Taquiña,Avenida Sumaj Llajta,,-17.3528550,-66.1765658
+3636046996,Dania,,,-17.4312618,-66.1509413
+3636047001,Horizonte,,,-17.4276169,-66.1535565
+3636047005,Pinto,,,-17.4149095,-66.1516375
+3648118862,Monica,,,-17.3908870,-66.2319403
+3648118863,Oscarito,,,-17.3908856,-66.2322017
+3658998650,Duralit,,,-17.3962306,-66.1771493
+3658998651,Duralit,,,-17.3962554,-66.1759603
+3660714340,Arival,,,-17.3569275,-66.1766775
+3660714342,Cala Cala,,,-17.3723193,-66.1680572
+3660714366,La Favorita,Avenida Santa Cruz,,-17.3744251,-66.1570731
+3663850130,Saravia,,,-17.3544835,-66.1800479
+3666105791,Ferreteria Rodríguez,,,-17.3332959,-66.2371353
+3666105795,Meneces,,,-17.3283422,-66.2465142
+3666105798,Valeros,Avenida Cochabamba,Tiquipaya,-17.3359449,-66.2300952
+3666107345,Elvis,,,-17.3571897,-66.1847220
+3669195888,NCA,Calle Juan Capriles,,-17.3713652,-66.1621988
+3673632979,Madetal,Avenida Simón Lopez,,-17.3640972,-66.1790104
+3682578952,Struper,Avenida Circunvalación Beijing,,-17.3587455,-66.1735341
+3706871958,Punto Com,,,-17.3872459,-66.1962198
+3913512475,Papaiz,Avenida Melchor Pérez de Olguín,Cochabamba,-17.3839927,-66.1766425
+3913555078,Ferretería Vanessa,Avenida Melchor Pérez de Olguín,Cochabamba,-17.3827545,-66.1767651
+3924544395,Cañoto,Calle Niceto Rodriguez,Cochabamba,-17.3590454,-66.1833874
+3933396782,Tramontina,Avenida Santa Cruz,,-17.3760367,-66.1571104
+3958921016,García,Avenida Melchor Pérez de Olguín,Cochabamba,-17.4025722,-66.1831262
+3964474217,Perteca,Calle Eudoro Galindo Q.,Cochabamba,-17.3683795,-66.1456434
+3994334292,Ferro I,Calle William Shakespeare,Cochabamba,-17.3542785,-66.1549830
+3994334293,Soraya,Calle William Shakespeare,Cochabamba,-17.3542247,-66.1547443
+4006181262,Ferretería Davi's,Calle Pedro Borda,Cochabamba,-17.3841636,-66.1517845
+4013908724,Electrojhu,Avenida General Galindo León,Cochabamba,-17.3758648,-66.1424789
+4044430315,Buena Estrella,Avenida Aroma,Cochabamba,-17.3983925,-66.1501480
+4078555603,Truper,Avenida Santa Cruz,Cochabamba,-17.3723791,-66.1569919
+4108810914,Atocha,Calle Eduardo Ocampo Moscoso,Cochabamba,-17.3743628,-66.1804233
+4108810942,Sanchez,,,-17.3751449,-66.1798558
+4108810961,Comercial Vargas,Avenida América,Cochabamba,-17.3715993,-66.1798355
+4108810962,Comercial J & J,Avenida América,Cochabamba,-17.3716050,-66.1797072
+4108832810,Comercial Josefina,Avenida América,Cochabamba,-17.3713064,-66.1788741
+4108832811,Comercial Jacky Color,Avenida América,Cochabamba,-17.3713086,-66.1788319
+4117983588,Grupo Lujan,Avenida Blanco Galindo,Cochabamba,-17.3930952,-66.1968422
+4221664295,Importadora LINZ,Calle Ladislao Cabrera,,-17.3971014,-66.1538163
+4224990390,Abbys,,,-17.3909080,-66.0762224
+4224990391,Buenos Aires,,,-17.3910987,-66.0752488
+4224990392,Ismmar,,,-17.3905144,-66.0750268
+4257146493,TemplaBol,,,-17.3543405,-66.1882212
+4278425255,Importadora Nalex,Calle Andrés Rodriguez,,-17.3775918,-66.1259007
+4437940155,Incerpaz,,,-17.3557109,-66.1859049
+4469501689,Casa y Construcción,Avenida Beijing,Cochabamba,-17.3826066,-66.1820541
+4469501989,Ferretería San Jorge,Avenida Melchor Pérez de Olguín,Cochabamba,-17.3781887,-66.1762247
+4478186791,Galvez,Avenida Martín de la Rocha,Cochabamba,-17.3827182,-66.1666150
+4491060790,Fischer,,,-17.3658158,-66.1750187
+4494518690,Ferreteria Fischer,Calle Las Aralias,,-17.3679000,-66.1460167
+4494522091,Ferretería Miraflores,Avenida Circunvalación Beijing,Cochabamba,-17.3721610,-66.1372725
+4494614390,Coral,,,-17.3781642,-66.0806912
+4494614690,S. Ramirez,Avenida Primera,,-17.3781221,-66.0808724
+4494617789,Segovia R.,Avenida Primera,,-17.3782360,-66.0801145
+4494623390,Marianela,Avenida Primera,,-17.3774754,-66.0832089
+4501071692,Ferretería Michelle,Avenida Blanco Galindo,Cochabamba,-17.3931392,-66.1801248
+4513148272,Cordova,,,-17.3786367,-66.1606877
+4519127093,Ferrocar,Avenida Simón Lopez,,-17.3530649,-66.1893555
+4519205189,Ayala,Avenida Simón Lopez,,-17.3529491,-66.1894745
+4519247993,Coral,Avenida Circunvalación Beijing,,-17.3526502,-66.1823597
+4519359989,Comercial Torrez,Avenida Primera,,-17.3788404,-66.0753135
+4519402589,Del Carmen,Avenida Parque de las Memorias,,-17.3750333,-66.1044483
+4541302394,Santiago II,,,-17.3956077,-66.2790849
+4541322890,Dupast,Calle General Pando,,-17.3950732,-66.2786741
+4541322891,Balderrama,,,-17.3943298,-66.2878043
+4541322895,Rodríguez,Calle General Pando,,-17.3950689,-66.2788532
+4541322896,Económica MultiPlast,Calle Pacheco,,-17.3952667,-66.2789020
+4541336689,Medina,Pacheco,,-17.3956670,-66.2790971
+4557891804,Sol de Septiembre,,,-17.3784501,-66.1895496
+4574222676,Comercial Deco Hogar,Avenida Carlos Blanco Galindo,Cochabamba,-17.3939464,-66.1764835
+4586486624,Orellana,,,-17.3907066,-66.2355858
+4591826884,JT,Calle San Martín,,-17.3897360,-66.1547860
+4613497306,Cerbol,,,-17.3518069,-66.1914604
+4673887332,Feprom Solutions,,,-17.3916805,-66.1612151
+4673888751,Milo,,,-17.3527688,-66.1903032
+4688076601,F & V,Avenida Libertador Simón Bolívar,Cochabamba,-17.3748084,-66.1621689
+4728694962,Marcelo,,,-17.3623369,-66.1811412
+4728695164,San Carlos,,,-17.3592687,-66.1828363
+4728695165,Urkupiñita,Avenida Simón Lopez,Cochabamba,-17.3624546,-66.1810702
+4732278821,La Casa del Ceramiquista,Avenida Albina Patiño,,-17.3955623,-66.3132765
+4747939544,Carmen,,,-17.3969043,-66.1511790
+4747939680,Ferreteria Colombus,Calle Uruguay,Cochabamba,-17.3978663,-66.1512843
+4768582724,Fischer,Avenida Libertador Simón Bolívar,Cochabamba,-17.3762265,-66.1617714
+4792463616,Ferretería Danny,Avenida Ecológica,Tiquipaya,-17.3420766,-66.2111060
+4792470841,Ferretería Vigabriel,Avenida Ecológica,Tiquipaya,-17.3433756,-66.2094514
+4831819346,Ferretería Edyar,,,-17.3760773,-66.1271537
+4835448371,Almanza,,,-17.4040817,-66.1808704
+4835448372,Campero,,,-17.4111814,-66.1640628
+4835451185,Viaducto,,,-17.3937785,-66.1814639
+4872887423,LU,Avenida Juan Pablo II,,-17.3918616,-66.1994847
+4874516996,Melina,Calle Esteban Arze,,-17.4070572,-66.1561400
+4914008951,El Rey,,,-17.4094903,-66.1078218
+4941280522,Ariel,,,-17.3997241,-66.1866289
+4941280621,Cardozo,,,-17.4126608,-66.0415503
+4941299121,RHENN,Calle Avaroa,,-17.3952703,-66.1659121
+4941333922,Copacabana,,Cochabamba,-17.3823211,-66.1746901
+4953974708,Veizaga,,,-17.3826998,-66.1139245
+4953975232,La Paceña,,,-17.4003995,-66.1120870
+4953975233,Silvia,,,-17.4009467,-66.1118216
+4953975234,Xander,,,-17.4019600,-66.1111876
+4965305638,Club del Constructor,,,-17.3818330,-66.1195322
+4965335049,Ferretería Chapaco,Avenida Eliodoro Villazón,Cochabamba,-17.3743312,-66.1328951
+4965335924,FerroTodo,,,-17.3831668,-66.1142269
+4981436352,DISMAT,Avenida Libertador Simón Bolívar,Cochabamba,-17.3760615,-66.1613317
+4981436357,San Marcos,,,-17.3580685,-66.1836679
+5117996866,Ferretería Gross Basta,Calle Teniente Antonio Arévalo,Cochabamba,-17.3843792,-66.1612487
+5138541084,Table Sur,,,-17.3927659,-66.1698552
+5143443465,FerroElectric,,,-17.3970985,-66.1599882
+5154045460,Rhalim,,,-17.3626031,-66.1800221
+5162127578,Frenzebol,,,-17.3877962,-66.1782350
+5162127792,Maconal,,Cochabamba,-17.3876425,-66.1701518
+5357991122,Appliance Center,,,-17.3737978,-66.1450942
+5357991125,Dismac,Avenida Pando,Cochabamba,-17.3746676,-66.1513150
+5371442028,Doctor Calamina,,,-17.4096163,-66.1487031
+5425991107,Isana,,,-17.3880643,-66.1519655
+5519534990,Ferretería Los Angeles,,,-17.3789321,-66.1821198
+5521106455,Importadora Juan,,,-17.3851445,-66.1673770
+5559733711,Ferreteria Ferroblack,Calle Miguel María de Aguirre,Cochabamba,-17.3781762,-66.1489571
+5704032081,Perteca,,Cochabamba,-17.3939027,-66.1612596
+5805417255,Calaminas,,,-17.3611674,-66.2857117
+5827467227,Ferretería Trujillo,,,-17.3954797,-66.0578286
+6285094441,Ferretería La Económica,,,-17.4155097,-66.3330180
+6298413547,Ferretería Nuevo Tiempo,Doble Vía Quillacollo-Suticollo,Vinto,-17.3990137,-66.3260276
+6396666428,Representaciones Cortez,Km 7,Colcapirhua,-17.3911273,-66.2268027
+6396666429,Representaciones Cortez,Avenida Libertador Simón Bolivar,Cochabamba,-17.3756126,-66.1619407
+6465524086,Cromo Tecnica Bolivina,Avenida La Paz,Colcapirhua,-17.3786126,-66.2388346
+6471609428,Ferreterías,,,-17.4045512,-66.1517493
+6909809617,Ferreteria La Guadalupana,Calle Toribio Torrico,Tiquipaya,-17.3367923,-66.2184595
+6909809619,Ferreteria Urkupiña,Calle Toribio Torrico,Tiquipaya,-17.3367153,-66.2186273
+7110937485,Sidemaq,,,-17.3930316,-66.1972433
+7117029790,Ferretería Aiquile,Avenida Circunvalación Beijing,Cochabamba,-17.3643347,-66.1638023
+7134382107,Ferretería Santina,Avenida Melchor Perez,,-17.3753939,-66.1757213
+7222853485,Campero,Avenida Blanco Galindo,Quillacollo,-17.3909707,-66.2602672
+8365715663,Distribuidora Zurita,Calle Esteban Arze,Cochabamba,-17.4064237,-66.1563505
+8430310179,Ferretería Panchitos,Avenida Circunvalación Beijing,Cochabamba,-17.3729249,-66.1170412
+8430310182,Ferretería Rogra,Avenida Circunvalación Beijing,Cochabamba,-17.3730266,-66.1190254
+8566416807,Importadora CEMAR,Calle Francisco de Toledo,Cochabamba,-17.3904813,-66.1674243
+8920823237,Ferreteria La Economica,Calle Cochabamba,Tiquipaya,-17.3394617,-66.2191684
+8964752637,Ferreteria EMI,,,-17.3927589,-66.1531304
+9089886510,Pernos,Avenida Guillermo Killman,Cochabamba,-17.4100395,-66.1698752
+9121465637,Ferretería Campero,Avenida Oquendo,Cochabamba,-17.3997277,-66.1484368
+9359800364,Comercial Céspedes,Avenida Eliodoro Villazón,Cochabamba,-17.3748229,-66.1327156
+9538684829,Pernos,Calle Zhimerman,Tiquipaya,-17.3374447,-66.2222561
+9875778098,PERTEC,Avenida Simón López,Cochabamba,-17.3662496,-66.1670677
+9920400615,Tolsen Bolivia,Calle Aurelio Melean,Cochabamba,-17.3908785,-66.1479036
+9941529709,Ferreteria America,Calle Uruguay,Cochabamba,-17.3979214,-66.1528289
+10261575261,Ferreteria Rodry,Calle Uruguay,Cochabamba,-17.3979929,-66.1520167
+10711481623,Pernos Ledezma,Calle 16 de Julio,Cochabamba,-17.3983656,-66.1499231
+11070705232,Ferretería La Solución,Avenida Melchor Pérez de Olguín,Cochabamba,-17.3774914,-66.1758687
+11093039133,Ferretería Pacata,Avenida Circunvalación Beijing,Cochabamba,-17.3727874,-66.1129067
+11098667843,Ferretería,,Cochabamba,-17.3844688,-66.1678938
+11112538074,Comercial FAESMAQ,Calle Ladislao Cabrera,Cochabamba,-17.3968557,-66.1530851
+11211252708,Ferretería El Ofertón,Avenida Beijing,Cochabamba,-17.3855891,-66.1817744
+11296098990,Ferretería América,Avenida Tadeo Haenke,Cochabamba,-17.3827834,-66.1716984
+11463548586,Ferreteria La Economica II,,,-17.3405096,-66.2182335
+11836778765,Ferrocasa,Avenida América,Cochabamba,-17.3714611,-66.1759418
+11946749084,Grit Center,Calle Simón Bolívar,Cochabamba,-17.3922794,-66.1508898
+11997866384,Electro Ferretería,Avenida Libertador Simón Bolívar,Cochabamba,-17.3754227,-66.1619810
+12509397301,Ferretería Urkupiña,Avenida Santa Cruz,,-17.3579987,-66.2860982
+12885335628,Ferretería San Miguel,Calle Loa,,-17.3380491,-66.2199576
+13147890260,Ferretería Callejas,Calle Pablo Jaimes,,-17.3366837,-66.2223443
+13438103969,Comercial Téllez,Avenida Carlos Blanco Galindo,Cochabamba,-17.3939490,-66.1764355
+13653439660,Ferroplom,Avenida Lluq'i Yupanqui,Cochabamba,-17.3630149,-66.1793369
+13792875816,Ferretería Guayacán,Avenida Los Angeles,Cochabamba,-17.4233820,-66.1238038
+541580472,Distribuidora Campero,Avenida Blanco Galindo,Quillacollo,-17.3909779,-66.2607857
+577621896,Ferreteria  Maxfral,Avenida Tadeo Haenke,Cochabamba,-17.3821381,-66.1740016
+580316593,Campero,,,-17.3924678,-66.1923719
+581351826,Ferreteria Cañoto,,,-17.3590771,-66.1834335
+583353034,Ferretería,,,-17.3580695,-66.1836052
+877350638,Ferretería Campero,Avenida Eliodoro Villazón,Cochabamba,-17.3771772,-66.1269671
+973869261,Ferretería Campero,Avenida Eliodoro Villazón,,-17.3760936,-66.1269513
+1481162606,Salqui,Avenida Eliodoro Villazón,Sacaba,-17.3892756,-66.0846044
