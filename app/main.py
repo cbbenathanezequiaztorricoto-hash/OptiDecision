@@ -1,11 +1,13 @@
 # app/main.py
+# Orquestador Principal FastAPI de la Aplicación IOP812.
+
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-#from app.shared.db_init import inicializar_base_datos
+from app.shared.database import inicializar_base_datos
 from app.modules.autenticacion.routes import router as auth_router
 from app.modules.buscador_ahp.routes import router as ahp_router
 from app.modules.inventarios_eoq.routes import router as inventarios_router
@@ -27,6 +29,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Registrar routers de backend (Vertical Slices)
 app.include_router(auth_router)
 app.include_router(ahp_router)
 app.include_router(inventarios_router)
@@ -34,6 +37,7 @@ app.include_router(decisiones_router)
 app.include_router(markov_router)
 app.include_router(colas_router)
 
+# Ruta a la carpeta estática del frontend
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 assets_path = os.path.join(frontend_path, "assets")
 
@@ -62,4 +66,9 @@ async def servir_index():
     index_path = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_path):
         return index_path
-    return {"status": "ok", "message": "Backend IOP812 activo."}
+    return {"status": "ok", "message": "Backend IOP812 activo. Crea frontend/index.html para cargar la interfaz."}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

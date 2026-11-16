@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: optidecision-iop812
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: iop812-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_HOURS
+        value: "24"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+
+databases:
+  - name: iop812-postgres
+    plan: free
+    databaseName: iop812_db
+    user: iop812_user
