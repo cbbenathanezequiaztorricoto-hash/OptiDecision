@@ -154,11 +154,27 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarMapa();
 
     // ---------------------------------------------------------------
-    // 4. MODALES Y NAVEGACIÓN
+    // 4. MODALES, OMNIBOX Y POPOVER DE CUENTA
     // ---------------------------------------------------------------
-    document.getElementById('btnAbrirLogin')?.addEventListener('click', () => {
-        const el = document.getElementById('modalLoginAuth');
-        if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
+    const popoverPerfil = document.getElementById('popoverPerfilCuenta');
+    const btnEsfericoCuenta = document.getElementById('btnEsfericoCuenta');
+
+    btnEsfericoCuenta?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!perfilUsuarioActual) {
+            const el = document.getElementById('modalLoginAuth');
+            if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
+            return;
+        }
+        popoverPerfil?.classList.toggle('d-none');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (popoverPerfil && !popoverPerfil.classList.contains('d-none')) {
+            if (!popoverPerfil.contains(e.target) && !btnEsfericoCuenta?.contains(e.target)) {
+                popoverPerfil.classList.add('d-none');
+            }
+        }
     });
 
     document.getElementById('btnAbrirCreditos')?.addEventListener('click', () => {
@@ -166,21 +182,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
     });
 
-    document.getElementById('btnAbrirDashboard')?.addEventListener('click', () => {
+    const abrirDashboardIO = () => {
+        popoverPerfil?.classList.add('d-none');
         const el = document.getElementById('modalDashboardIO');
         if (el && typeof bootstrap !== 'undefined') {
             bootstrap.Modal.getOrCreateInstance(el).show();
             cargarProductosCRUD();
             if (perfilUsuarioActual?.rol === 'admin') cargarUsuariosAdmin();
         }
-    });
+    };
+
+    document.getElementById('btnAbrirDashboard')?.addEventListener('click', abrirDashboardIO);
+    document.getElementById('btnPopoverDashboard')?.addEventListener('click', abrirDashboardIO);
 
     const abrirModalRegistroFerreteria = () => {
+        popoverPerfil?.classList.add('d-none');
         const el = document.getElementById('modalRegistrarFerreteria');
         if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
     };
 
     document.getElementById('btnAbrirRegistroFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
+    document.getElementById('btnPopoverRegFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
     document.getElementById('btnAdminNuevaFerreteria')?.addEventListener('click', abrirModalRegistroFerreteria);
 
     document.getElementById('btnPickMapLocation')?.addEventListener('click', () => {
@@ -198,11 +220,34 @@ document.addEventListener('DOMContentLoaded', () => {
         abrirModalRegistroFerreteria();
     });
 
-    document.getElementById('btnToggleAHP')?.addEventListener('click', (e) => {
+    // Subpaneles colapsables del Omnibox (Origen y Pesos AHP)
+    const panelOrigenOmnibox = document.getElementById('panelOrigenOmnibox');
+    const btnToggleOrigen = document.getElementById('btnToggleOrigen');
+    const btnToggleAHP = document.getElementById('btnToggleAHP');
+
+    btnToggleOrigen?.addEventListener('click', () => {
+        const oculto = panelOrigenOmnibox?.classList.contains('d-none');
+        panelOrigenOmnibox?.classList.toggle('d-none', !oculto);
+        btnToggleOrigen.classList.toggle('active', oculto);
+    });
+
+    document.getElementById('btnCerrarOrigenPanel')?.addEventListener('click', () => {
+        panelOrigenOmnibox?.classList.add('d-none');
+        btnToggleOrigen?.classList.remove('active');
+    });
+
+    document.getElementById('inputProducto')?.addEventListener('focus', () => {
+        panelOrigenOmnibox?.classList.remove('d-none');
+        btnToggleOrigen?.classList.add('active');
+    });
+
+    btnToggleAHP?.addEventListener('click', (e) => {
         e.preventDefault();
         const collapseAHP = document.getElementById('collapseAHP');
         if (collapseAHP && typeof bootstrap !== 'undefined') {
+            const abierto = collapseAHP.classList.contains('show');
             bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false }).toggle();
+            btnToggleAHP.classList.toggle('active', !abierto);
         }
     });
 
@@ -284,25 +329,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
 
-    const setBuscadorColapsado = (colapsado) => {
-        const body = document.getElementById('searchCardBody');
-        const icon = document.getElementById('iconToggleSearchCard');
-        if (!body) return;
-        body.classList.toggle('d-none', colapsado);
-        if (icon) {
-            icon.className = colapsado ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+    const colapsarSubpanelesOmnibox = () => {
+        document.getElementById('panelOrigenOmnibox')?.classList.add('d-none');
+        document.getElementById('btnToggleOrigen')?.classList.remove('active');
+        const collapseAHP = document.getElementById('collapseAHP');
+        if (collapseAHP?.classList.contains('show') && typeof bootstrap !== 'undefined') {
+            bootstrap.Collapse.getOrCreateInstance(collapseAHP, { toggle: false }).hide();
+            document.getElementById('btnToggleAHP')?.classList.remove('active');
         }
     };
 
-    document.getElementById('btnToggleSearchCard')?.addEventListener('click', () => {
-        const body = document.getElementById('searchCardBody');
-        const estaOculto = body?.classList.contains('d-none');
-        setBuscadorColapsado(!estaOculto);
-    });
-
     document.getElementById('btnCloseTopResult')?.addEventListener('click', () => {
         cardTopResult?.classList.add('d-none');
-        if (window.innerWidth < 768) setBuscadorColapsado(false);
     });
 
     formBuscador?.addEventListener('submit', async (e) => {
@@ -314,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnBuscar = document.getElementById('btnBuscarAHP');
         if (btnBuscar) {
             btnBuscar.disabled = true;
-            btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i> Consultando PostGIS & AHP...`;
+            btnBuscar.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
         }
 
         const coordsActuales = await resolverCoordenadasOrigen(origenText || '');
@@ -347,11 +385,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarResultadosAHP(data);
             if (perfilUsuarioActual) cargarHistorialYFavoritos();
         } catch (error) {
-            notificar('Error en Búsqueda AHP', error.message, 'warning');
+            console.error('[OptiDecision] Error en búsqueda AHP:', error);
+            notificar('Error en búsqueda AHP', error.message, 'warning');
         } finally {
             if (btnBuscar) {
                 btnBuscar.disabled = false;
-                btnBuscar.innerHTML = `<i class="fa-solid fa-route"></i> <span>Optimizar y Buscar Ferretería</span>`;
+                btnBuscar.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i>`;
+            } else {
+                console.warn('[OptiDecision] No se encontró #btnBuscarAHP en el DOM al restaurar estado.');
             }
         }
     });
@@ -375,9 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
         document.getElementById('topReputacion').textContent = top.reputacion;
         document.getElementById('topStock').textContent = `${top.stock} un.`;
-        cardTopResult?.classList.remove('d-none');
-        
-        if (window.innerWidth < 768) setBuscadorColapsado(true);
+
+        cardTopResult?.classList.remove('d-none');        
+        if (window.innerWidth < 768) colapsarSubpanelesOmnibox();
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
 
         data.ferreterias.forEach((f, idx) => {
@@ -545,22 +586,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const autenticado = Boolean(perfil);
         const rol = perfil?.rol || 'cliente';
 
-        document.getElementById('btnAbrirLogin')?.classList.toggle('d-none', autenticado);
-        document.getElementById('btnCerrarSesion')?.classList.toggle('d-none', !autenticado);
+        const btnCuenta = document.getElementById('btnEsfericoCuenta');
+        const popover = document.getElementById('popoverPerfilCuenta');
 
-        const navBadge = document.getElementById('navUserBadge');
-        if (navBadge) {
-            navBadge.classList.toggle('d-none', !autenticado);
-            navBadge.classList.toggle('d-md-inline-flex', autenticado);
-            document.getElementById('navUserName').textContent = autenticado ? perfil.username : '';
-            document.getElementById('navUserRole').textContent = autenticado ? rol : '';
+        if (btnCuenta) {
+            btnCuenta.classList.toggle('authenticated', autenticado);
+            if (autenticado) {
+                const inicial = (perfil.username || perfil.email || 'U').charAt(0).toUpperCase();
+                btnCuenta.innerHTML = `<span>${inicial}</span>`;
+                btnCuenta.title = `${perfil.username} (${rol})`;
+            } else {
+                btnCuenta.innerHTML = `<i class="fa-solid fa-user"></i>`;
+                btnCuenta.title = 'Iniciar Sesión / Crear Cuenta';
+                popover?.classList.add('d-none');
+            }
+        }
+
+        if (autenticado) {
+            const inicial = (perfil.username || perfil.email || 'U').charAt(0).toUpperCase();
+            document.getElementById('popoverUserInitial').textContent = inicial;
+            document.getElementById('popoverUserName').textContent = perfil.username || 'Usuario';
+            document.getElementById('popoverUserEmail').textContent = perfil.email || '';
+            document.getElementById('popoverUserRole').textContent = rol;
+
+            const ferrInfo = document.getElementById('popoverUserFerreteria');
+            if (ferrInfo) {
+                if (perfil.nombre_ferreteria) {
+                    ferrInfo.classList.remove('d-none');
+                    ferrInfo.querySelector('span').textContent = perfil.nombre_ferreteria;
+                } else {
+                    ferrInfo.classList.add('d-none');
+                }
+            }
         }
 
         const esGestor = autenticado && (rol === 'ferretero' || rol === 'admin');
         const puedeRegistrarFerreteria = autenticado && (rol === 'admin' || !perfil.id_ferreteria);
 
         document.getElementById('btnAbrirDashboard')?.classList.toggle('d-none', !esGestor);
+        document.getElementById('btnPopoverDashboard')?.classList.toggle('d-none', !esGestor);
         document.getElementById('btnAbrirRegistroFerreteria')?.classList.toggle('d-none', !puedeRegistrarFerreteria);
+        document.getElementById('btnPopoverRegFerreteria')?.classList.toggle('d-none', !puedeRegistrarFerreteria);
         document.getElementById('navItemAdmin')?.classList.toggle('d-none', rol !== 'admin');
     };
 

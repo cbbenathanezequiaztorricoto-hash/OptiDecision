@@ -30,48 +30,8 @@
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <!-- NAV BAR SUPERIOR HÍBRIDA -->
-    <nav class="navbar sticky-top border-bottom" id="topNav">
-        <div class="container-fluid px-2 px-sm-3 px-lg-4 flex-nowrap gap-1">
-            <div class="d-flex align-items-center gap-1 gap-sm-2 min-w-0">
-                <button class="btn btn-outline-secondary border-0 px-2 fs-5" type="button" data-bs-toggle="offcanvas" data-bs-target="#drawerGoogleMaps" aria-controls="drawerGoogleMaps" title="Menú Principal & Historial">
-                    <i class="fa-solid fa-bars text-main"></i>
-                </button>
-                <a class="navbar-brand d-flex align-items-center gap-2 m-0 text-truncate" href="#mapa-ahp">
-                    <img src="/assets/images/favicon.ico" alt="OptiDecision Logo" width="28" height="28" class="rounded flex-shrink-0">
-                    <span class="fw-bold fs-6 fs-sm-5 tracking-tight text-truncate">OptiDecision <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7 d-none d-sm-inline-block">IOP812</span></span>
-                </a>
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-                <!-- Indicador de usuario y rol activo -->
-                <span class="badge bg-secondary-subtle text-main border rounded-pill px-3 py-2 d-none align-items-center gap-2" id="navUserBadge">
-                    <i class="fa-solid fa-user-check text-primary"></i>
-                    <span id="navUserName">Usuario</span>
-                    <span class="badge bg-primary text-uppercase" id="navUserRole">cliente</span>
-                </span>
-
-                <!-- Toggle Modo Oscuro / Claro -->
-                <button class="btn btn-outline-secondary rounded-circle" id="themeToggle" type="button" title="Cambiar tema de color">
-                    <i class="fa-solid fa-moon" id="themeIcon"></i>
-                </button>
-
-                <!-- Botones de Sesión -->
-                <div id="authStatusContainer" class="d-flex align-items-center gap-2">
-                    <button class="btn btn-primary rounded-pill px-3 fw-medium d-flex align-items-center gap-2" id="btnAbrirLogin">
-                        <i class="fa-solid fa-right-to-bracket"></i>
-                        <span class="d-none d-sm-inline">Acceso</span>
-                    </button>
-                    <button class="btn btn-outline-danger rounded-pill px-3 fw-medium d-none" id="btnCerrarSesion" type="button">
-                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Salir
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <!-- BANNER FLOTANTE PARA SELECCIÓN DE UBICACIÓN EN MAPA -->
-    <div id="mapPickerBanner" class="position-fixed top-0 start-50 translate-middle-x mt-5 pt-3 z-3 d-none">
+    <div id="mapPickerBanner" class="position-fixed top-0 start-50 translate-middle-x mt-3 d-none" style="z-index: 1040;">
         <div class="alert alert-primary shadow-lg rounded-pill px-4 py-2 d-flex align-items-center gap-3 border">
             <i class="fa-solid fa-map-pin fa-bounce"></i>
             <span class="small fw-semibold">Haz clic en el mapa sobre la ubicación exacta de la ferretería</span>
@@ -79,90 +39,131 @@
         </div>
     </div>
 
-    <!-- SECCIÓN PRINCIPAL: MAPA INTERACTIVO CON BUSCADOR FLOTANTE -->
+    <!-- SECCIÓN PRINCIPAL: LIENZO ESPACIAL 100dvh TIPO GOOGLE MAPS -->
     <main id="mapa-ahp" class="position-relative w-100 overflow-hidden">
         <div id="map"></div>
 
-        <!-- HUD BUSCADOR FLOTANTE UX -->
-        <div class="floating-search-card shadow-lg rounded-4 p-2 p-sm-3 border" id="floatingSearchCard">
+        <!-- OMNIBOX FLOTANTE SUPERIOR IZQUIERDO (376px x 48px desktop / calc(100vw - 84px) x 48px móvil) -->
+        <div class="omnibox-wrapper" id="floatingSearchCard">
             <form id="formBuscadorAHP" onsubmit="event.preventDefault();">
-                <div class="d-flex align-items-center justify-content-between gap-2" id="searchCardHeader">
-                    <span class="extra-small text-uppercase fw-bold text-muted tracking-wider text-nowrap">
-                        <i class="fa-solid fa-magnifying-glass-location text-primary me-1"></i>Buscador
-                    </span>
-                    <div class="d-flex align-items-center gap-1">
-                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill extra-small text-nowrap" id="badgeCRInfo">
-                            <i class="fa-solid fa-circle-check me-1"></i>CR &lt; 0.10
+                <div class="omnibox-bar">
+                    <button type="button" class="omnibox-icon-btn" data-bs-toggle="offcanvas" data-bs-target="#drawerGoogleMaps" aria-controls="drawerGoogleMaps" title="Menú Principal, Historial y Favoritos">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+
+                    <input type="text" class="omnibox-input" id="inputProducto" placeholder="Buscar producto en OptiDecision..." autocomplete="off" required>
+
+                    <button type="submit" class="omnibox-icon-btn text-primary" id="btnBuscarAHP" title="Optimizar y Buscar Ferretería">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+
+                    <button type="button" class="omnibox-icon-btn" id="btnToggleOrigen" title="Definir ubicación de origen / GPS">
+                        <i class="fa-solid fa-location-dot text-primary"></i>
+                    </button>
+
+                    <button type="button" class="omnibox-icon-btn" id="btnToggleAHP" title="Ponderación de criterios AHP (Saaty)">
+                        <i class="fa-solid fa-sliders"></i>
+                    </button>
+                </div>
+
+                <!-- SUBPANEL COLAPSABLE: ORIGEN Y GPS -->
+                <div class="omnibox-subpanel p-3 d-none" id="panelOrigenOmnibox">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="extra-small text-uppercase fw-bold text-muted tracking-wider">
+                            <i class="fa-solid fa-route text-primary me-1"></i>Punto de Origen
                         </span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2" id="btnToggleSearchCard" title="Minimizar / Expandir buscador">
-                            <i class="fa-solid fa-chevron-up" id="iconToggleSearchCard"></i>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill extra-small" id="badgeCRInfo">
+                                <i class="fa-solid fa-circle-check me-1"></i>CR &lt; 0.10
+                            </span>
+                            <button type="button" class="btn-close small" id="btnCerrarOrigenPanel" aria-label="Cerrar"></button>
+                        </div>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text border-end-0 text-primary"><i class="fa-solid fa-location-crosshairs"></i></span>
+                        <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Ej. Cala Cala, Quillacollo, Sacaba" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" id="btnGPS" title="Usar mi ubicación GPS actual">
+                            <i class="fa-solid fa-crosshairs text-primary"></i>
                         </button>
                     </div>
                 </div>
 
-                <div id="searchCardBody" class="mt-2">
-                <!-- Campo Origen -->
-                <div class="input-group mb-2">
-                    <span class="input-group-text bg-body border-end-0 text-primary"><i class="fa-solid fa-location-dot"></i></span>
-                    <input type="text" class="form-control border-start-0 border-end-0 ps-0" id="inputOrigen" placeholder="Origen (ej. Cala Cala, Quillacollo, Sacaba)" autocomplete="off" value="Plaza 14 de Septiembre, Cochabamba">
-                    <button class="btn btn-outline-secondary border-start-0" type="button" id="btnGPS" title="Usar mi ubicación GPS actual">
-                        <i class="fa-solid fa-crosshairs text-primary"></i>
-                    </button>
-                </div>
-                <!-- Campo Producto Buscado -->
-                <div class="input-group mb-3">
-                    <span class="input-group-text bg-body border-end-0 text-muted"><i class="fa-solid fa-screwdriver-wrench"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" id="inputProducto" placeholder="¿Qué producto buscas? (ej. Cemento, Fierro 1/2&quot;, Yeso)" required>
-                </div>
-                <!-- Acordeón Desplegable AHP -->
-                <div class="accordion accordion-flush mb-3 rounded-3 border" id="accordionAHP">
-                    <div class="accordion-item bg-transparent">
-                        <h2 class="accordion-header" id="headingAHP">
-                            <button class="accordion-button collapsed py-2 px-3 small fw-medium text-main" type="button" id="btnToggleAHP">
-                                <i class="fa-solid fa-sliders text-primary me-2"></i> Ajustar Importancia de Criterios
-                            </button>
-                        </h2>
-                        <div id="collapseAHP" class="accordion-collapse collapse">
-                            <div class="accordion-body p-3">
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <label for="sliderPrecio" class="form-label mb-0 text-muted">Precio</label>
-                                        <span class="fw-bold text-primary" id="valPrecio">40%</span>
-                                    </div>
-                                    <input type="range" class="form-range" id="sliderPrecio" min="1" max="9" value="4">
-                                </div>
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <label for="sliderDistancia" class="form-label mb-0 text-muted">Cercanía</label>
-                                        <span class="fw-bold text-primary" id="valDistancia">30%</span>
-                                    </div>
-                                    <input type="range" class="form-range" id="sliderDistancia" min="1" max="9" value="3">
-                                </div>
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <label for="sliderReputacion" class="form-label mb-0 text-muted">Reputación</label>
-                                        <span class="fw-bold text-primary" id="valReputacion">20%</span>
-                                    </div>
-                                    <input type="range" class="form-range" id="sliderReputacion" min="1" max="9" value="2">
-                                </div>
-                                <div>
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <label for="sliderStock" class="form-label mb-0 text-muted">Importancia del Stock</label>
-                                        <span class="fw-bold text-primary" id="valStock">10%</span>
-                                    </div>
-                                    <input type="range" class="form-range" id="sliderStock" min="1" max="9" value="1">
-                                </div>
-                            </div>
+                <!-- SUBPANEL COLAPSABLE: PESOS MULTICRITERIO AHP -->
+                <div class="omnibox-subpanel collapse p-3" id="collapseAHP">
+                    <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                        <span class="extra-small text-uppercase fw-bold text-muted tracking-wider">
+                            <i class="fa-solid fa-scale-balanced text-primary me-1"></i>Ponderación AHP (Saaty)
+                        </span>
+                        <span class="extra-small text-muted">Escala 1 - 9</span>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <label for="sliderPrecio" class="form-label mb-0 text-muted">Precio (BOB)</label>
+                            <span class="fw-bold text-primary" id="valPrecio">40%</span>
                         </div>
+                        <input type="range" class="form-range" id="sliderPrecio" min="1" max="9" value="4">
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <label for="sliderDistancia" class="form-label mb-0 text-muted">Cercanía</label>
+                            <span class="fw-bold text-primary" id="valDistancia">30%</span>
+                        </div>
+                        <input type="range" class="form-range" id="sliderDistancia" min="1" max="9" value="3">
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <label for="sliderReputacion" class="form-label mb-0 text-muted">Reputación</label>
+                            <span class="fw-bold text-primary" id="valReputacion">20%</span>
+                        </div>
+                        <input type="range" class="form-range" id="sliderReputacion" min="1" max="9" value="2">
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <label for="sliderStock" class="form-label mb-0 text-muted">Stock Disponible</label>
+                            <span class="fw-bold text-primary" id="valStock">10%</span>
+                        </div>
+                        <input type="range" class="form-range" id="sliderStock" min="1" max="9" value="1">
                     </div>
                 </div>
-
-                <button class="btn btn-primary w-100 rounded-3 py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-2" type="submit" id="btnBuscarAHP">
-                    <i class="fa-solid fa-route"></i>
-                    <span>Optimizar y Buscar Ferretería</span>
-                </button>
-                </div>
             </form>
+        </div>
+
+        <!-- CONTROLES ESFÉRICOS SUPERIORES DERECHOS (40px x 40px) -->
+        <div class="top-right-controls">
+            <button class="spherical-btn" id="btnEsfericoCuenta" type="button" title="Cuenta y Sesión">
+                <i class="fa-solid fa-user" id="iconEsfericoCuenta"></i>
+            </button>
+            <button class="spherical-btn" id="themeToggle" type="button" title="Cambiar tema Oscuro / Claro">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+        </div>
+
+        <!-- POPOVER FLOTANTE DE PERFIL Y CIERRE DE SESIÓN -->
+        <div class="account-popover p-3 d-none" id="popoverPerfilCuenta">
+            <div class="d-flex align-items-center gap-3 border-bottom pb-3 mb-3">
+                <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.1rem;" id="popoverUserInitial">
+                    U
+                </div>
+                <div class="min-w-0">
+                    <div class="fw-bold text-main text-truncate" id="popoverUserName">Usuario</div>
+                    <div class="extra-small text-muted text-truncate" id="popoverUserEmail">correo@ejemplo.com</div>
+                    <span class="badge bg-primary text-uppercase mt-1" id="popoverUserRole">cliente</span>
+                </div>
+            </div>
+            <div class="extra-small text-muted mb-2 d-none" id="popoverUserFerreteria">
+                <i class="fa-solid fa-store text-primary me-1"></i><span></span>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <button type="button" class="btn btn-sm btn-outline-success text-start rounded-3 d-none" id="btnPopoverRegFerreteria">
+                    <i class="fa-solid fa-store me-2"></i>Registrar mi Ferretería
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary text-start rounded-3 d-none" id="btnPopoverDashboard">
+                    <i class="fa-solid fa-calculator me-2"></i>Panel I.O. Ferretero
+                </button>
+                <button type="button" class="btn btn-sm btn-danger text-start rounded-3 fw-medium" id="btnCerrarSesion">
+                    <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Cerrar Sesión
+                </button>
+            </div>
         </div>
 
         <!-- TARJETA FLOTANTE TOP PICK AHP -->
