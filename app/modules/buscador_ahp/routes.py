@@ -1,6 +1,7 @@
 # app/modules/buscador_ahp/routes.py
 # Controlador HTTP para el Algoritmo AHP de Selección y Buscador Multicriterio.
 from typing import Optional, Dict, Any, List
+from psycopg2 import errors as pg_errors
 from fastapi import APIRouter, HTTPException, Depends, status
 from app.modules.buscador_ahp.schemas import (
     AHPSearchInput,
