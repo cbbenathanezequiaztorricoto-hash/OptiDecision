@@ -1,6 +1,14 @@
 # app/modules/buscador_ahp/schemas.py
+#Schemas.py funciona como un lugar donde guardamos moldes para el motor
+#estos reciben datos y dan forma a las salidas
+
+#Recuerda que una clase al ser como un molde es como generalizar
+#los datos/Atributos que tendrá un objeto y agrupar esos datos en un objeto
+
+#Actualmente schemas.py tiene 7 moldes
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
+
 
 class PesosAHPInput(BaseModel):
     precio: int = Field(default=4, ge=1, le=9)
@@ -8,16 +16,19 @@ class PesosAHPInput(BaseModel):
     reputacion: int = Field(default=2, ge=1, le=9)
     stock: int = Field(default=1, ge=1, le=9)
 
+
 class AHPSearchInput(BaseModel):
     latitud: float = Field(..., description="Latitud GPS de origen")
     longitud: float = Field(..., description="Longitud GPS de origen")
     producto: str = Field(..., min_length=1, description="Producto buscado")
     pesos: PesosAHPInput = Field(default_factory=PesosAHPInput)
 
+
 class AHPMatrizCriteriosInput(BaseModel):
     criterios: List[str] = ["Precio", "Distancia", "Reputación", "Stock"]
     matriz_comparacion: List[List[float]]
     alternativas: Optional[List[Dict[str, Any]]] = None
+
 
 class FerreteriaResultadoAHP(BaseModel):
     id_ferreteria: int
@@ -31,6 +42,7 @@ class FerreteriaResultadoAHP(BaseModel):
     distancia_km: float
     puntuacion_ahp: float
 
+
 class AHPResultadoOutput(BaseModel):
     vector_pesos_W: Dict[str, float]
     lambda_maximo: float
@@ -40,3 +52,32 @@ class AHPResultadoOutput(BaseModel):
     es_consistente: bool
     mensaje_consistencia: str
     ferreterias: List[FerreteriaResultadoAHP] = []
+
+#Nuevos moldes para el bloque de la versión V1.1. en funcionalidades
+#Normalmente la IA se olvida de usarlos o les cambia los nombres
+#asi que ten en cuenta eso cuando se rompa el frontend
+
+#Incluimos la url del producto y su descripción
+class ProductoCatalogoTiendaOutput(BaseModel):
+    id_producto: int
+    nombre: str
+    precio_bob: float
+    stock_actual: int
+    foto_url: Optional[str] = None
+    categoria: Optional[str] = None
+    marca: Optional[str] = None
+
+#Un catalogo para los productos de los dueños de las ferreterias
+class FerreteriaCatalogoOutput(BaseModel):
+    id_ferreteria: int
+    nombre: str
+    direccion: str
+    latitud: float
+    longitud: float
+    reputacion: float
+    superficie_almacen_m2: float = 0.0
+    capacidad_canales_atencion: int = 1
+    tiempo_espera_wq_min: Optional[float] = None
+    estado_congestion: str = "Sin registro M/M/1"
+    total_productos: int
+    productos: List[ProductoCatalogoTiendaOutput] = []
