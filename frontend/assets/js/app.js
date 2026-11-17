@@ -12,8 +12,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
     let perfilUsuarioActual = null;
     let topFerreteriaActual = null;
+    let ferreteriaModalActual = null;
+    let catalogoModalCache = [];
+    let favoritosIds = new Set();
     let productosCache = [];
     let modoSeleccionMapa = false;
+
+    const escapeHtml = (texto) => {
+        if (texto === null || texto === undefined) return '';
+        return String(texto)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
 
     const getAuthHeaders = (conJson = false) => {
         const headers = {};
@@ -22,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (token) headers['Authorization'] = `Bearer ${token}`;
         return headers;
     };
+
     // Helper para notificaciones con SweetAlert2
     const notificar = (titulo, texto, icono = 'info') => {
         // Quitar el foco de cualquier elemento activo para evitar advertencias aria-hidden
@@ -82,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return L.marker([lat, lng], { icon: userIcon, isUserMarker: true })
             .addTo(markersLayer)
-            .bindPopup(`<strong>${titulo}</strong>`);
+            .bindPopup(`<strong>${escapeHtml(titulo)}</strong>`);
     };
 
     const intentoAutoGeolocalizacion = () => {
@@ -276,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const resolverCoordenadasOrigen = async (textoOrigen) => {
-        if (textoOrigen.includes("GPS")) return ubicacionUsuario;
+        if (textoOrigen.includes("GPS") || textoOrigen.includes("Historial")) return ubicacionUsuario;
         try {
             const query = encodeURIComponent(`${textoOrigen}, Cochabamba, Bolivia`);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
@@ -325,6 +339,334 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---------------------------------------------------------------
     // 6. BÚSQUEDA MULTICRITERIO AHP + FAVORITOS E HISTORIAL
+    // SINCRONIZACIÓN DE FAVORITOS (RN-08) Y FICHA DE FERRETERÍA 17/11/2026 16:24 pm
+    // ---------------------------------------------------------------
+    const actualizarBotonesFavoritoUI = () => {
+        // 1. Botón de favorito en tarjeta flotante Top Pick AHP
+        const btnTop = document.getElementById('btnFavoritoTop');
+        if (btnTop && topFerreteriaActual) {
+            const esFavTop = favoritosIds.has(Number(topFerreteriaActual.id_ferreteria));
+            btnTop.classList.toggle('btn-favorito-activo', esFavTop);
+            btnTop.classList.toggle('btn-outline-warning', !esFavTop);
+            btnTop.title = esFavTop ? 'Quitar de favoritos' : 'Guardar ferretería en favoritos';
+            btnTop.innerHTML = esFavTop
+                ? `<i class="fa-solid fa-star"></i>`
+                : `<i class="fa-regular fa-star"></i>`;
+        }
+
+        // 2. Botón de favorito dentro del Modal de Ficha de Ferretería
+        const btnModal = document.getElementById('btnFavoritoModalFerr');
+        if (btnModal && ferreteriaModalActual) {
+            const esFavModal = favoritosIds.has(Number(ferreteriaModalActual.id_ferreteria));
+            btnModal.classList.toggle('btn-favorito-activo', esFavModal);
+            btnModal.classList.toggle('btn-outline-warning', !esFavModal);
+            btnModal.innerHTML = esFavModal
+                ? `<i class="fa-solid fa-star me-1"></i><span>Quitar de Favoritos</span>`
+                : `<i class="fa-regular fa-star me-1"></i><span>Guardar</span>`;
+        }
+
+        // 3. Botones dentro de popups activos de Leaflet
+        document.querySelectorAll('[data-popup-fav-id]').forEach(btn => {
+            const id = Number(btn.getAttribute('data-popup-fav-id'));
+            const esFav = favoritosIds.has(id);
+            btn.className = esFav
+                ? 'btn btn-sm btn-favorito-activo mt-2 w-100 py-1'
+                : 'btn btn-sm btn-warning mt-2 w-100 py-1';
+            btn.innerHTML = esFav
+                ? `<i class="fa-solid fa-star me-1"></i>Quitar de Favoritos`
+                : `<i class="fa-regular fa-star me-1"></i>Guardar Favorito`;
+        });
+    };
+
+    window.toggleFavorito = async (idFerreteria) => {
+        const idNum = Number(idFerreteria);
+        if (!perfilUsuarioActual) {
+            notificar('Inicia Sesión', 'Debes iniciar sesión para administrar tus ferreterías favoritas.', 'info');
+            return;
+        }
+
+        const yaEsFavorito = favoritosIds.has(idNum);
+        const method = yaEsFavorito ? 'DELETE' : 'POST';
+
+        try {
+            const res = await fetch(`/api/ahp/favoritos/${idNum}`, {
+                method,
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo actualizar favoritos');
+
+            if (yaEsFavorito) {
+                favoritosIds.delete(idNum);
+            } else {
+                favoritosIds.add(idNum);
+            }
+
+            actualizarBotonesFavoritoUI();
+            notificar(
+                yaEsFavorito ? 'Eliminado de Favoritos' : 'Guardado en Favoritos',
+                data.mensaje || (yaEsFavorito ? 'Ferretería quitada de tu lista.' : 'Ferretería añadida a tu lista.'),
+                'success'
+            );
+            cargarHistorialYFavoritos();
+        } catch (err) {
+            notificar('Favoritos', err.message, 'warning');
+        }
+    };
+
+    // Mantener alias por compatibilidad
+    window.agregarFavorito = window.toggleFavorito;
+
+    document.getElementById('btnFavoritoTop')?.addEventListener('click', () => {
+        if (topFerreteriaActual) window.toggleFavorito(topFerreteriaActual.id_ferreteria);
+    });
+
+    document.getElementById('btnFavoritoModalFerr')?.addEventListener('click', () => {
+        if (ferreteriaModalActual) window.toggleFavorito(ferreteriaModalActual.id_ferreteria);
+    });
+
+    const renderizarListaCatalogoModal = (productos) => {
+        const contenedor = document.getElementById('contenedorProductosFerreteria');
+        if (!contenedor) return;
+
+        if (!productos || productos.length === 0) {
+            contenedor.innerHTML = `
+                <div class="list-group-item bg-transparent text-muted small py-3 text-center">
+                    Esta ferretería aún no tiene productos registrados en su catálogo.
+                </div>`;
+            return;
+        }
+
+        contenedor.innerHTML = productos.map(p => {
+            const disponible = Number(p.stock_actual) > 0;
+            const badgeStock = disponible
+                ? `<span class="badge bg-success-subtle text-success border border-success-subtle">${p.stock_actual} un.</span>`
+                : `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Agotado</span>`;
+            const subInfo = [p.categoria, p.marca].filter(Boolean).join(' • ');
+
+            return `
+                <div class="list-group-item bg-transparent text-main py-2 px-3 catalogo-item-row d-flex justify-content-between align-items-center gap-2">
+                    <div class="overflow-hidden">
+                        <div class="fw-semibold small text-truncate">${escapeHtml(p.nombre)}</div>
+                        ${subInfo ? `<div class="extra-small text-muted text-truncate">${escapeHtml(subInfo)}</div>` : ''}
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <span class="fw-bold text-success small">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</span>
+                        ${badgeStock}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    };
+
+    document.getElementById('filtroCatalogoFerreteria')?.addEventListener('input', (e) => {
+        const termino = e.target.value.trim().toLowerCase();
+        const filtrados = !termino
+            ? catalogoModalCache
+            : catalogoModalCache.filter(p =>
+                p.nombre.toLowerCase().includes(termino) ||
+                (p.categoria && p.categoria.toLowerCase().includes(termino)) ||
+                (p.marca && p.marca.toLowerCase().includes(termino))
+            );
+        renderizarListaCatalogoModal(filtrados);
+    });
+
+    const cargarCatalogoFerreteriaModal = async (idFerreteria) => {
+        const seccion = document.getElementById('seccionCatalogoFerreteria');
+        const contenedor = document.getElementById('contenedorProductosFerreteria');
+        const btnCatalogo = document.getElementById('btnVerCatalogoCompleto');
+        if (!seccion || !contenedor) return;
+
+        seccion.classList.remove('d-none');
+        if (btnCatalogo) {
+            btnCatalogo.disabled = true;
+            btnCatalogo.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando Catálogo...`;
+        }
+        contenedor.innerHTML = `<div class="list-group-item bg-transparent text-muted small py-3 text-center"><i class="fa-solid fa-spinner fa-spin me-1"></i> Consultando inventario...</div>`;
+
+        try {
+            const res = await fetch(`/api/ahp/ferreterias/${idFerreteria}/catalogo`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo cargar el catálogo de la ferretería');
+
+            ferreteriaModalActual = data;
+            catalogoModalCache = data.productos || [];
+
+            document.getElementById('modalDetalleFerreteriaLabel').textContent = data.nombre;
+            document.getElementById('detFerrDireccion').textContent = data.direccion;
+            document.getElementById('detFerrReputacion').textContent = Number(data.reputacion).toFixed(2);
+            document.getElementById('detFerrCanales').textContent = data.capacidad_canales_atencion ?? 1;
+            document.getElementById('detFerrTotalProductos').textContent = data.total_productos ?? catalogoModalCache.length;
+
+            const wqEl = document.getElementById('detFerrWq');
+            if (wqEl) {
+                wqEl.textContent = data.tiempo_espera_wq_min !== null && data.tiempo_espera_wq_min !== undefined
+                    ? `${data.tiempo_espera_wq_min} min`
+                    : 'Sin datos';
+            }
+
+            const filtroInput = document.getElementById('filtroCatalogoFerreteria');
+            if (filtroInput) filtroInput.value = '';
+            renderizarListaCatalogoModal(catalogoModalCache);
+            actualizarBotonesFavoritoUI();
+        } catch (err) {
+            contenedor.innerHTML = `<div class="list-group-item bg-transparent text-danger small py-3 text-center">${escapeHtml(err.message)}</div>`;
+        } finally {
+            if (btnCatalogo) {
+                btnCatalogo.disabled = false;
+                btnCatalogo.innerHTML = `<i class="fa-solid fa-boxes-stacked me-2"></i>Actualizar Catálogo`;
+            }
+        }
+    };
+
+    document.getElementById('btnVerCatalogoCompleto')?.addEventListener('click', () => {
+        if (ferreteriaModalActual?.id_ferreteria) {
+            cargarCatalogoFerreteriaModal(ferreteriaModalActual.id_ferreteria);
+        }
+    });
+
+    document.getElementById('btnTrazarRutaModalFerr')?.addEventListener('click', () => {
+        if (!ferreteriaModalActual) return;
+        const { latitud, longitud, nombre, direccion } = ferreteriaModalActual;
+        const modalEl = document.getElementById('modalDetalleFerreteria');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        }
+        if (map) {
+            map.flyTo([latitud, longitud], 16);
+            L.popup()
+                .setLatLng([latitud, longitud])
+                .setContent(`<strong>${escapeHtml(nombre)}</strong><br><small>${escapeHtml(direccion || '')}</small>`)
+                .openOn(map);
+        }
+    });
+
+    window.abrirFichaFerreteria = async (idFerreteria, datosIniciales = null) => {
+        const idNum = Number(idFerreteria);
+        ferreteriaModalActual = datosIniciales ? { ...datosIniciales, id_ferreteria: idNum } : { id_ferreteria: idNum };
+        catalogoModalCache = [];
+
+        document.getElementById('modalDetalleFerreteriaLabel').textContent = datosIniciales?.nombre || 'Ficha de Ferretería';
+        document.getElementById('detFerrDireccion').textContent = datosIniciales?.direccion || 'Cargando dirección...';
+        document.getElementById('detFerrReputacion').textContent = datosIniciales?.reputacion ? Number(datosIniciales.reputacion).toFixed(2) : '5.00';
+        document.getElementById('detFerrWq').textContent = 'Consultando...';
+        document.getElementById('detFerrCanales').textContent = datosIniciales?.capacidad_canales_atencion || '1';
+        document.getElementById('detFerrTotalProductos').textContent = '0';
+
+        const seccionCat = document.getElementById('seccionCatalogoFerreteria');
+        if (seccionCat) seccionCat.classList.add('d-none');
+
+        const btnCat = document.getElementById('btnVerCatalogoCompleto');
+        if (btnCat) {
+            btnCat.disabled = false;
+            btnCat.innerHTML = `<i class="fa-solid fa-boxes-stacked me-2"></i>Ver Catálogo Completo`;
+        }
+
+        actualizarBotonesFavoritoUI();
+
+        const modalEl = document.getElementById('modalDetalleFerreteria');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+
+        // Precargar metadatos reales de la ferretería (incluyendo Wq si existe)
+        try {
+            const res = await fetch(`/api/ahp/ferreterias/${idNum}/catalogo`);
+            if (res.ok) {
+                const data = await res.json();
+                ferreteriaModalActual = data;
+                catalogoModalCache = data.productos || [];
+                document.getElementById('modalDetalleFerreteriaLabel').textContent = data.nombre;
+                document.getElementById('detFerrDireccion').textContent = data.direccion;
+                document.getElementById('detFerrReputacion').textContent = Number(data.reputacion).toFixed(2);
+                document.getElementById('detFerrCanales').textContent = data.capacidad_canales_atencion ?? 1;
+                document.getElementById('detFerrTotalProductos').textContent = data.total_productos ?? catalogoModalCache.length;
+                document.getElementById('detFerrWq').textContent =
+                    data.tiempo_espera_wq_min !== null && data.tiempo_espera_wq_min !== undefined
+                        ? `${data.tiempo_espera_wq_min} min`
+                        : 'Sin datos';
+                actualizarBotonesFavoritoUI();
+            }
+        } catch (e) {
+            console.warn('No se pudo precargar ficha de ferretería:', e);
+        }
+    };
+
+    window.seleccionarFavoritoDrawer = (idFerreteria, lat, lng, nombre, direccion, reputacion) => {
+        const drawerEl = document.getElementById('drawerGoogleMaps');
+        if (drawerEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Offcanvas.getOrCreateInstance(drawerEl).hide();
+        }
+
+        const latNum = parseFloat(lat);
+        const lngNum = parseFloat(lng);
+
+        if (map && !Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+            map.flyTo([latNum, lngNum], 16);
+            L.popup()
+                .setLatLng([latNum, lngNum])
+                .setContent(`<strong>${escapeHtml(nombre)}</strong><br><small>${escapeHtml(direccion)}</small>`)
+                .openOn(map);
+        }
+
+        window.abrirFichaFerreteria(idFerreteria, {
+            id_ferreteria: idFerreteria,
+            nombre,
+            direccion,
+            latitud: latNum,
+            longitud: lngNum,
+            reputacion: parseFloat(reputacion) || 5.0
+        });
+    };
+
+    window.restaurarBusquedaHistorial = (textoBuscado, latUsuario, lngUsuario) => {
+        const drawerEl = document.getElementById('drawerGoogleMaps');
+        if (drawerEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Offcanvas.getOrCreateInstance(drawerEl).hide();
+        }
+
+        const latNum = parseFloat(latUsuario);
+        const lngNum = parseFloat(lngUsuario);
+        if (!Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+            ubicacionUsuario = { lat: latNum, lng: lngNum };
+            const inputOrig = document.getElementById('inputOrigen');
+            if (inputOrig) {
+                inputOrig.value = `Historial (${latNum.toFixed(4)}, ${lngNum.toFixed(4)})`;
+            }
+            actualizarMarcadorUsuario(latNum, lngNum, 'Origen restaurado del historial');
+            if (map) map.flyTo([latNum, lngNum], 14);
+        }
+
+        const inputProd = document.getElementById('inputProducto');
+        if (inputProd) inputProd.value = textoBuscado;
+        document.getElementById('formBuscadorAHP')?.dispatchEvent(new Event('submit'));
+    };
+
+    window.eliminarHistorialItem = async (idBusqueda, event) => {
+        if (event) event.stopPropagation();
+        if (!perfilUsuarioActual) return;
+
+        try {
+            const res = await fetch(`/api/ahp/historial/${idBusqueda}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo eliminar el registro');
+            cargarHistorialYFavoritos();
+        } catch (err) {
+            notificar('Historial', err.message, 'warning');
+        }
+    };
+
+    document.getElementById('btnVerCatalogoTop')?.addEventListener('click', () => {
+        if (topFerreteriaActual) {
+            window.abrirFichaFerreteria(topFerreteriaActual.id_ferreteria, topFerreteriaActual);
+        }
+    });
+
+    // ---------------------------------------------------------------
+    // 7. BÚSQUEDA MULTICRITERIO AHP + HISTORIAL Y FAVORITOS EN DRAWER
     // ---------------------------------------------------------------
     const formBuscador = document.getElementById('formBuscadorAHP');
     const cardTopResult = document.getElementById('cardTopResult');
@@ -392,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnBuscar.disabled = false;
                 btnBuscar.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i>`;
             } else {
-                console.warn('[OptiDecision] No se encontró #btnBuscarAHP en el DOM al restaurar estado.');
+                console.warn('[OptiDecision] No se encontró #btnBuscarAHP en el DOM al restaurarestado.');
             }
         }
     });
@@ -411,18 +753,20 @@ document.addEventListener('DOMContentLoaded', () => {
         topFerreteriaActual = top;
 
         document.getElementById('topFerreteriaNombre').textContent = top.nombre;
-        document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${top.direccion}`;
+        document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${escapeHtml(top.direccion)}`;
         document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
         document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
         document.getElementById('topReputacion').textContent = top.reputacion;
         document.getElementById('topStock').textContent = `${top.stock} un.`;
 
-        cardTopResult?.classList.remove('d-none');        
+        actualizarBotonesFavoritoUI();
+        cardTopResult?.classList.remove('d-none');
         if (window.innerWidth < 768) colapsarSubpanelesOmnibox();
         const puntosBounds = [[ubicacionUsuario.lat, ubicacionUsuario.lng]];
 
         data.ferreterias.forEach((f, idx) => {
             const color = idx === 0 ? '#F59E0B' : '#0EA5E9';
+            const esFav = favoritosIds.has(Number(f.id_ferreteria));
             const markerIcon = L.divIcon({
                 className: 'ferreteria-marker',
                 html: `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><i class="fa-solid fa-store"></i></div>`,
@@ -433,15 +777,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const marker = L.marker([f.latitud, f.longitud], { icon: markerIcon })
                 .addTo(markersLayer)
                 .bindPopup(`
-                    <div style="color: #0F172A; min-width: 180px;">
-                        <strong style="color: ${color};">${f.nombre}</strong><br>
-                        <small>${f.direccion}</small><br>
+                    <div style="color: #0F172A; min-width: 195px;">
+                        <strong style="color: ${color};">${escapeHtml(f.nombre)}</strong><br>
+                        <small>${escapeHtml(f.direccion)}</small><br>
                         <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.<br>
-                        <button class="btn btn-sm btn-warning mt-2 w-100 py-0" onclick="window.agregarFavorito(${f.id_ferreteria})">
-                            <i class="fa-solid fa-star"></i> Guardar Favorito
+                        <button class="btn btn-sm ${esFav ? 'btn-favorito-activo' : 'btn-warning'} mt-2 w-100 py-1"
+                            data-popup-fav-id="${f.id_ferreteria}"
+                            onclick="window.toggleFavorito(${f.id_ferreteria})">
+                            <i class="${esFav ? 'fa-solid' : 'fa-regular'} fa-star me-1"></i>${esFav ? 'Quitar de Favoritos' : 'Guardar Favorito'}
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary mt-1 w-100 py-1"
+                            onclick="window.abrirFichaFerreteria(${f.id_ferreteria})">
+                            <i class="fa-solid fa-boxes-stacked me-1"></i>Ver Catálogo
                         </button>
                     </div>
                 `);
+
+            marker.on('popupopen', actualizarBotonesFavoritoUI);
 
             if (idx === 0) marker.openPopup();
             puntosBounds.push([f.latitud, f.longitud]);
@@ -450,31 +802,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (map) map.fitBounds(puntosBounds, { padding: [50, 50] });
     };
 
-    window.agregarFavorito = async (idFerreteria) => {
+    const cargarHistorialYFavoritos = async () => {
         if (!perfilUsuarioActual) {
-            notificar('Inicia Sesión', 'Debes iniciar sesión para guardar ferreterías favoritas.', 'info');
+            favoritosIds = new Set();
+            actualizarBotonesFavoritoUI();
             return;
         }
-        try {
-            const res = await fetch(`/api/ahp/favoritos/${idFerreteria}`, {
-                method: 'POST',
-                headers: getAuthHeaders()
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'No se pudo guardar en favoritos');
-            notificar('Guardado en Favoritos', data.mensaje || 'Ferretería añadida a tu lista.', 'success');
-            cargarHistorialYFavoritos();
-        } catch (err) {
-            notificar('Favoritos', err.message, 'warning');
-        }
-    };
-
-    document.getElementById('btnFavoritoTop')?.addEventListener('click', () => {
-        if (topFerreteriaActual) window.agregarFavorito(topFerreteriaActual.id_ferreteria);
-    });
-
-    const cargarHistorialYFavoritos = async () => {
-        if (!perfilUsuarioActual) return;
         const listaHist = document.getElementById('listaHistorial');
         const listaFav = document.getElementById('listaFavoritos');
 
@@ -489,43 +822,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 listaHist.innerHTML = historial.length === 0
                     ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">Aún no tienes búsquedas registradas.</div>`
                     : historial.map(h => `
-                        <button type="button" class="list-group-item list-group-item-action bg-transparent text-main small py-2"
-                            onclick="document.getElementById('inputProducto').value='${h.texto_buscado.replace(/'/g, "\\'")}'; document.getElementById('formBuscadorAHP').dispatchEvent(new Event('submit'));">
-                            <div class="fw-semibold"><i class="fa-solid fa-magnifying-glass text-primary me-2"></i>${h.texto_buscado}</div>
-                            <span class="extra-small text-muted">${new Date(h.fecha_busqueda).toLocaleString()}</span>
-                        </button>
+                        <div class="list-group-item bg-transparent text-main small py-2 px-3 drawer-item-row d-flex justify-content-between align-items-center gap-2"
+                            role="button"
+                            onclick="window.restaurarBusquedaHistorial(${escapeHtml(JSON.stringify(h.texto_buscado))}, ${Number(h.latitud_usuario)}, ${Number(h.longitud_usuario)})">
+                            <div class="overflow-hidden">
+                                <div class="fw-semibold text-truncate"><i class="fa-solid fa-magnifying-glass text-primary me-2"></i>${escapeHtml(h.texto_buscado)}</div>
+                                <span class="extra-small text-muted d-block">${new Date(h.fecha_busqueda).toLocaleString()}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 flex-shrink-0"
+                                title="Eliminar búsqueda del historial"
+                                onclick="window.eliminarHistorialItem(${h.id_busqueda}, event)">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     `).join('');
             }
 
-            if (resFav.ok && listaFav) {
+            if (resFav.ok) {
                 const favoritos = await resFav.json();
-                listaFav.innerHTML = favoritos.length === 0
-                    ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">No tienes ferreterías favoritas guardadas.</div>`
-                    : favoritos.map(f => `
-                        <div class="list-group-item bg-transparent text-main small py-2 d-flex justify-content-between align-items-center">
-                            <div role="button" onclick="if(window._flyToStore) window._flyToStore(${f.latitud}, ${f.longitud}, '${f.nombre.replace(/'/g, "\\'")}')">
-                                <div class="fw-semibold"><i class="fa-solid fa-star text-warning me-1"></i> ${f.nombre}</div>
-                                <span class="extra-small text-muted">${f.direccion}</span>
+                favoritosIds = new Set(favoritos.map(f => Number(f.id_ferreteria)));
+                actualizarBotonesFavoritoUI();
+
+                if (listaFav) {
+                    listaFav.innerHTML = favoritos.length === 0
+                        ? `<div class="list-group-item bg-transparent text-muted small py-3 text-center">No tienes ferreterías favoritas guardadas.</div>`
+                        : favoritos.map(f => `
+                            <div class="list-group-item bg-transparent text-main small py-2 px-3 drawer-item-row d-flex justify-content-between align-items-center gap-2"
+                                role="button"
+                                onclick="window.seleccionarFavoritoDrawer(${f.id_ferreteria}, ${Number(f.latitud)}, ${Number(f.longitud)}, ${escapeHtml(JSON.stringify(f.nombre))}, ${escapeHtml(JSON.stringify(f.direccion))}, ${Number(f.reputacion || 5)})">
+                                <div class="overflow-hidden">
+                                    <div class="fw-semibold text-truncate"><i class="fa-solid fa-star text-warning me-1"></i> ${escapeHtml(f.nombre)}</div>
+                                    <span class="extra-small text-muted d-block text-truncate">${escapeHtml(f.direccion)}</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-warning border-0 flex-shrink-0"
+                                    title="Quitar de favoritos"
+                                    onclick="event.stopPropagation(); window.toggleFavorito(${f.id_ferreteria});">
+                                    <i class="fa-solid fa-trash-can text-danger"></i>
+                                </button>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                }
             }
         } catch (e) {
             console.warn('Historial/Favoritos pendientes de consulta:', e);
         }
     };
 
-    window._flyToStore = (lat, lng, nombre) => {
-        if (map) {
-            map.flyTo([lat, lng], 16);
-            L.popup().setLatLng([lat, lng]).setContent(`<strong>${nombre}</strong>`).openOn(map);
-        }
-    };
-
     document.getElementById('drawerGoogleMaps')?.addEventListener('show.bs.offcanvas', cargarHistorialYFavoritos);
 
     // ---------------------------------------------------------------
-    // 7. GOOGLE OAUTH2 (AUTHORIZATION CODE FLOW) + JWT + ROLES
+    // 8. GOOGLE OAUTH2 (AUTHORIZATION CODE FLOW) + JWT + ROLES
     // ---------------------------------------------------------------
     const procesarRetornoOAuth = async () => {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -539,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const perfil = await obtenerPerfil(oauthToken);
                 actualizarInterfazSesion(perfil);
-                notificar('¡Acceso Correcto!', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
+                notificar('Acceso Correcto', `Bienvenido ${perfil.username} (${perfil.rol.toUpperCase()}).`, 'success');
                 return true;
             } catch (err) {
                 localStorage.removeItem('iop812-token');
@@ -618,6 +964,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ferrInfo.classList.add('d-none');
                 }
             }
+            cargarHistorialYFavoritos();
+        } else {
+            favoritosIds = new Set();
+            actualizarBotonesFavoritoUI();
         }
 
         const esGestor = autenticado && (rol === 'ferretero' || rol === 'admin');
@@ -674,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btnSubmitAuth').textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar Sesión';
         document.getElementById('authModePrompt').textContent = isRegisterMode ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
         btnToggleAuthMode.textContent = isRegisterMode ? 'Iniciar sesión' : 'Crear cuenta';
-        document.getElementById('modalLoginAuthLabel').textContent = isRegisterMode ? 'Crear cuenta ferretera' : '¡Bienvenido a la familia Opti!';
+        document.getElementById('modalLoginAuthLabel').textContent = isRegisterMode ? 'Crear cuenta ferretera' : 'Iniciar sesión en Opti';
     });
 
     document.getElementById('btnCerrarSesion')?.addEventListener('click', () => {
@@ -710,14 +1060,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const modalEl = document.getElementById('modalLoginAuth');
             if (modalEl && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(modalEl).hide();
             e.target.reset();
-            notificar('¡Acceso correcto!', `Bienvenido ${perfil.username}.`, 'success');
+            notificar('Acceso correcto', `Bienvenido ${perfil.username}.`, 'success');
         } catch (err) {
             notificar('Error de Autenticación', err.message, 'error');
         }
     });
 
     // ---------------------------------------------------------------
-    // 8. REGISTRO DE FERRETERÍA Y GESTIÓN ADMIN DE ROLES
+    // 9. REGISTRO DE FERRETERÍA Y GESTIÓN ADMIN DE ROLES
     // ---------------------------------------------------------------
     document.getElementById('formRegistrarFerreteria')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -754,7 +1104,8 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('Error al Registrar', err.message, 'error');
         }
     });
-const cargarResumenAdmin = async () => {
+
+    const cargarResumenAdmin = async () => {
         const badge = document.getElementById('badgeResumenAdmin');
         if (!badge) return;
         try {
@@ -835,6 +1186,7 @@ const cargarResumenAdmin = async () => {
             e.target.value = '';
         }
     });
+
     const cargarUsuariosAdmin = async () => {
         cargarResumenAdmin();
         const tbody = document.getElementById('tbodyUsuariosAdmin');
@@ -845,9 +1197,9 @@ const cargarResumenAdmin = async () => {
             const usuarios = await res.json();
             tbody.innerHTML = usuarios.map(u => `
                 <tr>
-                    <td class="fw-medium">${u.username}</td>
-                    <td>${u.email}</td>
-                    <td>${u.nombre_ferreteria || '<span class="text-muted">Sin ferretería</span>'}</td>
+                    <td class="fw-medium">${escapeHtml(u.username)}</td>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td>${u.nombre_ferreteria ? escapeHtml(u.nombre_ferreteria) : '<span class="text-muted">Sin ferretería</span>'}</td>
                     <td>
                         <select class="form-select form-select-sm w-auto" onchange="window.cambiarRolUsuario(${u.id_usuario}, this.value)">
                             <option value="cliente" ${u.rol === 'cliente' ? 'selected' : ''}>cliente</option>
@@ -878,7 +1230,7 @@ const cargarResumenAdmin = async () => {
     };
 
     // ---------------------------------------------------------------
-    // 9. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV
+    // 10. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV
     // ---------------------------------------------------------------
     const cardFormProducto = document.getElementById('cardFormProducto');
     const formProductoCRUD = document.getElementById('formProductoCRUD');
@@ -979,8 +1331,8 @@ const cargarResumenAdmin = async () => {
 
             tbody.innerHTML = productosCache.map(p => `
                 <tr>
-                    <td class="fw-medium">${p.nombre}</td>
-                    <td class="small text-muted">${p.ferreteria_nombre || '-'}</td>
+                    <td class="fw-medium">${escapeHtml(p.nombre)}</td>
+                    <td class="small text-muted">${escapeHtml(p.ferreteria_nombre || '-')}</td>
                     <td class="text-success fw-bold">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</td>
                     <td><span class="badge ${p.stock_actual > 20 ? 'bg-success' : 'bg-danger'}">${p.stock_actual} un.</span></td>
                     <td>${p.demanda_anual_D} un.</td>
@@ -1041,7 +1393,7 @@ const cargarResumenAdmin = async () => {
     document.getElementById('tab-crud-tab')?.addEventListener('click', cargarProductosCRUD);
 
     // ---------------------------------------------------------------
-    // 10. CALCULADORAS IO2 (EOQ, COLAS M/M/1, MARKOV, DECISIONES)
+    // 11. CALCULADORAS IO2 (EOQ, COLAS M/M/1, MARKOV, DECISIONES)
     // ---------------------------------------------------------------
     document.getElementById('formEOQ')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1163,12 +1515,12 @@ const cargarResumenAdmin = async () => {
 
             document.getElementById('resDecisionesContainer').innerHTML = `
                 <ul class="list-unstyled mb-0 small">
-                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${vmeOpt}</span></li>
-                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${laplaceOpt}</li>
-                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${waldOpt}</li>
-                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${savageOpt}</li>
+                    <li class="mb-2"><strong>Sugerencia VME (Riesgo):</strong> <span class="text-success fw-bold">${escapeHtml(vmeOpt)}</span></li>
+                    <li class="mb-1"><strong>Criterio Laplace:</strong> ${escapeHtml(laplaceOpt)}</li>
+                    <li class="mb-1"><strong>Criterio Wald (Pesimista):</strong> ${escapeHtml(waldOpt)}</li>
+                    <li class="mb-1"><strong>Criterio Savage (Minimax):</strong> ${escapeHtml(savageOpt)}</li>
                 </ul>
-                <div class="mt-2 pt-2 border-top extra-small text-muted">${data.recomendacion_general}</div>
+                <div class="mt-2 pt-2 border-top extra-small text-muted">${escapeHtml(data.recomendacion_general)}</div>
             `;
             notificar('Evaluación Completada', 'Criterios procesados exitosamente.', 'success');
         } catch (err) {

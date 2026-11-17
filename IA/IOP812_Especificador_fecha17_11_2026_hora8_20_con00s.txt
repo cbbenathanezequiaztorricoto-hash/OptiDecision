@@ -116,7 +116,7 @@ CONTRATO DE EVOLUCIÓN FUNCIONAL Y ARQUITECTÓNICA (V1.1)
   Añadir `python-multipart>=0.0.9` y `cloudinary>=1.40.0`.
 
 4. PLAN DE IMPLEMENTACIÓN POR BLOQUES (CHECKLIST DE CONTROL)
-* [ ] **Bloque 1 — Interfaz Espacial Google Maps & Auth Móvil:** Reemplazar `#topNav` por Omnibox flotante (`376px x 48px` / `calc(100vw - 84px) x 48px`), Esférico de Cuenta (`40px x 40px`) + Popover de perfil/tema/logout, y fix `z-index: 2050` de SweetAlert2 en `frontend/index.html`, `frontend/assets/css/style.css` y `frontend/assets/js/app.js`.
+* [✅] **Bloque 1 — Interfaz Espacial Google Maps & Auth Móvil:** Reemplazar `#topNav` por Omnibox flotante (`376px x 48px` / `calc(100vw - 84px) x 48px`), Esférico de Cuenta (`40px x 40px`) + Popover de perfil/tema/logout, y fix `z-index: 2050` de SweetAlert2 en `frontend/index.html`, `frontend/assets/css/style.css` y `frontend/assets/js/app.js`.
 * [ ] **Bloque 2 — Favoritos Bidireccionales, Modal de Catálogo por Ferretería e Historial:** Implementar endpoint `GET /api/ahp/ferreterias/{id}/catalogo` y `DELETE /api/ahp/historial/{id}`, sincronizar estado Guardar/Quitar favorito, redirección desde Drawer Favoritos al mapa + `#modalDetalleFerreteria` con listado completo de productos y precios.
 * [ ] **Bloque 3 — Colas M/M/1 en Cliente + Rutas Multi-Modo (OpenRouteService):** Persistir parámetros M/M/1 en `registro_colas_atencion`, incluir $W_q$ en `POST /api/ahp/buscar`, crear `GET /api/ahp/ruta` (Auto, Moto, A pie + rutas alternativas) y renderizar polilíneas seleccionables + tiempo total en Leaflet.
 * [ ] **Bloque 4 — Cloudinary, Descripción Técnica y Ficha de Producto con Zoom:** Añadir columna `descripcion` en BD y CRUD de productos, crear endpoint de subida de imagen a Cloudinary (`POST /api/productos/subir-imagen`), implementar `#modalDetalleProducto` y visor de zoom interactivo sobre la fotografía.
@@ -2761,7 +2761,7 @@ if __name__ == "__main__":
     <title>OptiDecision Suite - IOP812 | Buscador Ferretero & Optimización IO</title>
     
     <!-- Favicon -->
-    <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="assets/images/favicon.ico" type="image/x-icon">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2782,11 +2782,11 @@ if __name__ == "__main__":
 
     
     <!-- 6. Estilos Personalizados -->
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=1.1">
 </head>
 <body>
     <!-- BANNER FLOTANTE PARA SELECCIÓN DE UBICACIÓN EN MAPA -->
-    <div id="mapPickerBanner" class="position-fixed top-0 start-50 translate-middle-x mt-3 z-3 d-none">
+    <div id="mapPickerBanner" class="position-fixed top-0 start-50 translate-middle-x mt-3 d-none" style="z-index: 1040;">
         <div class="alert alert-primary shadow-lg rounded-pill px-4 py-2 d-flex align-items-center gap-3 border">
             <i class="fa-solid fa-map-pin fa-bounce"></i>
             <span class="small fw-semibold">Haz clic en el mapa sobre la ubicación exacta de la ferretería</span>
@@ -2899,7 +2899,7 @@ if __name__ == "__main__":
                 <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.1rem;" id="popoverUserInitial">
                     U
                 </div>
-                <div class="min-w-0">
+                <div class="flex-grow-1 overflow-hidden" style="min-width: 0;">
                     <div class="fw-bold text-main text-truncate" id="popoverUserName">Usuario</div>
                     <div class="extra-small text-muted text-truncate" id="popoverUserEmail">correo@ejemplo.com</div>
                     <span class="badge bg-primary text-uppercase mt-1" id="popoverUserRole">cliente</span>
@@ -3500,9 +3500,10 @@ if __name__ == "__main__":
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=1.1"></script>
 </body>
 </html>
+
 ]]>
 </archivo>
 
@@ -3721,6 +3722,7 @@ input:-webkit-autofill:focus {
     z-index: 1025;
     width: 280px;
     max-width: calc(100vw - 32px);
+    overflow: hidden;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 16px;

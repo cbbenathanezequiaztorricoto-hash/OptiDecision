@@ -233,6 +233,32 @@ input:-webkit-autofill:focus {
     animation: fadeInUp 0.3s ease-out;
 }
 
+/* ESTADOS DE FAVORITOS BIDIRECCIONALES E HISTORIAL (BLOQUE 2) */
+.btn-favorito-activo {
+    background-color: var(--accent-gold) !important;
+    border-color: var(--accent-gold) !important;
+    color: #0F172A !important;
+    font-weight: 600;
+}
+
+.drawer-item-row {
+    border-color: var(--border-color) !important;
+    transition: background-color 0.15s ease;
+}
+
+.drawer-item-row:hover {
+    background-color: rgba(14, 165, 233, 0.08) !important;
+}
+
+.catalogo-item-row {
+    border-color: var(--border-color) !important;
+    transition: background-color 0.15s ease;
+}
+
+.catalogo-item-row:hover {
+    background-color: rgba(14, 165, 233, 0.06) !important;
+}
+
 @keyframes fadeInUp {
     from { 
         opacity: 0; 
@@ -341,6 +367,7 @@ input:-webkit-autofill:focus {
         height: 100dvh;
     }
 }
+
 /* ===================================================================
    CORRECCIÓN DE CONTRASTE: MODALES, OFFCANVAS Y FONDOS TERTIARY
    =================================================================== */

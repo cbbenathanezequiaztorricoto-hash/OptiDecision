@@ -1,8 +1,14 @@
 # app/modules/buscador_ahp/routes.py
 # Controlador HTTP para el Algoritmo AHP de Selección y Buscador Multicriterio.
 from typing import Optional, Dict, Any, List
+from psycopg2 import errors as pg_errors
 from fastapi import APIRouter, HTTPException, Depends, status
-from app.modules.buscador_ahp.schemas import AHPSearchInput, AHPMatrizCriteriosInput, AHPResultadoOutput
+from app.modules.buscador_ahp.schemas import (
+    AHPSearchInput,
+    AHPMatrizCriteriosInput,
+    AHPResultadoOutput,
+    FerreteriaCatalogoOutput
+)
 from app.modules.buscador_ahp.engine import calcular_proceso_ahp
 from app.modules.autenticacion.routes import obtener_usuario_actual, obtener_usuario_opcional
 from app.shared.database import obtener_conexion
@@ -27,7 +33,7 @@ async def buscar_ferreterias_ahp(
         )
         # 2. Calcular consistencia matemática (NumPy)
         res_math = calcular_proceso_ahp(entrada_ahp)
-        
+
         # 3. Consulta Geoespacial a PostgreSQL con PostGIS
         ferreterias_ordenadas = []
         conn = obtener_conexion()
@@ -119,9 +125,109 @@ async def buscar_ferreterias_ahp(
         )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error en consulta PostGIS/AHP: {str(e)}"
         )
+
+#NUEVO 17-11-2026
+#Catalogo de productos
+@router.get(
+    "/ferreterias/{id_ferreteria}/catalogo",
+    response_model=FerreteriaCatalogoOutput,
+    summary="Obtener ficha detallada y catálogo completo de una ferretería"
+)
+async def obtener_catalogo_ferreteria(id_ferreteria: int) -> FerreteriaCatalogoOutput:
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id_ferreteria, nombre, direccion, latitud, longitud,
+                       COALESCE(reputacion, 5.00) AS reputacion,
+                       COALESCE(superficie_almacen_m2, 0.00) AS superficie_almacen_m2,
+                       COALESCE(capacidad_canales_atencion, 1) AS capacidad_canales_atencion
+                FROM ferreterias
+                WHERE id_ferreteria = %s
+                LIMIT 1;
+                """,
+                (id_ferreteria,)
+            )
+            ferreteria = cur.fetchone()
+            if not ferreteria:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ferretería no encontrada."
+                )
+
+            # Consultar último registro M/M/1 si existe
+            cur.execute(
+                """
+                SELECT tasa_llegada_lambda, tasa_servicio_mu
+                FROM registro_colas_atencion
+                WHERE id_ferreteria = %s
+                ORDER BY fecha_registro DESC
+                LIMIT 1;
+                """,
+                (id_ferreteria,)
+            )
+            cola = cur.fetchone()
+            wq_min: Optional[float] = None
+            estado_congestion = "Sin datos de cola"
+
+            if cola:
+                lam = float(cola["tasa_llegada_lambda"])
+                mu = float(cola["tasa_servicio_mu"])
+                if mu > lam > 0:
+                    wq_min = round((lam / (mu * (mu - lam))) * 60.0, 1)
+                    if wq_min > 15.0:
+                        estado_congestion = "Alta congestión"
+                    elif wq_min > 5.0:
+                        estado_congestion = "Congestión moderada"
+                    else:
+                        estado_congestion = "Atención fluida"
+
+            # Consultar catálogo completo de la ferretería
+            cur.execute(
+                """
+                SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual, p.foto_url,
+                       c.nombre AS categoria, m.nombre AS marca
+                FROM productos p
+                LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
+                LEFT JOIN marcas m ON m.id_marca = p.id_marca
+                WHERE p.id_ferreteria = %s
+                ORDER BY p.stock_actual DESC, p.nombre ASC;
+                """,
+                (id_ferreteria,)
+            )
+            productos = [
+                {
+                    "id_producto": row["id_producto"],
+                    "nombre": row["nombre"],
+                    "precio_bob": float(row["precio_bob"]),
+                    "stock_actual": int(row["stock_actual"]),
+                    "foto_url": row["foto_url"],
+                    "categoria": row["categoria"],
+                    "marca": row["marca"]
+                }
+                for row in cur.fetchall()
+            ]
+
+            return FerreteriaCatalogoOutput(
+                id_ferreteria=ferreteria["id_ferreteria"],
+                nombre=ferreteria["nombre"],
+                direccion=ferreteria["direccion"],
+                latitud=float(ferreteria["latitud"]),
+                longitud=float(ferreteria["longitud"]),
+                reputacion=float(ferreteria["reputacion"]),
+                superficie_almacen_m2=float(ferreteria["superficie_almacen_m2"]),
+                capacidad_canales_atencion=int(ferreteria["capacidad_canales_atencion"]),
+                tiempo_espera_wq_min=wq_min,
+                estado_congestion=estado_congestion,
+                total_productos=len(productos),
+                productos=productos
+            )
+    finally:
+        conn.close()
 
 
 @router.get("/historial", summary="Obtener historial de búsquedas del usuario")
@@ -144,6 +250,31 @@ async def obtener_historial(usuario: Dict[str, Any] = Depends(obtener_usuario_ac
         conn.close()
 
 
+@router.delete("/historial/{id_busqueda}", summary="Eliminar un registro individual del historial")
+async def eliminar_historial(id_busqueda: int, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM historial_busquedas
+                WHERE id_busqueda = %s AND id_usuario = %s
+                RETURNING id_busqueda;
+                """,
+                (id_busqueda, usuario["id_usuario"])
+            )
+            eliminado = cur.fetchone()
+            if not eliminado:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Registro de historial no encontrado."
+                )
+            conn.commit()
+            return {"mensaje": "Registro eliminado del historial."}
+    finally:
+        conn.close()
+
+#RUD COMPLETO Y LÓGICA DE FAVORITOS
 @router.get("/favoritos", summary="Listar ferreterías favoritas del usuario")
 async def listar_favoritos(usuario: Dict[str, Any] = Depends(obtener_usuario_actual)) -> List[Dict[str, Any]]:
     conn = obtener_conexion()
@@ -179,9 +310,20 @@ async def agregar_favorito(id_ferreteria: int, usuario: Dict[str, Any] = Depends
             )
             conn.commit()
             return {"mensaje": "Ferretería guardada en tus favoritos."}
+    except pg_errors.ForeignKeyViolation:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="La ferretería indicada no existe."
+        )
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al guardar favorito: {str(e)}"
+        )
     finally:
         conn.close()
-
 
 @router.delete("/favoritos/{id_ferreteria}", summary="Eliminar ferretería de favoritos")
 async def eliminar_favorito(id_ferreteria: int, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
