@@ -82,7 +82,44 @@ REGLAS DE NEGOCIO DEL SISTEMA:
 * Ingesta de Datos Reales: Importación masiva mediante archivos CSV (python-multipart) desde Overpass Turbo y plantillas multi-sucursal
 * Despliegue en Nube: Render (render.yaml + variable DATABASE_URL + ADMIN_EMAIL / ADMIN_EMAILS)
 </TECNOLOGIAS>
+===================================================================
+CONTRATO DE EVOLUCIÓN FUNCIONAL Y ARQUITECTÓNICA (V1.1)
+===================================================================
 
+1. SERVICIOS EXTERNOS Y VARIABLES DE ENTORNO (.env / Render)
+* Enrutamiento Vial Multi-Modo: OpenRouteService API (`ORS_API_KEY`). Perfiles: `driving-car`, `cycling-regular`, `foot-walking`, con soporte de rutas alternativas.
+* Almacenamiento Multimedia: Cloudinary (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`). Toda imagen de producto se sube a Cloudinary y guarda su URL segura en `productos.foto_url` (prohibido Base64 o binarios en PostgreSQL).
+* Autenticación OAuth 2.0: Google (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` sincronizado con el dominio activo).
+
+2. REGLAS DE NEGOCIO Y FLUJO DE USUARIO (RN-07 a RN-11)
+* RN-07 (Interfaz Espacial Omnibox + Esférico de Cuenta):
+  - El usuario escribe directamente en el Omnibox (`376px x 48px` desktop / `calc(100vw - 84px) x 48px` móvil) sin desplegar tarjetas previas. El botón de filtros AHP despliega los pesos Saaty debajo del Omnibox.
+  - El botón esférico superior derecho (`40px x 40px`) gestiona inicio de sesión o despliega el Popover de perfil con rol, cambio de tema y cierre de sesión accesible en cualquier resolución.
+* RN-08 (Favoritos Reactivos y Modal de Ferretería con Catálogo Completo):
+  - El frontend mantiene sincronizados los `id_ferreteria` favoritos del usuario: si una tienda ya es favorita, el botón muestra estado activo ("Quitar de Favoritos", `DELETE /api/ahp/favoritos/{id}`).
+  - Al presionar una ferretería en la pestaña **Favoritos** del Drawer lateral, se cierra el Drawer, el mapa centra la cámara (`flyTo`) en sus coordenadas y se abre el **Modal de Ficha de Ferretería** (`#modalDetalleFerreteria`), el cual muestra su dirección, reputación, tiempo de espera en cola ($W_q$), botón para trazar ruta y un botón **"Ver Catálogo Completo"** (`GET /api/ahp/ferreterias/{id_ferreteria}/catalogo`) que lista todos sus productos con precio en BOB, stock disponible y acceso a su ficha individual.
+  - El **Historial** restaura término buscado + coordenadas (`latitud_usuario`, `longitud_usuario`) y permite borrar registros individuales (`DELETE /api/ahp/historial/{id_busqueda}`).
+* RN-09 (Tiempo de Espera M/M/1 en Resultados Cliente):
+  - Al calcular métricas en el tab Colas M/M/1 del panel ferretero, los parámetros ($\lambda, \mu$) se persisten en `registro_colas_atencion` asociados a `id_ferreteria`.
+  - `POST /api/ahp/buscar` consulta el último registro M/M/1 de cada ferretería candidata y retorna `tiempo_espera_wq_min` y estado de congestión en las tarjetas y popups.
+* RN-10 (Enrutamiento Multi-Modo y Tiempo Logístico Total):
+  - Endpoint `GET /api/ahp/ruta?origen_lat=...&origen_lng=...&destino_lat=...&destino_lng=...&modo=...` consulta OpenRouteService y retorna ruta principal y alternativas en GeoJSON.
+  - El mapa traza la ruta principal en azul sólido (`#0EA5E9`) y las alternativas en gris punteado (`#94A3B8`) seleccionables al clic. La tarjeta de navegación calcula: `Tiempo de viaje + Espera en cola (Wq) = Tiempo total estimado`.
+* RN-11 (Ficha Técnica de Producto y Zoom de Imagen):
+  - Al pulsar cualquier producto (desde resultados AHP, popup del mapa o catálogo de una ferretería), se abre `#modalDetalleProducto` mostrando fotografía desde Cloudinary, nombre, marca, categoría, descripción técnica, precio en BOB, stock actual y botón **"Cómo llegar a esta ferretería"**.
+  - Al hacer clic sobre la imagen del producto (o en el botón de lupa `fa-magnifying-glass-plus`), se activa el visor con zoom interactivo (`#modalZoomImagen` / zoom 2x con desplazamiento) para inspeccionar detalles del material o herramienta.
+
+3. CAMBIOS EN ESQUEMA DE BASE DE DATOS Y DEPENDENCIAS
+* `init_db.sql`:
+  `ALTER TABLE productos ADD COLUMN IF NOT EXISTS descripcion TEXT NULL;`
+* `requirements.txt`:
+  Añadir `python-multipart>=0.0.9` y `cloudinary>=1.40.0`.
+
+4. PLAN DE IMPLEMENTACIÓN POR BLOQUES (CHECKLIST DE CONTROL)
+* [ ] **Bloque 1 — Interfaz Espacial Google Maps & Auth Móvil:** Reemplazar `#topNav` por Omnibox flotante (`376px x 48px` / `calc(100vw - 84px) x 48px`), Esférico de Cuenta (`40px x 40px`) + Popover de perfil/tema/logout, y fix `z-index: 2050` de SweetAlert2 en `frontend/index.html`, `frontend/assets/css/style.css` y `frontend/assets/js/app.js`.
+* [ ] **Bloque 2 — Favoritos Bidireccionales, Modal de Catálogo por Ferretería e Historial:** Implementar endpoint `GET /api/ahp/ferreterias/{id}/catalogo` y `DELETE /api/ahp/historial/{id}`, sincronizar estado Guardar/Quitar favorito, redirección desde Drawer Favoritos al mapa + `#modalDetalleFerreteria` con listado completo de productos y precios.
+* [ ] **Bloque 3 — Colas M/M/1 en Cliente + Rutas Multi-Modo (OpenRouteService):** Persistir parámetros M/M/1 en `registro_colas_atencion`, incluir $W_q$ en `POST /api/ahp/buscar`, crear `GET /api/ahp/ruta` (Auto, Moto, A pie + rutas alternativas) y renderizar polilíneas seleccionables + tiempo total en Leaflet.
+* [ ] **Bloque 4 — Cloudinary, Descripción Técnica y Ficha de Producto con Zoom:** Añadir columna `descripcion` en BD y CRUD de productos, crear endpoint de subida de imagen a Cloudinary (`POST /api/productos/subir-imagen`), implementar `#modalDetalleProducto` y visor de zoom interactivo sobre la fotografía.
 ¿ARQUITECTURA?
 Arquitectura vertical por dominio / Módulos de I.O. (Vertical Slices):
 IOP812/

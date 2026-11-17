@@ -1,0 +1,191 @@
+===================================================================
+ESPECIFICADOR DE ESTILOS Y UI/UX: IOP812 - OPTI DECISION SUITE
+===================================================================
+Este documento define la identidad visual, el comportamiento de temas,
+la responsividad y la arquitectura UWE de la interfaz de usuario.
+
+NOTA IMPORTANTE:
+El siguiente TXT debe ser leído sin saltarse nada ni obviar absolutamente nada
+tampoco saltarse delimitadores XML por precaución de romper algo.
+
+¿TENDRÁ EMOJIS EL FRONTEND?
+Ninguno, el proyecto Opti busca seriedad porque estamos por la plata no por la patria.
+
+¿QUÉ LIBRERÍAS ESTAMOS USANDO?
+🌟Leaflet.js (v1.9.4)
+Es la librería estándar open-source para mapas interactivos ligeros (~40 KB). 
+Se integra nativamente con los azulejos (tiles) gratuitos de OpenStreetMap.   
+
+🌟Bootstrap (v5.3)
+Proporciona el sistema de rejilla (grid flexbox), el comportamiento mobile-first, 
+la gestión de modales de autenticación y los componentes base de la plantilla Made.   
+
+🌟FontAwesome (v6.5)
+Aporta la iconografía vectorial para herramientas ferreteras 
+(martillos, llaves, pines de ubicación, stock, candados) sin sobrecargar 
+la red cargando imágenes .png individuales.
+
+¿CÓMO DISEÑAMOS EL FRONTEND? ¿CUÁL ES SU ARQUITECTURA?
+Es la clásica.
+├── frontend/
+│   ├── assets/
+│   │   ├── css/               # style.css
+│   │   ├── js/                # app.js
+│   │   └── images/            # logo y iconos (favicon.ico, marker-icon.png)
+│   └── index.html             # Interfa< central
+Nos basamos en una <GUIA_VISUAL_Y_COLORES>, un diseño UWE <designNavegacion_UWE>,
+buscamos un <RESPONSIVE_MOBILE_FIRST> y <COMPORTAMIENTO_TEMA_TOGGLE>.
+
+<GUIA_VISUAL_Y_COLORES>
+1. PALETA INDUSTRIAL-TECH PRO (Tema por Defecto: Oscuro / Slate):
+   --bg-base:        #0F172A (Slate 900 - Fondo principal)
+   --card-bg:        #1E293B (Slate 800 - Paneles, modales y tarjetas)
+   --border-color:   #334155 (Slate 700 - Bordes sutiles y separadores)
+   --primary:        #0EA5E9 (Cyan / Azul Eléctrico - Acciones primarias y rutas)
+   --primary-hover:  #0284C7 (Cyan Oscuro - Estados hover)
+   --accent-gold:    #F59E0B (Ámbar / Dorado Ferretero - Top Pick AHP y precios destacados)
+   --success:        #10B981 (Esmeralda - Stock disponible, CR AHP consistente)
+   --danger:         #EF4444 (Carmín - Alertas de faltantes / Inconsistencia AHP)
+   --text-main:      #F8FAFC (Slate 50 - Texto principal)
+   --text-muted:     #94A3B8 (Slate 400 - Textos secundarios y leyendas)
+
+2. MODO CLARO (Conmutado via data-theme="light"):
+   --bg-base:        #F8FAFC (Slate 50)
+   --card-bg:        #FFFFFF (Blanco puro)
+   --border-color:   #E2E8F0 (Slate 200)
+   --text-main:      #0F172A (Slate 900)
+   --text-muted:     #64748B (Slate 500)
+</GUIA_VISUAL_Y_COLORES>
+
+<RESPONSIVE_MOBILE_FIRST>
+* Viewport Móvil: En pantallas < 768px, el mapa de Leaflet.js ocupa el 100% del viewport vertical (100vh).
+* Buscador Flotante (Google Maps / Trufi UX): El cuadro de búsqueda de origen/producto flota sobre el mapa en la parte superior con z-index elevado y sombras suaves.
+* Tablas Adaptables: En dispositivos móviles, las tablas de datos (CRUD e Inventarios) cambian dinámicamente a tarjetas desglosables (Responsive Cards) para evitar el desplazamiento horizontal incómodo.
+</RESPONSIVE_MOBILE_FIRST>
+
+<COMPORTAMIENTO_TEMA_TOGGLE>
+* Mecanismo: Elemento HTML con id="themeToggle" que ejecuta JavaScript para alternar el atributo `data-theme` en el tag <html>.
+* Persistencia: Utiliza `localStorage.getItem('iop812-theme')` para recordar la preferencia del usuario entre sesiones.
+</COMPORTAMIENTO_TEMA_TOGGLE>
+
+<designNavegacion_UWE>
++--------------------------------------------------------------------------------------+
+| NOTACIÓN UWE UTILIZADA:                                                              |
+| <<navigationClass>> : Pantalla / Vista HTML / Modal interactivo                      |
+| <<menu>>            : Menú de navegación, barra lateral o grupo de pestañas          |
+| <<processClass>>   : Acción o proceso de negocio ejecutado en el backend FastAPI     |
+| <<query>>           : Búsqueda o filtro de datos enviado a la BD (PostgreSQL/PostGIS)|
+| <<index>>           : Lista o tabla de resultados devuelta a la pantalla             |
+| <<navigationLink>>  : Enlace de navegación entre pantallas                           |
+| <<processLink>>     : Conexión de una pantalla con la ejecución de un proceso        |
++--------------------------------------------------------------------------------------+
+<<navigationClass>>
+                               VistaPublicaCliente
+                              (Google Maps + Trufi UX)
+                                         |
+               +-------------------------+-------------------------+
+               |                                                   |
+      <<menu>> TopNavCliente                              <<menu>> FiltrosAHPBar
+               |                                                   |
+    +----------+----------+                              +---------+---------+
+    |                     |                              |                   |
+<<navigationLink>>  <<navigationLink>>               <<query>>           <<query>>
+   #home                #mapa-ahp               QueryOrigenGeocoding QueryFerreteriasAHP
+                                                         |                   |
+                                                <<processClass>>     <<processClass>>
+                                                ObtenerCoordenadas   EjecutarAHPPostGIS
+                                                         |                   |
+                                                         +---------+---------+
+                                                                   |
+                                                               <<index>>
+                                                        ListaFerreteriasOptimas
+                                                              (Leaflet Map)
+                                                                   |
+                                                          <<navigationLink>>
+                                                          <<navigationClass>>
+                                                            ModalLoginAuth
+                                                                   |
+                                                            <<processLink>>
+                                                           <<processClass>>
+                                                         AutenticarUsuarioJWT
+                                                                   |
+                                                  [Si Token JWT es Válido]
+                                                                   |
+                                                          <<navigationClass>>
+                                                        DashboardFerreteroAdmin
+                                                                   |
+                                                       <<menu>> MenuModulosIO
+                                                                   |
+     +---------------------+---------------------+-----------------+---------------------+
+     |                     |                     |                 |                     |
+<<navigationClass>>   <<navigationClass>>   <<navigationClass>> <<navigationClass>>   <<navigationClass>>
+GestionCatálogoCRUD   ModuloInventarioEOQ   ModuloDecisionesIO  ModuloMarkovPrediccion ModuloColasMM1
+     |                     |                     |                 |                     |
+<<processClass>>      <<processClass>>      <<processClass>>   <<processClass>>      <<processClass>>
+GuardarProductoBD     CalcularLoteOptimo    EvaluarVMEySavage  CalcularMatrizAbsorcion EstimarEsperaWq
+</designNavegacion_UWE>
+===================================================================
+ACTUALIZACIÓN UI ESPACIAL Y MODELO DE NAVEGACIÓN UWE (V1.1)
+===================================================================
+
+<REGLAS_ESPACIALES_GOOGLE_MAPS_V1_1>
+1. LIENZO FULL-BLEED (100dvh):
+   - Se suprime la barra de navegación superior tradicional (<nav id="topNav">).
+   - El contenedor #mapa-ahp y #map ocupan el 100% del viewport (width: 100vw; height: 100dvh; overflow: hidden).
+   - html, body mantienen overflow-x: hidden estricto; SweetAlert2 opera con .swal2-container { z-index: 2050 !important; }.
+
+2. OMNIBOX FLOTANTE SUPERIOR IZQUIERDO (top: 16px; left: 16px; z-index: 1010):
+   - Dimensiones: 376px de ancho x 48px de alto en escritorio; calc(100vw - 84px) x 48px en móvil (< 768px).
+   - Estructura horizontal interna (flex-nowrap, border-radius: 24px, var(--card-bg), sombra elevada):
+     [Botón Menú Lateral (fa-bars)] | [Input directo de producto] | [Botón Buscar (fa-magnifying-glass)] | [Botón Pesos AHP (fa-sliders)]
+   - Debajo del Omnibox se despliega de forma colapsable:
+     a) Fila compacta de Origen + botón GPS (fa-crosshairs) + badge de consistencia CR < 0.10.
+     b) Panel de sliders Saaty (Precio, Cercanía, Reputación, Stock) al pulsar fa-sliders.
+
+3. ESFÉRICO DE PERFIL Y CONTROLES SUPERIORES DERECHOS (top: 16px; right: 16px; z-index: 1010):
+   - Botón Esférico de Cuenta (40px x 40px, border-radius: 50%):
+     * Sin sesión: ícono fa-user; al pulsar abre #modalLoginAuth.
+     * Con sesión: inicial del usuario en negrita; al pulsar despliega Popover flotante de cuenta (#popoverPerfilCuenta) con nombre, correo, badge de rol (CLIENTE / FERRETERO / ADMIN), botón de tema (Oscuro/Claro), acceso a Panel I.O. (si aplica) y botón Cerrar Sesión.
+   - Botón Esférico de Tema (40px x 40px) accesible en todo momento.
+
+4. VISOR DE ZOOM DE IMAGEN DE PRODUCTO (LIGHTBOX):
+   - Dentro de #modalDetalleProducto, la fotografía cargada desde Cloudinary permite clic para alternar escala (1x -> 2x con arrastre/desplazamiento) o abrir vista ampliada a pantalla completa (#modalZoomImagen) con controles [fa-magnifying-glass-plus], [fa-magnifying-glass-minus] y [fa-xmark].
+</REGLAS_ESPACIALES_GOOGLE_MAPS_V1_1>
+
+<designNavegacion_UWE_V1_1>
+<<navigationClass>>
+                         VistaEspacialCliente
+                     (Mapa 100dvh + Omnibox HUD)
+                                  |
+       +--------------------------+--------------------------+
+       |                          |                          |
+<<menu>> OmniboxFlotante   <<menu>> DrawerLateral     <<menu>> EsfericoPerfil
+  (Menu | Input | AHP)      (Historial | Favoritos)     (Popover Cuenta/Tema)
+       |                          |                          |
+  +----+----+              +------+------+                   |
+  |         |              |             |                   |
+<<query>> <<query>>    <<index>>     <<index>>       <<navigationLink>>
+Origen    BusquedaAHP  ListaHistorial ListaFavoritos   ModalLoginAuth
+  |         |              |             |                   |
+  v         v              |             v                   v
+<<processClass>>           |      <<navigationLink>>  <<processClass>>
+Geocoding EjecutarAHP      |      ModalFerreteria     AutenticarJWT_OAuth
+  +----+----+              |       & Catalogo                |
+       |                   |             |                   v
+       v                   |      +------+------+     <<navigationClass>>
+  <<index>>                |      |             |     DashboardFerreteroAdmin
+ListaFerreteriasOptimas <--+   <<query>>    <<navigationLink>>
+  (Top Pick + Pines)         CatalogoTienda ModalDetalleProducto
+       |                                        (Zoom Imagen + Specs)
+       +-------------------+--------------------+
+                           |
+                    <<processLink>>
+                    <<processClass>>
+                CalcularRutaMultiModoORS
+            (Auto / Moto / Pie + Alternativas)
+                           |
+                           v
+                    <<navigationClass>>
+                PanelRutaYTiempoTotalWq
+                (Viaje ORS + Espera M/M/1)
+</designNavegacion_UWE_V1_1>
