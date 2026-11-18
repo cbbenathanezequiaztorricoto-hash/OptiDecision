@@ -1,11 +1,4 @@
 # app/modules/buscador_ahp/schemas.py
-#Schemas.py funciona como un lugar donde guardamos moldes para el motor
-#estos reciben datos y dan forma a las salidas
-
-#Recuerda que una clase al ser como un molde es como generalizar
-#los datos/Atributos que tendrá un objeto y agrupar esos datos en un objeto
-
-#Actualmente schemas.py tiene 7 moldes
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
 
@@ -41,6 +34,8 @@ class FerreteriaResultadoAHP(BaseModel):
     reputacion: float
     distancia_km: float
     puntuacion_ahp: float
+    tiempo_espera_wq_min: Optional[float] = None
+    estado_congestion: str = "Sin datos de cola"
 
 
 class AHPResultadoOutput(BaseModel):
@@ -53,11 +48,7 @@ class AHPResultadoOutput(BaseModel):
     mensaje_consistencia: str
     ferreterias: List[FerreteriaResultadoAHP] = []
 
-#Nuevos moldes para el bloque de la versión V1.1. en funcionalidades
-#Normalmente la IA se olvida de usarlos o les cambia los nombres
-#asi que ten en cuenta eso cuando se rompa el frontend
 
-#Incluimos la url del producto y su descripción
 class ProductoCatalogoTiendaOutput(BaseModel):
     id_producto: int
     nombre: str
@@ -67,7 +58,7 @@ class ProductoCatalogoTiendaOutput(BaseModel):
     categoria: Optional[str] = None
     marca: Optional[str] = None
 
-#Un catalogo para los productos de los dueños de las ferreterias
+
 class FerreteriaCatalogoOutput(BaseModel):
     id_ferreteria: int
     nombre: str

@@ -9,7 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const COCHABAMBA_DEFAULT = [-17.3895, -66.1568]; // Plaza 14 de Septiembre
     let map = null;
     let markersLayer = null;
+    let rutasLayer = null;
     let ubicacionUsuario = { lat: COCHABAMBA_DEFAULT[0], lng: COCHABAMBA_DEFAULT[1] };
+    let rutaActivaConfig = null;
+    let rutasDisponiblesCache = [];
     let perfilUsuarioActual = null;
     let topFerreteriaActual = null;
     let ferreteriaModalActual = null;
@@ -138,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 attribution: '&copy; OpenStreetMap contributors | IOP812'
             }).addTo(map);
 
+            rutasLayer = L.layerGroup().addTo(map);
             markersLayer = L.layerGroup().addTo(map);
             intentoAutoGeolocalizacion();
 
@@ -527,18 +531,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btnTrazarRutaModalFerr')?.addEventListener('click', () => {
         if (!ferreteriaModalActual) return;
-        const { latitud, longitud, nombre, direccion } = ferreteriaModalActual;
+        const { latitud, longitud, nombre, tiempo_espera_wq_min } = ferreteriaModalActual;
         const modalEl = document.getElementById('modalDetalleFerreteria');
         if (modalEl && typeof bootstrap !== 'undefined') {
             bootstrap.Modal.getOrCreateInstance(modalEl).hide();
         }
-        if (map) {
-            map.flyTo([latitud, longitud], 16);
-            L.popup()
-                .setLatLng([latitud, longitud])
-                .setContent(`<strong>${escapeHtml(nombre)}</strong><br><small>${escapeHtml(direccion || '')}</small>`)
-                .openOn(map);
-        }
+        window.trazarRutaFerreteria(latitud, longitud, nombre, tiempo_espera_wq_min ?? null, 'driving-car');
     });
 
     window.abrirFichaFerreteria = async (idFerreteria, datosIniciales = null) => {
@@ -759,6 +757,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('topReputacion').textContent = top.reputacion;
         document.getElementById('topStock').textContent = `${top.stock} un.`;
 
+        const wqTopTexto = top.tiempo_espera_wq_min !== null && top.tiempo_espera_wq_min !== undefined
+            ? `${top.tiempo_espera_wq_min} min`
+            : 'Sin datos';
+        const topColaWqEl = document.getElementById('topColaWq');
+        const topEstadoColaEl = document.getElementById('topEstadoCola');
+        if (topColaWqEl) topColaWqEl.textContent = wqTopTexto;
+        if (topEstadoColaEl) topEstadoColaEl.textContent = top.estado_congestion || 'Sin datos de cola';
+
         actualizarBotonesFavoritoUI();
         cardTopResult?.classList.remove('d-none');
         if (window.innerWidth < 768) colapsarSubpanelesOmnibox();
@@ -767,6 +773,13 @@ document.addEventListener('DOMContentLoaded', () => {
         data.ferreterias.forEach((f, idx) => {
             const color = idx === 0 ? '#F59E0B' : '#0EA5E9';
             const esFav = favoritosIds.has(Number(f.id_ferreteria));
+            const wqPopup = f.tiempo_espera_wq_min !== null && f.tiempo_espera_wq_min !== undefined
+                ? `${f.tiempo_espera_wq_min} min (${escapeHtml(f.estado_congestion || '')})`
+                : 'Sin datos de cola';
+            const wqParam = f.tiempo_espera_wq_min !== null && f.tiempo_espera_wq_min !== undefined
+                ? Number(f.tiempo_espera_wq_min)
+                : 'null';
+
             const markerIcon = L.divIcon({
                 className: 'ferreteria-marker',
                 html: `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);"><i class="fa-solid fa-store"></i></div>`,
@@ -777,11 +790,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const marker = L.marker([f.latitud, f.longitud], { icon: markerIcon })
                 .addTo(markersLayer)
                 .bindPopup(`
-                    <div style="color: #0F172A; min-width: 195px;">
+                    <div style="color: #0F172A; min-width: 205px;">
                         <strong style="color: ${color};">${escapeHtml(f.nombre)}</strong><br>
                         <small>${escapeHtml(f.direccion)}</small><br>
                         <strong style="color: #10B981;">Bs. ${parseFloat(f.precio_bob).toFixed(2)}</strong> | Stock: ${f.stock} un.<br>
-                        <button class="btn btn-sm ${esFav ? 'btn-favorito-activo' : 'btn-warning'} mt-2 w-100 py-1"
+                        <small style="color: #0284C7;"><i class="fa-solid fa-users-line"></i> Espera Wq: ${wqPopup}</small><br>
+                        <button class="btn btn-sm btn-primary mt-2 w-100 py-1"
+                            onclick="window.trazarRutaFerreteria(${Number(f.latitud)}, ${Number(f.longitud)}, ${escapeHtml(JSON.stringify(f.nombre))}, ${wqParam}, 'driving-car')">
+                            <i class="fa-solid fa-route me-1"></i>Trazar Ruta
+                        </button>
+                        <button class="btn btn-sm ${esFav ? 'btn-favorito-activo' : 'btn-warning'} mt-1 w-100 py-1"
                             data-popup-fav-id="${f.id_ferreteria}"
                             onclick="window.toggleFavorito(${f.id_ferreteria})">
                             <i class="${esFav ? 'fa-solid' : 'fa-regular'} fa-star me-1"></i>${esFav ? 'Quitar de Favoritos' : 'Guardar Favorito'}
@@ -801,6 +819,130 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (map) map.fitBounds(puntosBounds, { padding: [50, 50] });
     };
+
+    const seleccionarRutaAlternativa = (indiceSeleccionado) => {
+        if (!rutasLayer || !rutasDisponiblesCache.length || !rutaActivaConfig) return;
+        rutasLayer.clearLayers();
+
+        // Dibujar primero las rutas no seleccionadas en gris punteado (#94A3B8)
+        rutasDisponiblesCache.forEach((r) => {
+            if (r.indice === indiceSeleccionado || !r.geometry) return;
+            const capaAlt = L.geoJSON(r.geometry, {
+                style: {
+                    color: '#94A3B8',
+                    weight: 5,
+                    opacity: 0.75,
+                    dashArray: '8, 8'
+                }
+            }).addTo(rutasLayer);
+            capaAlt.on('click', () => seleccionarRutaAlternativa(r.indice));
+        });
+
+        // Dibujar la ruta seleccionada encima en azul sólido (#0EA5E9)
+        const rutaElegida = rutasDisponiblesCache.find(r => r.indice === indiceSeleccionado) || rutasDisponiblesCache[0];
+        if (rutaElegida?.geometry) {
+            const capaPrincipal = L.geoJSON(rutaElegida.geometry, {
+                style: {
+                    color: '#0EA5E9',
+                    weight: 6,
+                    opacity: 0.95
+                }
+            }).addTo(rutasLayer);
+            if (map) map.fitBounds(capaPrincipal.getBounds(), { padding: [55, 55] });
+        }
+
+        // Actualizar botones de alternativas y cálculo logístico total: Viaje + Wq = Total
+        const contAlt = document.getElementById('contenedorAlternativasRuta');
+        if (contAlt) {
+            contAlt.innerHTML = rutasDisponiblesCache.map(r => `
+                <button type="button"
+                    class="btn btn-sm ${r.indice === rutaElegida.indice ? 'btn-primary' : 'btn-outline-secondary'} extra-small py-0 px-2"
+                    onclick="window.seleccionarRutaIndex(${r.indice})">
+                    ${escapeHtml(r.etiqueta)} (${r.duracion_min} min)
+                </button>
+            `).join('');
+        }
+
+        const wqMin = rutaActivaConfig.wqMin !== null && rutaActivaConfig.wqMin !== undefined
+            ? Number(rutaActivaConfig.wqMin)
+            : 0.0;
+        const totalMin = (Number(rutaElegida.duracion_min) + wqMin).toFixed(1);
+
+        document.getElementById('rutaViajeResumen').textContent = `${rutaElegida.distancia_km} km (${rutaElegida.duracion_min} min)`;
+        document.getElementById('rutaEsperaWq').textContent = rutaActivaConfig.wqMin !== null && rutaActivaConfig.wqMin !== undefined
+            ? `${wqMin.toFixed(1)} min`
+            : 'Sin datos (0 min)';
+        document.getElementById('rutaTiempoTotal').textContent = `${totalMin} min`;
+    };
+
+    window.seleccionarRutaIndex = seleccionarRutaAlternativa;
+
+    window.trazarRutaFerreteria = async (destinoLat, destinoLng, nombreFerreteria, wqMin = null, modo = 'driving-car') => {
+        rutaActivaConfig = {
+            destinoLat: Number(destinoLat),
+            destinoLng: Number(destinoLng),
+            nombreFerreteria,
+            wqMin,
+            modo
+        };
+
+        document.querySelectorAll('.route-mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-modo') === modo);
+        });
+
+        const panel = document.getElementById('panelNavegacionRuta');
+        document.getElementById('rutaDestinoNombre').textContent = nombreFerreteria;
+        document.getElementById('rutaViajeResumen').textContent = 'Calculando ruta...';
+        panel?.classList.remove('d-none');
+
+        try {
+            const params = new URLSearchParams({
+                origen_lat: String(ubicacionUsuario.lat),
+                origen_lng: String(ubicacionUsuario.lng),
+                destino_lat: String(destinoLat),
+                destino_lng: String(destinoLng),
+                modo
+            });
+            const res = await fetch(`/api/ahp/ruta?${params.toString()}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo trazar la ruta.');
+
+            rutasDisponiblesCache = data.rutas || [];
+            seleccionarRutaAlternativa(0);
+        } catch (err) {
+            notificar('Enrutamiento Vial', err.message, 'warning');
+        }
+    };
+
+    document.getElementById('btnTrazarRutaTop')?.addEventListener('click', () => {
+        if (!topFerreteriaActual) return;
+        window.trazarRutaFerreteria(
+            topFerreteriaActual.latitud,
+            topFerreteriaActual.longitud,
+            topFerreteriaActual.nombre,
+            topFerreteriaActual.tiempo_espera_wq_min ?? null,
+            'driving-car'
+        );
+    });
+
+    document.querySelectorAll('.route-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!rutaActivaConfig) return;
+            const nuevoModo = btn.getAttribute('data-modo') || 'driving-car';
+            window.trazarRutaFerreteria(
+                rutaActivaConfig.destinoLat,
+                rutaActivaConfig.destinoLng,
+                rutaActivaConfig.nombreFerreteria,
+                rutaActivaConfig.wqMin,
+                nuevoModo
+            );
+        });
+    });
+
+    document.getElementById('btnCerrarPanelRuta')?.addEventListener('click', () => {
+        document.getElementById('panelNavegacionRuta')?.classList.add('d-none');
+        if (rutasLayer) rutasLayer.clearLayers();
+    });
 
     const cargarHistorialYFavoritos = async () => {
         if (!perfilUsuarioActual) {
@@ -1425,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/colas/mm1', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(true),
                 body: JSON.stringify({
                     tasa_llegada_lambda: parseFloat(document.getElementById('colaLambda')?.value || 0),
                     tasa_servicio_mu: parseFloat(document.getElementById('colaMu')?.value || 0),

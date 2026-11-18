@@ -2,14 +2,18 @@
 # Controlador HTTP para el Algoritmo AHP de Selección y Buscador Multicriterio.
 from typing import Optional, Dict, Any, List
 from psycopg2 import errors as pg_errors
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Query, status
 from app.modules.buscador_ahp.schemas import (
     AHPSearchInput,
     AHPMatrizCriteriosInput,
     AHPResultadoOutput,
     FerreteriaCatalogoOutput
 )
-from app.modules.buscador_ahp.engine import calcular_proceso_ahp
+from app.modules.buscador_ahp.engine import (
+    calcular_proceso_ahp,
+    calcular_wq_y_estado,
+    consultar_ruta_ors
+)
 from app.modules.autenticacion.routes import obtener_usuario_actual, obtener_usuario_opcional
 from app.shared.database import obtener_conexion
 
@@ -57,9 +61,18 @@ async def buscar_ferreterias_ahp(
                         (ST_DistanceSphere(
                             COALESCE(f.ubicacion, ST_SetSRID(ST_MakePoint(f.longitud, f.latitud), 4326)),
                             ST_SetSRID(ST_MakePoint(%s, %s), 4326)
-                        ) / 1000.0) AS distancia_km
+                        ) / 1000.0) AS distancia_km,
+                        rc.tasa_llegada_lambda,
+                        rc.tasa_servicio_mu
                     FROM ferreterias f
                     JOIN productos p ON f.id_ferreteria = p.id_ferreteria
+                    LEFT JOIN LATERAL (
+                        SELECT tasa_llegada_lambda, tasa_servicio_mu
+                        FROM registro_colas_atencion
+                        WHERE id_ferreteria = f.id_ferreteria
+                        ORDER BY fecha_registro DESC
+                        LIMIT 1
+                    ) rc ON TRUE
                     WHERE LOWER(p.nombre) LIKE LOWER(%s) AND p.stock_actual > 0
                     LIMIT 25;
                 """
@@ -91,6 +104,11 @@ async def buscar_ferreterias_ahp(
 
                         score_total = (norm_precio * w_precio) + (norm_dist * w_dist) + (norm_rep * w_rep) + (norm_stock * w_stock)
 
+                        info_cola = calcular_wq_y_estado(
+                            float(f["tasa_llegada_lambda"]) if f["tasa_llegada_lambda"] is not None else None,
+                            float(f["tasa_servicio_mu"]) if f["tasa_servicio_mu"] is not None else None
+                        )
+
                         ferreterias_ordenadas.append({
                             "id_ferreteria": f["id_ferreteria"],
                             "nombre": f["nombre"],
@@ -101,7 +119,9 @@ async def buscar_ferreterias_ahp(
                             "stock": int(f["stock_actual"]),
                             "reputacion": float(f["reputacion"]),
                             "distancia_km": round(float(f["distancia_km"]), 2),
-                            "puntuacion_ahp": round(float(score_total), 4)
+                            "puntuacion_ahp": round(float(score_total), 4),
+                            "tiempo_espera_wq_min": info_cola["tiempo_espera_wq_min"],
+                            "estado_congestion": info_cola["estado_congestion"]
                         })
 
                     ferreterias_ordenadas.sort(key=lambda x: x["puntuacion_ahp"], reverse=True)
@@ -338,3 +358,25 @@ async def eliminar_favorito(id_ferreteria: int, usuario: Dict[str, Any] = Depend
             return {"mensaje": "Ferretería eliminada de favoritos."}
     finally:
         conn.close()
+
+
+@router.get("/ruta", summary="Trazar ruta vial multi-modo con OpenRouteService y rutas alternativas (RN-10)")
+async def obtener_ruta_multimodo(
+    origen_lat: float = Query(..., ge=-90, le=90),
+    origen_lng: float = Query(..., ge=-180, le=180),
+    destino_lat: float = Query(..., ge=-90, le=90),
+    destino_lng: float = Query(..., ge=-180, le=180),
+    modo: str = Query(default="driving-car", description="driving-car | cycling-regular | foot-walking")
+) -> Dict[str, Any]:
+    try:
+        return consultar_ruta_ors(origen_lat, origen_lng, destino_lat, destino_lng, modo)
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(err)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"No se pudo obtener la ruta desde OpenRouteService: {str(e)}"
+        )

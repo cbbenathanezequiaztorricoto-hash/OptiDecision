@@ -1,24 +1,28 @@
 # app/modules/colas_mm1/schemas.py
 # Validaciones para el modelo de colas M/M/1.
 
-from typing import Dict
+from typing import Dict, Optional
 from pydantic import BaseModel, Field, model_validator
 
 
 class ColasMM1Input(BaseModel):
     tasa_llegada_lambda: float = Field(
-        ..., 
-        gt=0.0, 
+        ...,
+        gt=0.0,
         description="Tasa promedio de llegada de clientes lambda"
     )
     tasa_servicio_mu: float = Field(
-        ..., 
-        gt=0.0, 
+        ...,
+        gt=0.0,
         description="Tasa promedio de atención mu"
     )
     unidad_tiempo: str = Field(
-        default="horas", 
+        default="horas",
         description="Unidad de tiempo ('horas' o 'minutos')"
+    )
+    id_ferreteria: Optional[int] = Field(
+        default=None,
+        description="ID opcional de ferretería (solo aplicable por admin)"
     )
 
     @model_validator(mode="after")

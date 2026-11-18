@@ -199,10 +199,59 @@
                 <span><i class="fa-solid fa-boxes-stacked text-info me-1"></i> Stock: <strong id="topStock">0 un.</strong></span>
             </div>
 
+            <div class="d-flex align-items-center justify-content-between extra-small text-muted mt-2 pt-2 border-top">
+                <span><i class="fa-solid fa-users-line text-info me-1"></i> Cola (Wq): <strong class="text-main" id="topColaWq">Sin datos</strong></span>
+                <span class="badge bg-secondary-subtle text-main border" id="topEstadoCola">Sin datos de cola</span>
+            </div>
+
             <div class="mt-2 pt-2 border-top d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-medium" id="btnVerCatalogoTop">
-                    <i class="fa-solid fa-store me-1"></i>Ver Ficha y Catálogo
+                <button type="button" class="btn btn-sm btn-primary flex-grow-1 rounded-3 fw-medium" id="btnTrazarRutaTop">
+                    <i class="fa-solid fa-route me-1"></i>Cómo llegar
                 </button>
+                <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1 rounded-3 fw-medium" id="btnVerCatalogoTop">
+                    <i class="fa-solid fa-store me-1"></i>Catálogo
+                </button>
+            </div>
+        </div>
+
+        <!-- PANEL FLOTANTE DE NAVEGACIÓN MULTI-MODO Y TIEMPO TOTAL (RN-10) -->
+        <div class="route-panel-card shadow-lg rounded-4 p-3 border d-none" id="panelNavegacionRuta">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                <span class="extra-small text-uppercase fw-bold text-primary tracking-wider">
+                    <i class="fa-solid fa-diamond-turn-right me-1"></i>Ruta Logística Multi-Modo
+                </span>
+                <button type="button" class="btn-close small" id="btnCerrarPanelRuta" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="small fw-bold text-main text-truncate mb-2" id="rutaDestinoNombre">Destino</div>
+
+            <div class="btn-group btn-group-sm w-100 mb-2" role="group" aria-label="Modo de transporte">
+                <button type="button" class="btn btn-outline-primary route-mode-btn active" data-modo="driving-car">
+                    <i class="fa-solid fa-car me-1"></i>Auto
+                </button>
+                <button type="button" class="btn btn-outline-primary route-mode-btn" data-modo="cycling-regular">
+                    <i class="fa-solid fa-motorcycle me-1"></i>Moto / Bici
+                </button>
+                <button type="button" class="btn btn-outline-primary route-mode-btn" data-modo="foot-walking">
+                    <i class="fa-solid fa-person-walking me-1"></i>A pie
+                </button>
+            </div>
+
+            <div id="contenedorAlternativasRuta" class="d-flex flex-wrap gap-1 mb-2"></div>
+
+            <div class="p-2 rounded-3 bg-body-tertiary border extra-small">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Distancia / Viaje:</span>
+                    <strong class="text-main" id="rutaViajeResumen">0.0 km (0 min)</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Espera en cola (Wq):</span>
+                    <strong class="text-info" id="rutaEsperaWq">0.0 min</strong>
+                </div>
+                <div class="d-flex justify-content-between border-top pt-1 mt-1">
+                    <span class="fw-bold text-main">Tiempo total estimado:</span>
+                    <strong class="text-success" id="rutaTiempoTotal">0.0 min</strong>
+                </div>
             </div>
         </div>
     </main>
