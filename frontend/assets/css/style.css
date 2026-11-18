@@ -460,3 +460,79 @@ input:-webkit-autofill:focus {
 [data-theme="dark"] .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
+
+/* ===================================================================
+   PASO 4.3: FICHA TÉCNICA DE PRODUCTO, FALLBACK SVG Y VISOR ZOOM 2X
+   =================================================================== */
+.detalle-visual-box {
+    width: 100%;
+    height: 240px;
+    background-color: var(--bg-base);
+    border-color: var(--border-color) !important;
+}
+
+.detalle-visual-box.has-photo {
+    cursor: zoom-in;
+}
+
+.detalle-visual-box img.detalle-prod-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.22s ease;
+}
+
+.detalle-visual-box.has-photo:hover img.detalle-prod-img {
+    transform: scale(1.04);
+}
+
+.detalle-fallback-svg-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-image:
+        linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.detalle-fallback-svg-wrap svg {
+    width: 112px;
+    height: 112px;
+}
+
+.zoom-viewport {
+    position: relative;
+    width: 100%;
+    height: 68vh;
+    max-height: 660px;
+    overflow: hidden;
+    background-color: #050811;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-in;
+    user-select: none;
+}
+
+.zoom-viewport.is-zoomed {
+    cursor: zoom-out;
+}
+
+.zoom-img-target {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform-origin: 50% 50%;
+    transform: scale(1);
+    transition: transform 0.16s ease-out;
+    will-change: transform, transform-origin;
+}
+
+.zoom-viewport.is-zoomed .zoom-img-target {
+    transform: scale(2);
+}

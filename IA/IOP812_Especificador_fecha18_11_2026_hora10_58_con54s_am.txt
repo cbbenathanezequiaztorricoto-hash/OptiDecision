@@ -123,7 +123,7 @@ CONTRATO DE EVOLUCIÓN FUNCIONAL Y ARQUITECTÓNICA (V1.1)
 * [✅] **Bloque 1 — Interfaz Espacial Google Maps & Auth Móvil:** Reemplazar `#topNav` por Omnibox flotante (`376px x 48px` / `calc(100vw - 84px) x 48px`), Esférico de Cuenta (`40px x 40px`) + Popover de perfil/tema/logout, y fix `z-index: 2050` de SweetAlert2 en `frontend/index.html`, `frontend/assets/css/style.css` y `frontend/assets/js/app.js`.
 * [✅] **Bloque 2 — Favoritos Bidireccionales, Modal de Catálogo por Ferretería e Historial:** Implementar endpoint `GET /api/ahp/ferreterias/{id}/catalogo` y `DELETE /api/ahp/historial/{id}`, sincronizar estado Guardar/Quitar favorito, redirección desde Drawer Favoritos al mapa + `#modalDetalleFerreteria` con listado completo de productos y precios.
 * [✅] **Bloque 3 — Colas M/M/1 en Cliente + Rutas Multi-Modo (OpenRouteService):** Persistir parámetros M/M/1 en `registro_colas_atencion`, incluir $W_q$ en `POST /api/ahp/buscar`, crear `GET /api/ahp/ruta` (Auto, Moto, A pie + rutas alternativas) y renderizar polilíneas seleccionables + tiempo total en Leaflet.
-* [ ] **Bloque 4 — Cloudinary, Carga Masiva Multimedia, Descripción Técnica y Ficha con Zoom:**
+* [✅] **Bloque 4 — Cloudinary, Carga Masiva Multimedia, Descripción Técnica y Ficha con Zoom:**
   - Añadir `descripcion` y `foto_url` al formulario CRUD, respuestas de catálogo e importador/plantillas CSV (`POST /api/productos/carga-masiva`).
   - Crear `POST /api/productos/subir-imagen` (subida individual en CRUD) y `POST /api/productos/subir-imagenes-lote` (subida múltiple a Cloudinary con auto-emparejamiento por nombre de archivo).
   - Implementar `#modalDetalleProducto` (con fallback vectorial por categoría si no hay foto) y visor de zoom interactivo 2x (`#modalZoomImagen`).
@@ -3429,8 +3429,8 @@ if __name__ == "__main__":
     <!-- 4. SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    <!-- 5. Estilos Personalizados VERSIÓN 1.2.(No hacemos /assets porque no se puede abrir así)-->
-    <link rel="stylesheet" href="assets/css/style.css?v=1.2">
+    <!-- 5. Estilos Personalizados VERSIÓN 1.3 -->
+    <link rel="stylesheet" href="assets/css/style.css?v=1.3">
 </head>
 <body>
     <!-- BANNER FLOTANTE PARA SELECCIÓN DE UBICACIÓN EN MAPA -->
@@ -3582,6 +3582,16 @@ if __name__ == "__main__":
             </div>
             <h6 class="fw-bold mb-1 text-main" id="topFerreteriaNombre">Ferretería</h6>
             <p class="small text-muted mb-2" id="topFerreteriaDireccion"><i class="fa-solid fa-location-pin me-1"></i> Dirección</p>
+
+            <div class="p-2 rounded-3 bg-body-tertiary border d-flex align-items-center justify-content-between gap-2 mb-2" role="button" id="btnVerProductoTop" title="Ver ficha técnica y fotografía del producto">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <div id="topProductoThumb" class="product-thumb-box" style="width: 34px; height: 34px; font-size: 0.9rem;">
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <span class="small fw-semibold text-main text-truncate" id="topProductoNombre">Producto</span>
+                </div>
+                <span class="extra-small text-primary flex-shrink-0 fw-medium">Ficha <i class="fa-solid fa-chevron-right ms-1"></i></span>
+            </div>
             
             <div class="row g-2 text-center my-2">
                 <div class="col-6">
@@ -4304,14 +4314,102 @@ if __name__ == "__main__":
             </div>
         </div>
     </div>
+    <!-- MODAL FICHA TÉCNICA DE PRODUCTO (RN-11) -->
+    <div class="modal fade" id="modalDetalleProducto" tabindex="-1" aria-labelledby="detalleProdNombre" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom py-2 px-4">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <span id="detalleProdCategoriaBadge" class="badge bg-primary">General</span>
+                        <span id="detalleProdFerreteriaBadge" class="extra-small text-muted text-truncate">
+                            <i class="fa-solid fa-store text-primary me-1"></i><span>Ferretería</span>
+                        </span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-4 align-items-center">
+                        <!-- Contenedor visual: Foto Cloudinary o Fallback Vectorial por categoría -->
+                        <div class="col-12 col-md-5">
+                            <div id="detalleProdVisualBox" class="detalle-visual-box rounded-3 border position-relative overflow-hidden d-flex align-items-center justify-content-center">
+                            </div>
+                            <div id="detalleProdZoomHint" class="text-center extra-small text-muted mt-2 d-none">
+                                <i class="fa-solid fa-magnifying-glass-plus text-primary me-1"></i>Clic en la imagen para ampliar 2x
+                            </div>
+                        </div>
+
+                        <!-- Información técnica y acción de ruta -->
+                        <div class="col-12 col-md-7">
+                            <div id="detalleProdMarca" class="extra-small text-uppercase fw-bold text-primary mb-1">Marca estándar</div>
+                            <h5 id="detalleProdNombre" class="fw-bold text-main mb-2">Nombre del producto</h5>
+
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                <span id="detalleProdPrecio" class="fs-4 fw-bold text-success">Bs. 0.00</span>
+                                <span id="detalleProdStockBadge"></span>
+                            </div>
+
+                            <div class="p-3 rounded-3 bg-body-tertiary border mb-3">
+                                <div class="extra-small text-uppercase text-muted fw-bold mb-1">Descripción Técnica / Especificaciones</div>
+                                <p id="detalleProdDescripcion" class="small mb-0 text-main" style="white-space: pre-line;">
+                                    Sin especificaciones adicionales registradas.
+                                </p>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                                <button type="button" id="btnComoLlegarProducto" class="btn btn-sm btn-primary rounded-3 fw-medium flex-grow-1">
+                                    <i class="fa-solid fa-route me-1"></i>Cómo llegar a esta ferretería
+                                </button>
+                                <button type="button" id="btnAbrirZoomDetalle" class="btn btn-sm btn-outline-primary rounded-3 d-none" title="Ampliar imagen 2x">
+                                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VISOR INTERACTIVO ZOOM 2X (RN-11) -->
+    <div class="modal fade" id="modalZoomImagen" tabindex="-1" aria-hidden="true" style="z-index: 1065;">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom py-2 px-3">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <i class="fa-solid fa-magnifying-glass-plus text-primary"></i>
+                        <span id="zoomImagenTitulo" class="fw-semibold small text-main text-truncate">Vista ampliada</span>
+                        <span id="zoomNivelBadge" class="badge bg-primary">2.0x</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" id="btnToggleZoomNivel" class="btn btn-sm btn-outline-primary rounded-pill">
+                            <i class="fa-solid fa-up-right-and-down-left-from-center me-1"></i>1x / 2x
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="zoomViewport" class="zoom-viewport is-zoomed">
+                        <img id="zoomImgTarget" src="" alt="Vista ampliada del producto" class="zoom-img-target">
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2 px-3 justify-content-between">
+                    <span class="extra-small text-muted">
+                        <i class="fa-solid fa-computer-mouse me-1"></i>Mueve el cursor para inspeccionar · Clic para alternar 2x / 1x
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JS Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/app.js?v=1.2"></script>
+    <script src="assets/js/app.js?v=1.3"></script>
 </body>
 </html>
+
 ]]>
 </archivo>
 
@@ -4779,6 +4877,83 @@ input:-webkit-autofill:focus {
 [data-theme="dark"] .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
+
+/* ===================================================================
+   PASO 4.3: FICHA TÉCNICA DE PRODUCTO, FALLBACK SVG Y VISOR ZOOM 2X
+   =================================================================== */
+.detalle-visual-box {
+    width: 100%;
+    height: 240px;
+    background-color: var(--bg-base);
+    border-color: var(--border-color) !important;
+}
+
+.detalle-visual-box.has-photo {
+    cursor: zoom-in;
+}
+
+.detalle-visual-box img.detalle-prod-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.22s ease;
+}
+
+.detalle-visual-box.has-photo:hover img.detalle-prod-img {
+    transform: scale(1.04);
+}
+
+.detalle-fallback-svg-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-image:
+        linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.detalle-fallback-svg-wrap svg {
+    width: 112px;
+    height: 112px;
+}
+
+.zoom-viewport {
+    position: relative;
+    width: 100%;
+    height: 68vh;
+    max-height: 660px;
+    overflow: hidden;
+    background-color: #050811;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-in;
+    user-select: none;
+}
+
+.zoom-viewport.is-zoomed {
+    cursor: zoom-out;
+}
+
+.zoom-img-target {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform-origin: 50% 50%;
+    transform: scale(1);
+    transition: transform 0.16s ease-out;
+    will-change: transform, transform-origin;
+}
+
+.zoom-viewport.is-zoomed .zoom-img-target {
+    transform: scale(2);
+}
+
 ]]>
 </archivo>
 
@@ -5267,8 +5442,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Agotado</span>`;
             const subInfo = [p.categoria, p.marca].filter(Boolean).join(' • ');
 
+            const payloadProd = encodeURIComponent(JSON.stringify(p));
             return `
-                <div class="list-group-item bg-transparent text-main py-2 px-3 catalogo-item-row d-flex justify-content-between align-items-center gap-2">
+                <div role="button" tabindex="0"
+                    data-producto="${payloadProd}"
+                    onclick="window.abrirDetalleProductoDesdeCatalogo(this)"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.abrirDetalleProductoDesdeCatalogo(this);}"
+                    title="Ver ficha técnica del producto"
+                    class="list-group-item bg-transparent text-main py-2 px-3 catalogo-item-row d-flex justify-content-between align-items-center gap-2">
                     <div class="d-flex align-items-center gap-2 overflow-hidden">
                         ${renderizarMiniaturaProducto(p.foto_url, p.categoria, p.nombre)}
                         <div class="overflow-hidden">
@@ -5279,6 +5460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         <span class="fw-bold text-success small">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</span>
                         ${badgeStock}
+                        <i class="fa-solid fa-chevron-right extra-small text-muted ms-1"></i>
                     </div>
                 </div>
             `;
@@ -5574,6 +5756,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('topFerreteriaNombre').textContent = top.nombre;
         document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${escapeHtml(top.direccion)}`;
+        document.getElementById('topProductoNombre').textContent = top.producto_nombre || 'Producto seleccionado';
+        const topThumbEl = document.getElementById('topProductoThumb');
+        if (topThumbEl) {
+            topThumbEl.innerHTML = top.producto_foto_url
+                ? `<img src="${escapeHtml(top.producto_foto_url)}" alt="${escapeHtml(top.producto_nombre || '')}" class="product-thumb-img">`
+                : `<i class="fa-solid ${obtenerIconoCategoria(top.producto_categoria, top.producto_nombre)}"></i>`;
+        }
         document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
         document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
         document.getElementById('topReputacion').textContent = top.reputacion;
@@ -5625,6 +5814,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             data-popup-fav-id="${f.id_ferreteria}"
                             onclick="window.toggleFavorito(${f.id_ferreteria})">
                             <i class="${esFav ? 'fa-solid' : 'fa-regular'} fa-star me-1"></i>${esFav ? 'Quitar de Favoritos' : 'Guardar Favorito'}
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary mt-1 w-100 py-1"
+                            data-producto="${encodeURIComponent(JSON.stringify(f))}"
+                            onclick="window.abrirDetalleProductoDesdeAHP(this)">
+                            <i class="fa-solid fa-circle-info me-1"></i>Ver Producto
                         </button>
                         <button class="btn btn-sm btn-outline-primary mt-1 w-100 py-1"
                             onclick="window.abrirFichaFerreteria(${f.id_ferreteria})">
@@ -6194,6 +6388,238 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ---------------------------------------------------------------
+    // 9.1 FICHA DETALLE DE PRODUCTO + FALLBACK VECTORIAL + ZOOM 2X
+    // ---------------------------------------------------------------
+    let productoModalDestinoActual = null;
+
+    const generarFallbackVectorialCategoria = (categoria = '', nombre = '') => {
+        const texto = `${categoria} ${nombre}`
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+
+        let etiqueta = categoria || 'Ferretería General';
+        let svgIcon = `
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="46" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                <polygon points="60,24 91,42 91,78 60,96 29,78 29,42" fill="#1E293B" stroke="#0EA5E9" stroke-width="3.5"/>
+                <circle cx="60" cy="60" r="14" fill="#0F172A" stroke="#38BDF8" stroke-width="3.5"/>
+            </svg>`;
+
+        if (/herramienta|martillo|llave|alicate|taladro|destornillador|sierra/.test(texto)) {
+            etiqueta = categoria || 'Herramientas';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <path d="M77 27a16 16 0 0 0-20 20L31 73a6 6 0 0 0 8 8l26-26a16 16 0 0 0 20-20l-9 9-7-2-2-7 10-8Z" fill="#1E293B" stroke="#F59E0B" stroke-width="3.5" stroke-linejoin="round"/>
+                    <path d="M35 34l14 14m23 23l15 15" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+                </svg>`;
+        } else if (/electr|cable|foco|led|interruptor|enchufe|breaker|luz/.test(texto)) {
+            etiqueta = categoria || 'Material Eléctrico';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <polygon points="66,22 36,64 58,64 52,98 84,54 62,54" fill="#1E293B" stroke="#FACC15" stroke-width="3.5" stroke-linejoin="round"/>
+                </svg>`;
+        } else if (/plomeria|tubo|pvc|grifo|llave de paso|valvula|agua|sanitar/.test(texto)) {
+            etiqueta = categoria || 'Plomería y Gasfitería';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <path d="M26 52h26v-12h16v12h26v16H68v16H52V68H26V52Z" fill="#1E293B" stroke="#38BDF8" stroke-width="3.5" stroke-linejoin="round"/>
+                    <line x1="44" y1="30" x2="76" y2="30" stroke="#F59E0B" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="60" y1="30" x2="60" y2="40" stroke="#F59E0B" stroke-width="4"/>
+                </svg>`;
+        } else if (/pintura|brocha|rodillo|esmalte|barniz|lija|sellador/.test(texto)) {
+            etiqueta = categoria || 'Pinturas y Acabados';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#A78BFA" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <rect x="30" y="28" width="52" height="22" rx="5" fill="#1E293B" stroke="#0EA5E9" stroke-width="3.5"/>
+                    <path d="M82 39h10v16L58 63v12" stroke="#94A3B8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="52" y="75" width="12" height="22" rx="3" fill="#F59E0B"/>
+                </svg>`;
+        } else if (/construc|cemento|fierro|clavo|tornillo|perno|yeso|arena/.test(texto)) {
+            etiqueta = categoria || 'Construcción y Fijaciones';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <rect x="26" y="64" width="32" height="18" rx="2" fill="#1E293B" stroke="#0EA5E9" stroke-width="3"/>
+                    <rect x="62" y="64" width="32" height="18" rx="2" fill="#1E293B" stroke="#0EA5E9" stroke-width="3"/>
+                    <rect x="44" y="42" width="32" height="18" rx="2" fill="#1E293B" stroke="#F59E0B" stroke-width="3"/>
+                </svg>`;
+        }
+
+        return `
+            <div class="detalle-fallback-svg-wrap text-center">
+                ${svgIcon}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle mt-2">${escapeHtml(etiqueta)}</span>
+                <span class="extra-small text-muted mt-1">Sin fotografía registrada</span>
+            </div>
+        `;
+    };
+
+    const abrirDetalleProducto = (item, ferreteriaContexto = null) => {
+        const modalEl = document.getElementById('modalDetalleProducto');
+        if (!modalEl || !item) return;
+
+        // Normaliza tanto objetos de búsqueda AHP (producto_*) como ítems de catálogo por tienda
+        const nombreProd = item.producto_nombre || item.nombre || 'Producto';
+        const descProd = (item.producto_descripcion ?? item.descripcion ?? '').trim();
+        const fotoProd = (item.producto_foto_url ?? item.foto_url ?? '').trim();
+        const catProd = item.producto_categoria || item.categoria || 'General';
+        const marcaProd = item.producto_marca || item.marca || 'Marca estándar';
+        const precioProd = parseFloat(item.precio_bob ?? 0);
+        const stockProd = parseInt(item.stock_actual ?? item.stock ?? 0, 10);
+
+        const ferrDestino = ferreteriaContexto || (item.latitud !== undefined ? {
+            id_ferreteria: item.id_ferreteria,
+            nombre: item.nombre,
+            latitud: item.latitud,
+            longitud: item.longitud,
+            tiempo_espera_wq_min: item.tiempo_espera_wq_min ?? null
+        } : null);
+        productoModalDestinoActual = ferrDestino;
+
+        document.getElementById('detalleProdCategoriaBadge').textContent = catProd;
+        const ferrSpan = document.querySelector('#detalleProdFerreteriaBadge span');
+        if (ferrSpan) ferrSpan.textContent = ferrDestino?.nombre || 'Sucursal';
+
+        document.getElementById('detalleProdMarca').textContent = marcaProd;
+        document.getElementById('detalleProdNombre').textContent = nombreProd;
+        document.getElementById('detalleProdPrecio').textContent = `Bs. ${precioProd.toFixed(2)}`;
+
+        const stockBadgeEl = document.getElementById('detalleProdStockBadge');
+        if (stockProd > 5) {
+            stockBadgeEl.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle">Disponible (${stockProd} un.)</span>`;
+        } else if (stockProd > 0) {
+            stockBadgeEl.innerHTML = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle">Últimas unidades (${stockProd} un.)</span>`;
+        } else {
+            stockBadgeEl.innerHTML = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Agotado</span>`;
+        }
+
+        document.getElementById('detalleProdDescripcion').textContent =
+            descProd || 'Sin especificaciones técnicas adicionales registradas para este artículo.';
+
+        const btnRuta = document.getElementById('btnComoLlegarProducto');
+        if (btnRuta) {
+            btnRuta.disabled = !ferrDestino || ferrDestino.latitud === undefined;
+        }
+
+        const visualBox = document.getElementById('detalleProdVisualBox');
+        const zoomHint = document.getElementById('detalleProdZoomHint');
+        const btnZoom = document.getElementById('btnAbrirZoomDetalle');
+
+        if (fotoProd) {
+            visualBox.classList.add('has-photo');
+            visualBox.innerHTML = `<img src="${escapeHtml(fotoProd)}" alt="${escapeHtml(nombreProd)}" class="detalle-prod-img">`;
+            zoomHint?.classList.remove('d-none');
+            btnZoom?.classList.remove('d-none');
+
+            const dispararZoom = () => abrirZoomImagen(fotoProd, nombreProd);
+            visualBox.onclick = dispararZoom;
+            if (btnZoom) btnZoom.onclick = dispararZoom;
+        } else {
+            visualBox.classList.remove('has-photo');
+            visualBox.innerHTML = generarFallbackVectorialCategoria(catProd, nombreProd);
+            visualBox.onclick = null;
+            zoomHint?.classList.add('d-none');
+            btnZoom?.classList.add('d-none');
+        }
+
+        if (typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    };
+
+    window.abrirDetalleProductoDesdeCatalogo = (el) => {
+        const raw = el?.getAttribute('data-producto');
+        if (!raw) return;
+        const prod = JSON.parse(decodeURIComponent(raw));
+        abrirDetalleProducto(prod, ferreteriaModalActual);
+    };
+
+    window.abrirDetalleProductoDesdeAHP = (el) => {
+        const raw = el?.getAttribute('data-producto');
+        if (!raw) return;
+        const item = JSON.parse(decodeURIComponent(raw));
+        abrirDetalleProducto(item, null);
+    };
+
+    document.getElementById('btnVerProductoTop')?.addEventListener('click', () => {
+        if (topFerreteriaActual) abrirDetalleProducto(topFerreteriaActual, null);
+    });
+
+    document.getElementById('btnComoLlegarProducto')?.addEventListener('click', () => {
+        if (!productoModalDestinoActual) return;
+        const { latitud, longitud, nombre, tiempo_espera_wq_min } = productoModalDestinoActual;
+
+        ['modalDetalleProducto', 'modalDetalleFerreteria'].forEach(id => {
+            const mEl = document.getElementById(id);
+            if (mEl && typeof bootstrap !== 'undefined') {
+                bootstrap.Modal.getInstance(mEl)?.hide();
+            }
+        });
+
+        window.trazarRutaFerreteria(latitud, longitud, nombre, tiempo_espera_wq_min ?? null, 'driving-car');
+    });
+
+    const abrirZoomImagen = (url, titulo = 'Vista ampliada') => {
+        const modalZoomEl = document.getElementById('modalZoomImagen');
+        const viewport = document.getElementById('zoomViewport');
+        const imgTarget = document.getElementById('zoomImgTarget');
+        const badgeNivel = document.getElementById('zoomNivelBadge');
+        if (!modalZoomEl || !viewport || !imgTarget) return;
+
+        document.getElementById('zoomImagenTitulo').textContent = titulo;
+        imgTarget.src = url;
+        imgTarget.style.transformOrigin = '50% 50%';
+        viewport.classList.add('is-zoomed');
+        if (badgeNivel) badgeNivel.textContent = '2.0x';
+
+        if (typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalZoomEl).show();
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                if (backdrops.length > 1) {
+                    backdrops[backdrops.length - 1].style.zIndex = '1060';
+                }
+            }, 50);
+        }
+    };
+
+    (() => {
+        const viewport = document.getElementById('zoomViewport');
+        const imgTarget = document.getElementById('zoomImgTarget');
+        const btnToggle = document.getElementById('btnToggleZoomNivel');
+        const badgeNivel = document.getElementById('zoomNivelBadge');
+        if (!viewport || !imgTarget) return;
+
+        const actualizarOrigen = (clientX, clientY) => {
+            if (!viewport.classList.contains('is-zoomed')) return;
+            const rect = viewport.getBoundingClientRect();
+            const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+            const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+            imgTarget.style.transformOrigin = `${x.toFixed(1)}% ${y.toFixed(1)}%`;
+        };
+
+        const alternarZoom = () => {
+            const activo = viewport.classList.toggle('is-zoomed');
+            if (!activo) imgTarget.style.transformOrigin = '50% 50%';
+            if (badgeNivel) badgeNivel.textContent = activo ? '2.0x' : '1.0x';
+        };
+
+        viewport.addEventListener('mousemove', (e) => actualizarOrigen(e.clientX, e.clientY));
+        viewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                actualizarOrigen(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+        viewport.addEventListener('click', alternarZoom);
+        btnToggle?.addEventListener('click', alternarZoom);
+    })();
+
+    // ---------------------------------------------------------------
     // 10. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV + MULTIMEDIA CLOUDINARY
     // ---------------------------------------------------------------
     const cardFormProducto = document.getElementById('cardFormProducto');
@@ -6592,805 +7018,132 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
 ]]>
 </archivo>
 
 <archivo ruta="init_db.sql">
 <![CDATA[
---
--- PostgreSQL database dump
---
+-- init_db.sql
+-- Script completo e idempotente de creación de base de datos e índices geoespaciales para IOP812.
 
-\restrict cQJLmYX9YSophl04MlcXzinzyGFpEk8WTXmFEY2fxYHGAmRAsGxVHldJvPv7r0v
+CREATE EXTENSION IF NOT EXISTS postgis;
 
--- Dumped from database version 16.15
--- Dumped by pg_dump version 16.15
-
--- Started on 2026-11-18 00:55:07
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- TOC entry 2 (class 3079 OID 16398)
--- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
-
-
---
--- TOC entry 5831 (class 0 OID 0)
--- Dependencies: 2
--- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION postgis IS 'PostGIS geometry and geography spatial types and functions';
-
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
---
--- TOC entry 226 (class 1259 OID 17512)
--- Name: categorias; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.categorias (
-    id_categoria integer NOT NULL,
-    nombre character varying(100) NOT NULL,
-    descripcion text
+-- 1. Tabla Usuario
+CREATE TABLE IF NOT EXISTS usuarios (
+    id_usuario SERIAL PRIMARY KEY,
+    google_id VARCHAR(255) UNIQUE NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NULL,
+    rol VARCHAR(20) DEFAULT 'cliente',
+    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 2. Tabla Ferreteria (Con coordenadas y PostGIS)
+CREATE TABLE IF NOT EXISTS ferreterias (
+    id_ferreteria SERIAL PRIMARY KEY,
+    id_usuario_propietario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    nombre VARCHAR(150) NOT NULL,
+    direccion TEXT NOT NULL,
+    latitud DECIMAL(10,8) NOT NULL,
+    longitud DECIMAL(11,8) NOT NULL,
+    ubicacion GEOMETRY(Point, 4326),
+    reputacion DECIMAL(3,2) DEFAULT 5.00,
+    superficie_almacen_m2 DECIMAL(10,2) DEFAULT 0.00,
+    capacidad_canales_atencion INT DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_ferreterias_ubicacion ON ferreterias USING GIST (ubicacion);
 
---
--- TOC entry 225 (class 1259 OID 17511)
--- Name: categorias_id_categoria_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.categorias_id_categoria_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5832 (class 0 OID 0)
--- Dependencies: 225
--- Name: categorias_id_categoria_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.categorias_id_categoria_seq OWNED BY public.categorias.id_categoria;
-
-
---
--- TOC entry 240 (class 1259 OID 17614)
--- Name: escenarios_incertidumbre; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.escenarios_incertidumbre (
-    id_escenario integer NOT NULL,
-    id_producto integer,
-    alternativa character varying(100) NOT NULL,
-    estado_naturaleza character varying(100) NOT NULL,
-    probabilidad numeric(4,3),
-    pago_estimado numeric(12,2) NOT NULL
+-- 3. Tabla Categoria
+CREATE TABLE IF NOT EXISTS categorias (
+    id_categoria SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT NULL
 );
 
-
---
--- TOC entry 239 (class 1259 OID 17613)
--- Name: escenarios_incertidumbre_id_escenario_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.escenarios_incertidumbre_id_escenario_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5833 (class 0 OID 0)
--- Dependencies: 239
--- Name: escenarios_incertidumbre_id_escenario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.escenarios_incertidumbre_id_escenario_seq OWNED BY public.escenarios_incertidumbre.id_escenario;
-
-
---
--- TOC entry 224 (class 1259 OID 17494)
--- Name: ferreterias; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.ferreterias (
-    id_ferreteria integer NOT NULL,
-    id_usuario_propietario integer,
-    nombre character varying(150) NOT NULL,
-    direccion text NOT NULL,
-    latitud numeric(10,8) NOT NULL,
-    longitud numeric(11,8) NOT NULL,
-    ubicacion public.geometry(Point,4326),
-    reputacion numeric(3,2) DEFAULT 5.00,
-    superficie_almacen_m2 numeric(10,2) DEFAULT 0.00,
-    capacidad_canales_atencion integer DEFAULT 1
+-- 4. Tabla Marca
+CREATE TABLE IF NOT EXISTS marcas (
+    id_marca SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL
 );
 
+-- 5. Tabla Producto (Modelos EOQ / EPQ / ROP + Multimedia y Ficha Técnica)
+CREATE TABLE IF NOT EXISTS productos (
+    id_producto SERIAL PRIMARY KEY,
+    id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
+    id_categoria INT REFERENCES categorias(id_categoria) ON DELETE SET NULL,
+    id_marca INT REFERENCES marcas(id_marca) ON DELETE SET NULL,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT NULL,
+    precio_bob DECIMAL(10,2) NOT NULL,
+    stock_actual INT DEFAULT 0,
+    foto_url VARCHAR(255) NULL,
+    volumen_m3 DECIMAL(8,4) DEFAULT 0.0000,
+    demanda_anual_D INT DEFAULT 0,
+    tasa_produccion_p INT NULL,
+    costo_pedido_K DECIMAL(10,2) DEFAULT 0.00,
+    costo_mantenimiento_H DECIMAL(10,2) DEFAULT 0.00,
+    costo_faltante_p DECIMAL(10,2) NULL,
+    tiempo_entrega_dias_L INT DEFAULT 0,
+    stock_seguridad_SS INT DEFAULT 0
+);
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS descripcion TEXT NULL;
 
---
--- TOC entry 236 (class 1259 OID 17582)
--- Name: ferreterias_favoritas; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.ferreterias_favoritas (
-    id_favorito integer NOT NULL,
-    id_ferreteria integer,
-    id_usuario integer
+-- 6. Tabla TramoDescuento (EOQ con Descuento por Cantidad)
+CREATE TABLE IF NOT EXISTS tramos_descuento (
+    id_tramo SERIAL PRIMARY KEY,
+    id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
+    cantidad_minima INT NOT NULL,
+    cantidad_maxima INT NOT NULL,
+    precio_unitario_descuento DECIMAL(10,2) NOT NULL
 );
 
-
---
--- TOC entry 235 (class 1259 OID 17581)
--- Name: ferreterias_favoritas_id_favorito_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.ferreterias_favoritas_id_favorito_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5834 (class 0 OID 0)
--- Dependencies: 235
--- Name: ferreterias_favoritas_id_favorito_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.ferreterias_favoritas_id_favorito_seq OWNED BY public.ferreterias_favoritas.id_favorito;
-
-
---
--- TOC entry 223 (class 1259 OID 17493)
--- Name: ferreterias_id_ferreteria_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.ferreterias_id_ferreteria_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5835 (class 0 OID 0)
--- Dependencies: 223
--- Name: ferreterias_id_ferreteria_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.ferreterias_id_ferreteria_seq OWNED BY public.ferreterias.id_ferreteria;
-
-
---
--- TOC entry 234 (class 1259 OID 17569)
--- Name: historial_busquedas; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.historial_busquedas (
-    id_busqueda integer NOT NULL,
-    id_usuario integer,
-    texto_buscado character varying(255) NOT NULL,
-    latitud_usuario numeric(10,8) NOT NULL,
-    longitud_usuario numeric(11,8) NOT NULL,
-    fecha_busqueda timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+-- 7. Tabla HistorialBusqueda
+CREATE TABLE IF NOT EXISTS historial_busquedas (
+    id_busqueda SERIAL PRIMARY KEY,
+    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    texto_buscado VARCHAR(255) NOT NULL,
+    latitud_usuario DECIMAL(10,8) NOT NULL,
+    longitud_usuario DECIMAL(11,8) NOT NULL,
+    fecha_busqueda TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-
---
--- TOC entry 233 (class 1259 OID 17568)
--- Name: historial_busquedas_id_busqueda_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.historial_busquedas_id_busqueda_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5836 (class 0 OID 0)
--- Dependencies: 233
--- Name: historial_busquedas_id_busqueda_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.historial_busquedas_id_busqueda_seq OWNED BY public.historial_busquedas.id_busqueda;
-
-
---
--- TOC entry 238 (class 1259 OID 17601)
--- Name: log_navegacion_markov; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.log_navegacion_markov (
-    id_log integer NOT NULL,
-    id_usuario integer,
-    estado_origen character varying(50) NOT NULL,
-    estado_destino character varying(50) NOT NULL,
-    "timestamp" timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+-- 8. Tabla FerreteriaFavorita
+CREATE TABLE IF NOT EXISTS ferreterias_favoritas (
+    id_favorito SERIAL PRIMARY KEY,
+    id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
+    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    CONSTRAINT uq_usuario_ferreteria UNIQUE(id_usuario, id_ferreteria)
 );
 
-
---
--- TOC entry 237 (class 1259 OID 17600)
--- Name: log_navegacion_markov_id_log_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.log_navegacion_markov_id_log_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5837 (class 0 OID 0)
--- Dependencies: 237
--- Name: log_navegacion_markov_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.log_navegacion_markov_id_log_seq OWNED BY public.log_navegacion_markov.id_log;
-
-
---
--- TOC entry 228 (class 1259 OID 17521)
--- Name: marcas; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.marcas (
-    id_marca integer NOT NULL,
-    nombre character varying(100) NOT NULL
+-- 9. Tabla LogNavegacionMarkov (Predicción de Conversión)
+CREATE TABLE IF NOT EXISTS log_navegacion_markov (
+    id_log SERIAL PRIMARY KEY,
+    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    estado_origen VARCHAR(50) NOT NULL,
+    estado_destino VARCHAR(50) NOT NULL,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-
---
--- TOC entry 227 (class 1259 OID 17520)
--- Name: marcas_id_marca_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.marcas_id_marca_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5838 (class 0 OID 0)
--- Dependencies: 227
--- Name: marcas_id_marca_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.marcas_id_marca_seq OWNED BY public.marcas.id_marca;
-
-
---
--- TOC entry 230 (class 1259 OID 17528)
--- Name: productos; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.productos (
-    id_producto integer NOT NULL,
-    id_ferreteria integer,
-    id_categoria integer,
-    id_marca integer,
-    nombre character varying(150) NOT NULL,
-    precio_bob numeric(10,2) NOT NULL,
-    stock_actual integer DEFAULT 0,
-    foto_url character varying(255),
-    volumen_m3 numeric(8,4) DEFAULT 0.0000,
-    demanda_anual_d integer DEFAULT 0,
-    tasa_produccion_p integer,
-    costo_pedido_k numeric(10,2) DEFAULT 0.00,
-    costo_mantenimiento_h numeric(10,2) DEFAULT 0.00,
-    costo_faltante_p numeric(10,2),
-    tiempo_entrega_dias_l integer DEFAULT 0,
-    stock_seguridad_ss integer DEFAULT 0,
-    descripcion text
+-- 10. Tabla EscenarioIncertidumbre (Matriz de Decisiones / Riesgo)
+CREATE TABLE IF NOT EXISTS escenarios_incertidumbre (
+    id_escenario SERIAL PRIMARY KEY,
+    id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
+    alternativa VARCHAR(100) NOT NULL,
+    estado_naturaleza VARCHAR(100) NOT NULL,
+    probabilidad DECIMAL(4,3) NULL,
+    pago_estimado DECIMAL(12,2) NOT NULL
 );
 
-
---
--- TOC entry 229 (class 1259 OID 17527)
--- Name: productos_id_producto_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.productos_id_producto_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5839 (class 0 OID 0)
--- Dependencies: 229
--- Name: productos_id_producto_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.productos_id_producto_seq OWNED BY public.productos.id_producto;
-
-
---
--- TOC entry 242 (class 1259 OID 17626)
--- Name: registro_colas_atencion; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.registro_colas_atencion (
-    id_registro integer NOT NULL,
-    id_ferreteria integer,
-    tasa_llegada_lambda numeric(8,2) NOT NULL,
-    tasa_servicio_mu numeric(8,2) NOT NULL,
-    fecha_registro timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+-- 11. Tabla RegistroColaAtencion (Simulación M/M/1)
+CREATE TABLE IF NOT EXISTS registro_colas_atencion (
+    id_registro SERIAL PRIMARY KEY,
+    id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
+    tasa_llegada_lambda DECIMAL(8,2) NOT NULL,
+    tasa_servicio_mu DECIMAL(8,2) NOT NULL,
+    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
-
---
--- TOC entry 241 (class 1259 OID 17625)
--- Name: registro_colas_atencion_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.registro_colas_atencion_id_registro_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5840 (class 0 OID 0)
--- Dependencies: 241
--- Name: registro_colas_atencion_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.registro_colas_atencion_id_registro_seq OWNED BY public.registro_colas_atencion.id_registro;
-
-
---
--- TOC entry 232 (class 1259 OID 17557)
--- Name: tramos_descuento; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tramos_descuento (
-    id_tramo integer NOT NULL,
-    id_producto integer,
-    cantidad_minima integer NOT NULL,
-    cantidad_maxima integer NOT NULL,
-    precio_unitario_descuento numeric(10,2) NOT NULL
-);
-
-
---
--- TOC entry 231 (class 1259 OID 17556)
--- Name: tramos_descuento_id_tramo_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.tramos_descuento_id_tramo_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5841 (class 0 OID 0)
--- Dependencies: 231
--- Name: tramos_descuento_id_tramo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.tramos_descuento_id_tramo_seq OWNED BY public.tramos_descuento.id_tramo;
-
-
---
--- TOC entry 222 (class 1259 OID 17480)
--- Name: usuarios; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.usuarios (
-    id_usuario integer NOT NULL,
-    google_id character varying(255),
-    email character varying(255) NOT NULL,
-    username character varying(100) NOT NULL,
-    password_hash character varying(255),
-    fecha_registro timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    rol character varying(20) DEFAULT 'cliente'::character varying
-);
-
-
---
--- TOC entry 221 (class 1259 OID 17479)
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.usuarios_id_usuario_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- TOC entry 5842 (class 0 OID 0)
--- Dependencies: 221
--- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuarios.id_usuario;
-
-
---
--- TOC entry 5616 (class 2604 OID 17515)
--- Name: categorias id_categoria; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.categorias ALTER COLUMN id_categoria SET DEFAULT nextval('public.categorias_id_categoria_seq'::regclass);
-
-
---
--- TOC entry 5632 (class 2604 OID 17617)
--- Name: escenarios_incertidumbre id_escenario; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.escenarios_incertidumbre ALTER COLUMN id_escenario SET DEFAULT nextval('public.escenarios_incertidumbre_id_escenario_seq'::regclass);
-
-
---
--- TOC entry 5612 (class 2604 OID 17497)
--- Name: ferreterias id_ferreteria; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias ALTER COLUMN id_ferreteria SET DEFAULT nextval('public.ferreterias_id_ferreteria_seq'::regclass);
-
-
---
--- TOC entry 5629 (class 2604 OID 17585)
--- Name: ferreterias_favoritas id_favorito; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias_favoritas ALTER COLUMN id_favorito SET DEFAULT nextval('public.ferreterias_favoritas_id_favorito_seq'::regclass);
-
-
---
--- TOC entry 5627 (class 2604 OID 17572)
--- Name: historial_busquedas id_busqueda; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.historial_busquedas ALTER COLUMN id_busqueda SET DEFAULT nextval('public.historial_busquedas_id_busqueda_seq'::regclass);
-
-
---
--- TOC entry 5630 (class 2604 OID 17604)
--- Name: log_navegacion_markov id_log; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.log_navegacion_markov ALTER COLUMN id_log SET DEFAULT nextval('public.log_navegacion_markov_id_log_seq'::regclass);
-
-
---
--- TOC entry 5617 (class 2604 OID 17524)
--- Name: marcas id_marca; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.marcas ALTER COLUMN id_marca SET DEFAULT nextval('public.marcas_id_marca_seq'::regclass);
-
-
---
--- TOC entry 5618 (class 2604 OID 17531)
--- Name: productos id_producto; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.productos ALTER COLUMN id_producto SET DEFAULT nextval('public.productos_id_producto_seq'::regclass);
-
-
---
--- TOC entry 5633 (class 2604 OID 17629)
--- Name: registro_colas_atencion id_registro; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.registro_colas_atencion ALTER COLUMN id_registro SET DEFAULT nextval('public.registro_colas_atencion_id_registro_seq'::regclass);
-
-
---
--- TOC entry 5626 (class 2604 OID 17560)
--- Name: tramos_descuento id_tramo; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tramos_descuento ALTER COLUMN id_tramo SET DEFAULT nextval('public.tramos_descuento_id_tramo_seq'::regclass);
-
-
---
--- TOC entry 5609 (class 2604 OID 17483)
--- Name: usuarios id_usuario; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.usuarios ALTER COLUMN id_usuario SET DEFAULT nextval('public.usuarios_id_usuario_seq'::regclass);
-
-
---
--- TOC entry 5648 (class 2606 OID 17519)
--- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.categorias
-    ADD CONSTRAINT categorias_pkey PRIMARY KEY (id_categoria);
-
-
---
--- TOC entry 5664 (class 2606 OID 17619)
--- Name: escenarios_incertidumbre escenarios_incertidumbre_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.escenarios_incertidumbre
-    ADD CONSTRAINT escenarios_incertidumbre_pkey PRIMARY KEY (id_escenario);
-
-
---
--- TOC entry 5658 (class 2606 OID 17587)
--- Name: ferreterias_favoritas ferreterias_favoritas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias_favoritas
-    ADD CONSTRAINT ferreterias_favoritas_pkey PRIMARY KEY (id_favorito);
-
-
---
--- TOC entry 5645 (class 2606 OID 17504)
--- Name: ferreterias ferreterias_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias
-    ADD CONSTRAINT ferreterias_pkey PRIMARY KEY (id_ferreteria);
-
-
---
--- TOC entry 5656 (class 2606 OID 17575)
--- Name: historial_busquedas historial_busquedas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.historial_busquedas
-    ADD CONSTRAINT historial_busquedas_pkey PRIMARY KEY (id_busqueda);
-
-
---
--- TOC entry 5662 (class 2606 OID 17607)
--- Name: log_navegacion_markov log_navegacion_markov_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.log_navegacion_markov
-    ADD CONSTRAINT log_navegacion_markov_pkey PRIMARY KEY (id_log);
-
-
---
--- TOC entry 5650 (class 2606 OID 17526)
--- Name: marcas marcas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.marcas
-    ADD CONSTRAINT marcas_pkey PRIMARY KEY (id_marca);
-
-
---
--- TOC entry 5652 (class 2606 OID 17540)
--- Name: productos productos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.productos
-    ADD CONSTRAINT productos_pkey PRIMARY KEY (id_producto);
-
-
---
--- TOC entry 5666 (class 2606 OID 17632)
--- Name: registro_colas_atencion registro_colas_atencion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.registro_colas_atencion
-    ADD CONSTRAINT registro_colas_atencion_pkey PRIMARY KEY (id_registro);
-
-
---
--- TOC entry 5654 (class 2606 OID 17562)
--- Name: tramos_descuento tramos_descuento_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tramos_descuento
-    ADD CONSTRAINT tramos_descuento_pkey PRIMARY KEY (id_tramo);
-
-
---
--- TOC entry 5660 (class 2606 OID 17589)
--- Name: ferreterias_favoritas uq_usuario_ferreteria; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias_favoritas
-    ADD CONSTRAINT uq_usuario_ferreteria UNIQUE (id_usuario, id_ferreteria);
-
-
---
--- TOC entry 5639 (class 2606 OID 17492)
--- Name: usuarios usuarios_email_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.usuarios
-    ADD CONSTRAINT usuarios_email_key UNIQUE (email);
-
-
---
--- TOC entry 5641 (class 2606 OID 17490)
--- Name: usuarios usuarios_google_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.usuarios
-    ADD CONSTRAINT usuarios_google_id_key UNIQUE (google_id);
-
-
---
--- TOC entry 5643 (class 2606 OID 17488)
--- Name: usuarios usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.usuarios
-    ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario);
-
-
---
--- TOC entry 5646 (class 1259 OID 17510)
--- Name: idx_ferreterias_ubicacion; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ferreterias_ubicacion ON public.ferreterias USING gist (ubicacion);
-
-
---
--- TOC entry 5676 (class 2606 OID 17620)
--- Name: escenarios_incertidumbre escenarios_incertidumbre_id_producto_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.escenarios_incertidumbre
-    ADD CONSTRAINT escenarios_incertidumbre_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto) ON DELETE CASCADE;
-
-
---
--- TOC entry 5673 (class 2606 OID 17590)
--- Name: ferreterias_favoritas ferreterias_favoritas_id_ferreteria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias_favoritas
-    ADD CONSTRAINT ferreterias_favoritas_id_ferreteria_fkey FOREIGN KEY (id_ferreteria) REFERENCES public.ferreterias(id_ferreteria) ON DELETE CASCADE;
-
-
---
--- TOC entry 5674 (class 2606 OID 17595)
--- Name: ferreterias_favoritas ferreterias_favoritas_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias_favoritas
-    ADD CONSTRAINT ferreterias_favoritas_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario) ON DELETE CASCADE;
-
-
---
--- TOC entry 5667 (class 2606 OID 17505)
--- Name: ferreterias ferreterias_id_usuario_propietario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.ferreterias
-    ADD CONSTRAINT ferreterias_id_usuario_propietario_fkey FOREIGN KEY (id_usuario_propietario) REFERENCES public.usuarios(id_usuario) ON DELETE CASCADE;
-
-
---
--- TOC entry 5672 (class 2606 OID 17576)
--- Name: historial_busquedas historial_busquedas_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.historial_busquedas
-    ADD CONSTRAINT historial_busquedas_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario) ON DELETE CASCADE;
-
-
---
--- TOC entry 5675 (class 2606 OID 17608)
--- Name: log_navegacion_markov log_navegacion_markov_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.log_navegacion_markov
-    ADD CONSTRAINT log_navegacion_markov_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario) ON DELETE CASCADE;
-
-
---
--- TOC entry 5668 (class 2606 OID 17546)
--- Name: productos productos_id_categoria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.productos
-    ADD CONSTRAINT productos_id_categoria_fkey FOREIGN KEY (id_categoria) REFERENCES public.categorias(id_categoria) ON DELETE SET NULL;
-
-
---
--- TOC entry 5669 (class 2606 OID 17541)
--- Name: productos productos_id_ferreteria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.productos
-    ADD CONSTRAINT productos_id_ferreteria_fkey FOREIGN KEY (id_ferreteria) REFERENCES public.ferreterias(id_ferreteria) ON DELETE CASCADE;
-
-
---
--- TOC entry 5670 (class 2606 OID 17551)
--- Name: productos productos_id_marca_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.productos
-    ADD CONSTRAINT productos_id_marca_fkey FOREIGN KEY (id_marca) REFERENCES public.marcas(id_marca) ON DELETE SET NULL;
-
-
---
--- TOC entry 5677 (class 2606 OID 17633)
--- Name: registro_colas_atencion registro_colas_atencion_id_ferreteria_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.registro_colas_atencion
-    ADD CONSTRAINT registro_colas_atencion_id_ferreteria_fkey FOREIGN KEY (id_ferreteria) REFERENCES public.ferreterias(id_ferreteria) ON DELETE CASCADE;
-
-
---
--- TOC entry 5671 (class 2606 OID 17563)
--- Name: tramos_descuento tramos_descuento_id_producto_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tramos_descuento
-    ADD CONSTRAINT tramos_descuento_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto) ON DELETE CASCADE;
-
-
--- Completed on 2026-11-18 00:55:08
-
---
--- PostgreSQL database dump complete
---
-
-\unrestrict cQJLmYX9YSophl04MlcXzinzyGFpEk8WTXmFEY2fxYHGAmRAsGxVHldJvPv7r0v
-
-
 ]]>
 </archivo>
 <archivo ruta="app/shared/database.py">

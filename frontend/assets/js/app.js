@@ -481,8 +481,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Agotado</span>`;
             const subInfo = [p.categoria, p.marca].filter(Boolean).join(' • ');
 
+            const payloadProd = encodeURIComponent(JSON.stringify(p));
             return `
-                <div class="list-group-item bg-transparent text-main py-2 px-3 catalogo-item-row d-flex justify-content-between align-items-center gap-2">
+                <div role="button" tabindex="0"
+                    data-producto="${payloadProd}"
+                    onclick="window.abrirDetalleProductoDesdeCatalogo(this)"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.abrirDetalleProductoDesdeCatalogo(this);}"
+                    title="Ver ficha técnica del producto"
+                    class="list-group-item bg-transparent text-main py-2 px-3 catalogo-item-row d-flex justify-content-between align-items-center gap-2">
                     <div class="d-flex align-items-center gap-2 overflow-hidden">
                         ${renderizarMiniaturaProducto(p.foto_url, p.categoria, p.nombre)}
                         <div class="overflow-hidden">
@@ -493,6 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         <span class="fw-bold text-success small">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</span>
                         ${badgeStock}
+                        <i class="fa-solid fa-chevron-right extra-small text-muted ms-1"></i>
                     </div>
                 </div>
             `;
@@ -788,6 +795,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('topFerreteriaNombre').textContent = top.nombre;
         document.getElementById('topFerreteriaDireccion').innerHTML = `<i class="fa-solid fa-location-pin me-1"></i> ${escapeHtml(top.direccion)}`;
+        document.getElementById('topProductoNombre').textContent = top.producto_nombre || 'Producto seleccionado';
+        const topThumbEl = document.getElementById('topProductoThumb');
+        if (topThumbEl) {
+            topThumbEl.innerHTML = top.producto_foto_url
+                ? `<img src="${escapeHtml(top.producto_foto_url)}" alt="${escapeHtml(top.producto_nombre || '')}" class="product-thumb-img">`
+                : `<i class="fa-solid ${obtenerIconoCategoria(top.producto_categoria, top.producto_nombre)}"></i>`;
+        }
         document.getElementById('topPrecioBOB').textContent = `Bs. ${parseFloat(top.precio_bob).toFixed(2)}`;
         document.getElementById('topDistanciaKM').textContent = `${top.distancia_km} km`;
         document.getElementById('topReputacion').textContent = top.reputacion;
@@ -839,6 +853,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             data-popup-fav-id="${f.id_ferreteria}"
                             onclick="window.toggleFavorito(${f.id_ferreteria})">
                             <i class="${esFav ? 'fa-solid' : 'fa-regular'} fa-star me-1"></i>${esFav ? 'Quitar de Favoritos' : 'Guardar Favorito'}
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary mt-1 w-100 py-1"
+                            data-producto="${encodeURIComponent(JSON.stringify(f))}"
+                            onclick="window.abrirDetalleProductoDesdeAHP(this)">
+                            <i class="fa-solid fa-circle-info me-1"></i>Ver Producto
                         </button>
                         <button class="btn btn-sm btn-outline-primary mt-1 w-100 py-1"
                             onclick="window.abrirFichaFerreteria(${f.id_ferreteria})">
@@ -1406,6 +1425,238 @@ document.addEventListener('DOMContentLoaded', () => {
             notificar('Error de Permisos', err.message, 'error');
         }
     };
+
+    // ---------------------------------------------------------------
+    // 9.1 FICHA DETALLE DE PRODUCTO + FALLBACK VECTORIAL + ZOOM 2X
+    // ---------------------------------------------------------------
+    let productoModalDestinoActual = null;
+
+    const generarFallbackVectorialCategoria = (categoria = '', nombre = '') => {
+        const texto = `${categoria} ${nombre}`
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+
+        let etiqueta = categoria || 'Ferretería General';
+        let svgIcon = `
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="46" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                <polygon points="60,24 91,42 91,78 60,96 29,78 29,42" fill="#1E293B" stroke="#0EA5E9" stroke-width="3.5"/>
+                <circle cx="60" cy="60" r="14" fill="#0F172A" stroke="#38BDF8" stroke-width="3.5"/>
+            </svg>`;
+
+        if (/herramienta|martillo|llave|alicate|taladro|destornillador|sierra/.test(texto)) {
+            etiqueta = categoria || 'Herramientas';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <path d="M77 27a16 16 0 0 0-20 20L31 73a6 6 0 0 0 8 8l26-26a16 16 0 0 0 20-20l-9 9-7-2-2-7 10-8Z" fill="#1E293B" stroke="#F59E0B" stroke-width="3.5" stroke-linejoin="round"/>
+                    <path d="M35 34l14 14m23 23l15 15" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+                </svg>`;
+        } else if (/electr|cable|foco|led|interruptor|enchufe|breaker|luz/.test(texto)) {
+            etiqueta = categoria || 'Material Eléctrico';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <polygon points="66,22 36,64 58,64 52,98 84,54 62,54" fill="#1E293B" stroke="#FACC15" stroke-width="3.5" stroke-linejoin="round"/>
+                </svg>`;
+        } else if (/plomeria|tubo|pvc|grifo|llave de paso|valvula|agua|sanitar/.test(texto)) {
+            etiqueta = categoria || 'Plomería y Gasfitería';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <path d="M26 52h26v-12h16v12h26v16H68v16H52V68H26V52Z" fill="#1E293B" stroke="#38BDF8" stroke-width="3.5" stroke-linejoin="round"/>
+                    <line x1="44" y1="30" x2="76" y2="30" stroke="#F59E0B" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="60" y1="30" x2="60" y2="40" stroke="#F59E0B" stroke-width="4"/>
+                </svg>`;
+        } else if (/pintura|brocha|rodillo|esmalte|barniz|lija|sellador/.test(texto)) {
+            etiqueta = categoria || 'Pinturas y Acabados';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#A78BFA" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <rect x="30" y="28" width="52" height="22" rx="5" fill="#1E293B" stroke="#0EA5E9" stroke-width="3.5"/>
+                    <path d="M82 39h10v16L58 63v12" stroke="#94A3B8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="52" y="75" width="12" height="22" rx="3" fill="#F59E0B"/>
+                </svg>`;
+        } else if (/construc|cemento|fierro|clavo|tornillo|perno|yeso|arena/.test(texto)) {
+            etiqueta = categoria || 'Construcción y Fijaciones';
+            svgIcon = `
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="46" stroke="#0EA5E9" stroke-width="2" stroke-dasharray="6 4" opacity="0.45"/>
+                    <rect x="26" y="64" width="32" height="18" rx="2" fill="#1E293B" stroke="#0EA5E9" stroke-width="3"/>
+                    <rect x="62" y="64" width="32" height="18" rx="2" fill="#1E293B" stroke="#0EA5E9" stroke-width="3"/>
+                    <rect x="44" y="42" width="32" height="18" rx="2" fill="#1E293B" stroke="#F59E0B" stroke-width="3"/>
+                </svg>`;
+        }
+
+        return `
+            <div class="detalle-fallback-svg-wrap text-center">
+                ${svgIcon}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle mt-2">${escapeHtml(etiqueta)}</span>
+                <span class="extra-small text-muted mt-1">Sin fotografía registrada</span>
+            </div>
+        `;
+    };
+
+    const abrirDetalleProducto = (item, ferreteriaContexto = null) => {
+        const modalEl = document.getElementById('modalDetalleProducto');
+        if (!modalEl || !item) return;
+
+        // Normaliza tanto objetos de búsqueda AHP (producto_*) como ítems de catálogo por tienda
+        const nombreProd = item.producto_nombre || item.nombre || 'Producto';
+        const descProd = (item.producto_descripcion ?? item.descripcion ?? '').trim();
+        const fotoProd = (item.producto_foto_url ?? item.foto_url ?? '').trim();
+        const catProd = item.producto_categoria || item.categoria || 'General';
+        const marcaProd = item.producto_marca || item.marca || 'Marca estándar';
+        const precioProd = parseFloat(item.precio_bob ?? 0);
+        const stockProd = parseInt(item.stock_actual ?? item.stock ?? 0, 10);
+
+        const ferrDestino = ferreteriaContexto || (item.latitud !== undefined ? {
+            id_ferreteria: item.id_ferreteria,
+            nombre: item.nombre,
+            latitud: item.latitud,
+            longitud: item.longitud,
+            tiempo_espera_wq_min: item.tiempo_espera_wq_min ?? null
+        } : null);
+        productoModalDestinoActual = ferrDestino;
+
+        document.getElementById('detalleProdCategoriaBadge').textContent = catProd;
+        const ferrSpan = document.querySelector('#detalleProdFerreteriaBadge span');
+        if (ferrSpan) ferrSpan.textContent = ferrDestino?.nombre || 'Sucursal';
+
+        document.getElementById('detalleProdMarca').textContent = marcaProd;
+        document.getElementById('detalleProdNombre').textContent = nombreProd;
+        document.getElementById('detalleProdPrecio').textContent = `Bs. ${precioProd.toFixed(2)}`;
+
+        const stockBadgeEl = document.getElementById('detalleProdStockBadge');
+        if (stockProd > 5) {
+            stockBadgeEl.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle">Disponible (${stockProd} un.)</span>`;
+        } else if (stockProd > 0) {
+            stockBadgeEl.innerHTML = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle">Últimas unidades (${stockProd} un.)</span>`;
+        } else {
+            stockBadgeEl.innerHTML = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Agotado</span>`;
+        }
+
+        document.getElementById('detalleProdDescripcion').textContent =
+            descProd || 'Sin especificaciones técnicas adicionales registradas para este artículo.';
+
+        const btnRuta = document.getElementById('btnComoLlegarProducto');
+        if (btnRuta) {
+            btnRuta.disabled = !ferrDestino || ferrDestino.latitud === undefined;
+        }
+
+        const visualBox = document.getElementById('detalleProdVisualBox');
+        const zoomHint = document.getElementById('detalleProdZoomHint');
+        const btnZoom = document.getElementById('btnAbrirZoomDetalle');
+
+        if (fotoProd) {
+            visualBox.classList.add('has-photo');
+            visualBox.innerHTML = `<img src="${escapeHtml(fotoProd)}" alt="${escapeHtml(nombreProd)}" class="detalle-prod-img">`;
+            zoomHint?.classList.remove('d-none');
+            btnZoom?.classList.remove('d-none');
+
+            const dispararZoom = () => abrirZoomImagen(fotoProd, nombreProd);
+            visualBox.onclick = dispararZoom;
+            if (btnZoom) btnZoom.onclick = dispararZoom;
+        } else {
+            visualBox.classList.remove('has-photo');
+            visualBox.innerHTML = generarFallbackVectorialCategoria(catProd, nombreProd);
+            visualBox.onclick = null;
+            zoomHint?.classList.add('d-none');
+            btnZoom?.classList.add('d-none');
+        }
+
+        if (typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    };
+
+    window.abrirDetalleProductoDesdeCatalogo = (el) => {
+        const raw = el?.getAttribute('data-producto');
+        if (!raw) return;
+        const prod = JSON.parse(decodeURIComponent(raw));
+        abrirDetalleProducto(prod, ferreteriaModalActual);
+    };
+
+    window.abrirDetalleProductoDesdeAHP = (el) => {
+        const raw = el?.getAttribute('data-producto');
+        if (!raw) return;
+        const item = JSON.parse(decodeURIComponent(raw));
+        abrirDetalleProducto(item, null);
+    };
+
+    document.getElementById('btnVerProductoTop')?.addEventListener('click', () => {
+        if (topFerreteriaActual) abrirDetalleProducto(topFerreteriaActual, null);
+    });
+
+    document.getElementById('btnComoLlegarProducto')?.addEventListener('click', () => {
+        if (!productoModalDestinoActual) return;
+        const { latitud, longitud, nombre, tiempo_espera_wq_min } = productoModalDestinoActual;
+
+        ['modalDetalleProducto', 'modalDetalleFerreteria'].forEach(id => {
+            const mEl = document.getElementById(id);
+            if (mEl && typeof bootstrap !== 'undefined') {
+                bootstrap.Modal.getInstance(mEl)?.hide();
+            }
+        });
+
+        window.trazarRutaFerreteria(latitud, longitud, nombre, tiempo_espera_wq_min ?? null, 'driving-car');
+    });
+
+    const abrirZoomImagen = (url, titulo = 'Vista ampliada') => {
+        const modalZoomEl = document.getElementById('modalZoomImagen');
+        const viewport = document.getElementById('zoomViewport');
+        const imgTarget = document.getElementById('zoomImgTarget');
+        const badgeNivel = document.getElementById('zoomNivelBadge');
+        if (!modalZoomEl || !viewport || !imgTarget) return;
+
+        document.getElementById('zoomImagenTitulo').textContent = titulo;
+        imgTarget.src = url;
+        imgTarget.style.transformOrigin = '50% 50%';
+        viewport.classList.add('is-zoomed');
+        if (badgeNivel) badgeNivel.textContent = '2.0x';
+
+        if (typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalZoomEl).show();
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                if (backdrops.length > 1) {
+                    backdrops[backdrops.length - 1].style.zIndex = '1060';
+                }
+            }, 50);
+        }
+    };
+
+    (() => {
+        const viewport = document.getElementById('zoomViewport');
+        const imgTarget = document.getElementById('zoomImgTarget');
+        const btnToggle = document.getElementById('btnToggleZoomNivel');
+        const badgeNivel = document.getElementById('zoomNivelBadge');
+        if (!viewport || !imgTarget) return;
+
+        const actualizarOrigen = (clientX, clientY) => {
+            if (!viewport.classList.contains('is-zoomed')) return;
+            const rect = viewport.getBoundingClientRect();
+            const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+            const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+            imgTarget.style.transformOrigin = `${x.toFixed(1)}% ${y.toFixed(1)}%`;
+        };
+
+        const alternarZoom = () => {
+            const activo = viewport.classList.toggle('is-zoomed');
+            if (!activo) imgTarget.style.transformOrigin = '50% 50%';
+            if (badgeNivel) badgeNivel.textContent = activo ? '2.0x' : '1.0x';
+        };
+
+        viewport.addEventListener('mousemove', (e) => actualizarOrigen(e.clientX, e.clientY));
+        viewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                actualizarOrigen(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+        viewport.addEventListener('click', alternarZoom);
+        btnToggle?.addEventListener('click', alternarZoom);
+    })();
 
     // ---------------------------------------------------------------
     // 10. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV + MULTIMEDIA CLOUDINARY

@@ -1,7 +1,6 @@
 -- init_db.sql
--- Script completo de creación de base de datos e índices geoespaciales para IOP812.
+-- Script completo e idempotente de creación de base de datos e índices geoespaciales para IOP812.
 
--- Habilitar extensión geoespacial PostGIS
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- 1. Tabla Usuario
@@ -11,6 +10,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NULL,
+    rol VARCHAR(20) DEFAULT 'cliente',
     fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS ferreterias (
     superficie_almacen_m2 DECIMAL(10,2) DEFAULT 0.00,
     capacidad_canales_atencion INT DEFAULT 1
 );
---- Índice geoespacial GIST para consultas por proximidad rápida
 CREATE INDEX IF NOT EXISTS idx_ferreterias_ubicacion ON ferreterias USING GIST (ubicacion);
 
 -- 3. Tabla Categoria
@@ -43,13 +42,14 @@ CREATE TABLE IF NOT EXISTS marcas (
     nombre VARCHAR(100) NOT NULL
 );
 
--- 5. Tabla Producto (Modelos EOQ / EPQ / ROP)
+-- 5. Tabla Producto (Modelos EOQ / EPQ / ROP + Multimedia y Ficha Técnica)
 CREATE TABLE IF NOT EXISTS productos (
     id_producto SERIAL PRIMARY KEY,
     id_ferreteria INT REFERENCES ferreterias(id_ferreteria) ON DELETE CASCADE,
     id_categoria INT REFERENCES categorias(id_categoria) ON DELETE SET NULL,
     id_marca INT REFERENCES marcas(id_marca) ON DELETE SET NULL,
     nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT NULL,
     precio_bob DECIMAL(10,2) NOT NULL,
     stock_actual INT DEFAULT 0,
     foto_url VARCHAR(255) NULL,
@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS productos (
     tiempo_entrega_dias_L INT DEFAULT 0,
     stock_seguridad_SS INT DEFAULT 0
 );
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS descripcion TEXT NULL;
 
 -- 6. Tabla TramoDescuento (EOQ con Descuento por Cantidad)
 CREATE TABLE IF NOT EXISTS tramos_descuento (
