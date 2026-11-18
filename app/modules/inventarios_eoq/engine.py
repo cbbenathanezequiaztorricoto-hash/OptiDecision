@@ -1,9 +1,118 @@
 # app/modules/inventarios_eoq/engine.py
 # Motor de cálculo determinístico de inventarios (EOQ Básico, EPQ, EOQ con Faltantes y ROP).
 
+import asyncio
 import math
-from typing import Dict, Any
+import os
+import re
+import unicodedata
+from typing import Any, Dict, List, Optional
+
+import cloudinary
+import cloudinary.uploader
+from fastapi import UploadFile
+
 from app.modules.inventarios_eoq.schemas import EOQParametrosInput
+
+MAX_IMAGE_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
+ALLOWED_IMAGE_MIMES: set[str] = {"image/jpeg", "image/png", "image/webp"}
+CLOUDINARY_PRODUCTS_FOLDER: str = "iop812_productos"
+
+
+def _configurar_cloudinary() -> None:
+    """Valida credenciales en entorno y configura el SDK de Cloudinary."""
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
+    api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
+    api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
+
+    if not cloud_name or not api_key or not api_secret or cloud_name == "tu_cloud_name":
+        raise ValueError(
+            "Faltan credenciales válidas de Cloudinary (CLOUDINARY_CLOUD_NAME, "
+            "CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) en el archivo .env."
+        )
+
+    cloudinary.config(
+        cloud_name=cloud_name,
+        api_key=api_key,
+        api_secret=api_secret,
+        secure=True,
+    )
+
+
+async def validar_y_leer_imagen(archivo: UploadFile) -> bytes:
+    """Valida tipo MIME, contenido no vacío y peso máximo antes de subir."""
+    if archivo.content_type not in ALLOWED_IMAGE_MIMES:
+        raise ValueError(
+            f"Formato no permitido en '{archivo.filename}'. Usa JPG, PNG o WEBP."
+        )
+
+    contenido = await archivo.read()
+    if not contenido:
+        raise ValueError(f"El archivo '{archivo.filename}' está vacío.")
+
+    if len(contenido) > MAX_IMAGE_SIZE_BYTES:
+        raise ValueError(
+            f"El archivo '{archivo.filename}' supera el límite de 5 MB."
+        )
+
+    return contenido
+
+
+def _subir_bytes_cloudinary_sync(contenido: bytes, carpeta: str) -> Dict[str, str]:
+    """Ejecuta la subida síncrona a Cloudinary con compresión y formato automático."""
+    resultado = cloudinary.uploader.upload(
+        contenido,
+        folder=carpeta,
+        resource_type="image",
+        transformation=[{"quality": "auto", "fetch_format": "auto"}],
+    )
+    return {
+        "foto_url": resultado["secure_url"],
+        "public_id": resultado["public_id"],
+    }
+
+
+async def subir_imagen_producto_cloudinary(archivo: UploadFile) -> Dict[str, str]:
+    """Valida y sube una imagen individual de producto sin bloquear el event loop."""
+    _configurar_cloudinary()
+    contenido = await validar_y_leer_imagen(archivo)
+    return await asyncio.to_thread(
+        _subir_bytes_cloudinary_sync, contenido, CLOUDINARY_PRODUCTS_FOLDER
+    )
+
+
+def normalizar_clave_nombre(texto: str) -> str:
+    """Normaliza nombres de archivo o producto (sin extensión, tildes ni símbolos)."""
+    base = os.path.splitext(texto.strip())[0]
+    sin_tildes = "".join(
+        c for c in unicodedata.normalize("NFD", base)
+        if unicodedata.category(c) != "Mn"
+    )
+    limpio = re.sub(r"[^a-zA-Z0-9]+", " ", sin_tildes).strip().lower()
+    return limpio
+
+
+def buscar_producto_coincidente(
+    nombre_archivo: str,
+    productos: List[Dict[str, Any]]
+) -> Optional[Dict[str, Any]]:
+    """Empareja el nombre de archivo normalizado contra el catálogo de la ferretería."""
+    clave_archivo = normalizar_clave_nombre(nombre_archivo)
+    if not clave_archivo:
+        return None
+
+    # 1. Coincidencia exacta normalizada
+    for prod in productos:
+        if normalizar_clave_nombre(prod["nombre"]) == clave_archivo:
+            return prod
+
+    # 2. Coincidencia por inclusión (ej. 'cemento_coboce.jpg' -> 'Cemento COBOCE IP-30 50kg')
+    for prod in productos:
+        clave_prod = normalizar_clave_nombre(prod["nombre"])
+        if len(clave_archivo) >= 4 and (clave_archivo in clave_prod or clave_prod in clave_archivo):
+            return prod
+
+    return None
 
 
 def calcular_modelo_inventario(datos: EOQParametrosInput) -> Dict[str, Any]:

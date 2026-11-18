@@ -452,10 +452,10 @@ async def descargar_plantilla_catalogo_admin(admin: Dict[str, Any] = Depends(req
         writer.writerow([
             "ferreteria", "nombre", "precio_bob", "stock_actual",
             "demanda_anual_D", "costo_pedido_K", "costo_mantenimiento_H",
-            "tiempo_entrega_dias_L", "stock_seguridad_SS"
+            "tiempo_entrega_dias_L", "stock_seguridad_SS", "descripcion", "foto_url"
         ])
         for nombre_ferr in ferreterias:
-            writer.writerow([nombre_ferr, "", "", "", "", "", "", "", ""])
+            writer.writerow([nombre_ferr, "", "", "", "", "", "", "", "", "", ""])
 
         return Response(
             content="\ufeff" + buffer.getvalue(),

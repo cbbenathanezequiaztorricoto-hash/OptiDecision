@@ -492,6 +492,10 @@
                                         <i class="fa-solid fa-upload me-1"></i> Importar CSV
                                     </label>
                                     <input type="file" id="inputCsvProductos" accept=".csv" class="d-none">
+                                    <label class="btn btn-sm btn-outline-info rounded-pill mb-0" for="inputFotosLote" title="Subir múltiples imágenes y vincular por nombre de producto">
+                                        <i class="fa-solid fa-images me-1"></i> Subir Fotos en Lote
+                                    </label>
+                                    <input type="file" id="inputFotosLote" accept="image/jpeg,image/png,image/webp" multiple class="d-none">
                                     <button class="btn btn-sm btn-primary rounded-pill" id="btnToggleFormProducto" type="button">
                                         <i class="fa-solid fa-plus me-1"></i> Nuevo Producto
                                     </button>
@@ -535,7 +539,24 @@
                                             <label class="form-label extra-small text-muted">Stock Seg. (SS)</label>
                                             <input type="number" class="form-control form-control-sm" id="prodSS" value="10">
                                         </div>
-                                        <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label extra-small text-muted">Fotografía del Producto (JPG, PNG, WEBP - Máx. 5 MB)</label>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div id="previewProdFoto" class="product-thumb-box" title="Vista previa">
+                                                    <i class="fa-solid fa-box-open"></i>
+                                                </div>
+                                                <input type="hidden" id="prodFotoUrl">
+                                                <input type="file" class="form-control form-control-sm" id="inputProdFoto" accept="image/jpeg,image/png,image/webp">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnLimpiarProdFoto" title="Quitar fotografía">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label class="form-label extra-small text-muted">Descripción Técnica / Especificaciones</label>
+                                            <input type="text" class="form-control form-control-sm" id="prodDescripcion" placeholder="Ej. Bolsa de 50 kg, resistencia 30 MPa, uso estructural">
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end justify-content-end gap-2">
                                             <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCancelarProducto">Cancelar</button>
                                             <button type="submit" class="btn btn-sm btn-primary" id="btnGuardarProducto">Guardar en Catálogo</button>
                                         </div>

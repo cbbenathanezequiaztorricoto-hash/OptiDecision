@@ -31,6 +31,39 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#39;');
     };
 
+    const obtenerIconoCategoria = (categoria, nombreProducto = '') => {
+        const ref = `${categoria || ''} ${nombreProducto || ''}`.toLowerCase();
+        if (ref.includes('herramienta') || ref.includes('martillo') || ref.includes('llave') || ref.includes('taladro')) {
+            return 'fa-screwdriver-wrench';
+        }
+        if (ref.includes('pintura') || ref.includes('brocha') || ref.includes('rodillo') || ref.includes('esmalte')) {
+            return 'fa-paint-roller';
+        }
+        if (ref.includes('construc') || ref.includes('cemento') || ref.includes('ladrillo') || ref.includes('yeso') || ref.includes('arena')) {
+            return 'fa-trowel-bricks';
+        }
+        if (ref.includes('electr') || ref.includes('cable') || ref.includes('foco') || ref.includes('breaker')) {
+            return 'fa-bolt';
+        }
+        return 'fa-box-open';
+    };
+
+    const renderizarMiniaturaProducto = (fotoUrl, categoria, nombreProducto = '') => {
+        if (fotoUrl && String(fotoUrl).trim() !== '') {
+            return `
+                <div class="product-thumb-box">
+                    <img src="${escapeHtml(fotoUrl)}" alt="${escapeHtml(nombreProducto)}" class="product-thumb-img" loading="lazy">
+                </div>
+            `;
+        }
+        const icono = obtenerIconoCategoria(categoria, nombreProducto);
+        return `
+            <div class="product-thumb-box" title="Sin fotografía">
+                <i class="fa-solid ${icono}"></i>
+            </div>
+        `;
+    };
+
     const getAuthHeaders = (conJson = false) => {
         const headers = {};
         if (conJson) headers['Content-Type'] = 'application/json';
@@ -450,9 +483,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
                 <div class="list-group-item bg-transparent text-main py-2 px-3 catalogo-item-row d-flex justify-content-between align-items-center gap-2">
-                    <div class="overflow-hidden">
-                        <div class="fw-semibold small text-truncate">${escapeHtml(p.nombre)}</div>
-                        ${subInfo ? `<div class="extra-small text-muted text-truncate">${escapeHtml(subInfo)}</div>` : ''}
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        ${renderizarMiniaturaProducto(p.foto_url, p.categoria, p.nombre)}
+                        <div class="overflow-hidden">
+                            <div class="fw-semibold small text-truncate">${escapeHtml(p.nombre)}</div>
+                            ${subInfo ? `<div class="extra-small text-muted text-truncate">${escapeHtml(subInfo)}</div>` : ''}
+                        </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         <span class="fw-bold text-success small">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</span>
@@ -1372,14 +1408,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ---------------------------------------------------------------
-    // 10. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV
+    // 10. CRUD CATÁLOGO FERRETERO + IMPORTADOR CSV + MULTIMEDIA CLOUDINARY
     // ---------------------------------------------------------------
     const cardFormProducto = document.getElementById('cardFormProducto');
     const formProductoCRUD = document.getElementById('formProductoCRUD');
 
+    const actualizarPreviewFotoCRUD = (fotoUrl, nombre = '') => {
+        const preview = document.getElementById('previewProdFoto');
+        if (!preview) return;
+        if (fotoUrl && fotoUrl.trim() !== '') {
+            preview.innerHTML = `<img src="${escapeHtml(fotoUrl)}" alt="${escapeHtml(nombre)}" class="product-thumb-img">`;
+        } else {
+            preview.innerHTML = `<i class="fa-solid ${obtenerIconoCategoria('', nombre)}"></i>`;
+        }
+    };
+
     document.getElementById('btnToggleFormProducto')?.addEventListener('click', () => {
         formProductoCRUD?.reset();
         document.getElementById('prodEditId').value = '';
+        document.getElementById('prodFotoUrl').value = '';
+        actualizarPreviewFotoCRUD('');
         cardFormProducto?.classList.toggle('d-none');
     });
 
@@ -1387,8 +1435,81 @@ document.addEventListener('DOMContentLoaded', () => {
         cardFormProducto?.classList.add('d-none');
     });
 
+    document.getElementById('btnLimpiarProdFoto')?.addEventListener('click', () => {
+        document.getElementById('prodFotoUrl').value = '';
+        const inputFoto = document.getElementById('inputProdFoto');
+        if (inputFoto) inputFoto.value = '';
+        actualizarPreviewFotoCRUD('', document.getElementById('prodNombre')?.value || '');
+    });
+
+    document.getElementById('inputProdFoto')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const btnGuardar = document.getElementById('btnGuardarProducto');
+        const preview = document.getElementById('previewProdFoto');
+        if (btnGuardar) btnGuardar.disabled = true;
+        if (preview) preview.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+
+        const formData = new FormData();
+        formData.append('archivo', file);
+
+        try {
+            const res = await fetch('/api/productos/subir-imagen', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'No se pudo subir la imagen');
+
+            document.getElementById('prodFotoUrl').value = data.foto_url;
+            actualizarPreviewFotoCRUD(data.foto_url, document.getElementById('prodNombre')?.value || '');
+            notificar('Imagen Cargada', 'Fotografía subida correctamente a Cloudinary.', 'success');
+        } catch (err) {
+            actualizarPreviewFotoCRUD(document.getElementById('prodFotoUrl')?.value || '');
+            notificar('Error al Subir Imagen', err.message, 'error');
+        } finally {
+            if (btnGuardar) btnGuardar.disabled = false;
+        }
+    });
+
+    document.getElementById('inputFotosLote')?.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        const formData = new FormData();
+        files.forEach(file => formData.append('archivos', file));
+
+        try {
+            const res = await fetch('/api/productos/subir-imagenes-lote', {
+                method: 'POST',
+                headers: getAuthHeaders(false),
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error al procesar el lote de fotografías');
+
+            let detalle = `${data.total_vinculadas} fotografía(s) vinculadas automáticamente.`;
+            if (data.total_no_emparejadas > 0) {
+                detalle += ` Sin coincidencia (${data.total_no_emparejadas}): ${data.no_emparejadas.join(', ')}.`;
+            }
+
+            notificar(
+                'Carga Multimedia por Lote',
+                detalle,
+                data.total_vinculadas > 0 ? 'success' : 'warning'
+            );
+            cargarProductosCRUD();
+        } catch (err) {
+            notificar('Error en Lote de Fotos', err.message, 'error');
+        } finally {
+            e.target.value = '';
+        }
+    });
+
     document.getElementById('btnDescargarPlantillaCSV')?.addEventListener('click', () => {
-        const encabezado = "nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS\n";
+        const encabezado = "nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS,descripcion,foto_url\n";
         const blob = new Blob([encabezado], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1434,7 +1555,9 @@ document.addEventListener('DOMContentLoaded', () => {
             costo_pedido_K: parseFloat(document.getElementById('prodK').value || 50),
             costo_mantenimiento_H: parseFloat(document.getElementById('prodH').value || 5),
             tiempo_entrega_dias_L: parseInt(document.getElementById('prodL').value || 3, 10),
-            stock_seguridad_SS: parseInt(document.getElementById('prodSS').value || 10, 10)
+            stock_seguridad_SS: parseInt(document.getElementById('prodSS').value || 10, 10),
+            descripcion: document.getElementById('prodDescripcion')?.value.trim() || null,
+            foto_url: document.getElementById('prodFotoUrl')?.value.trim() || null
         };
 
         const url = editId ? `/api/productos/${editId}` : '/api/productos';
@@ -1473,7 +1596,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tbody.innerHTML = productosCache.map(p => `
                 <tr>
-                    <td class="fw-medium">${escapeHtml(p.nombre)}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            ${renderizarMiniaturaProducto(p.foto_url, p.categoria, p.nombre)}
+                            <div class="overflow-hidden">
+                                <div class="fw-medium text-truncate" style="max-width: 220px;">${escapeHtml(p.nombre)}</div>
+                                ${p.descripcion ? `<div class="extra-small text-muted text-truncate" style="max-width: 220px;">${escapeHtml(p.descripcion)}</div>` : ''}
+                            </div>
+                        </div>
+                    </td>
                     <td class="small text-muted">${escapeHtml(p.ferreteria_nombre || '-')}</td>
                     <td class="text-success fw-bold">Bs. ${parseFloat(p.precio_bob).toFixed(2)}</td>
                     <td><span class="badge ${p.stock_actual > 20 ? 'bg-success' : 'bg-danger'}">${p.stock_actual} un.</span></td>
@@ -1501,6 +1632,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prodH').value = prod.costo_mantenimiento_H ?? 5;
         document.getElementById('prodL').value = prod.tiempo_entrega_dias_L ?? 3;
         document.getElementById('prodSS').value = prod.stock_seguridad_SS ?? 10;
+        document.getElementById('prodDescripcion').value = prod.descripcion || '';
+        document.getElementById('prodFotoUrl').value = prod.foto_url || '';
+        const inputFoto = document.getElementById('inputProdFoto');
+        if (inputFoto) inputFoto.value = '';
+        actualizarPreviewFotoCRUD(prod.foto_url || '', prod.nombre);
         cardFormProducto?.classList.remove('d-none');
     };
 

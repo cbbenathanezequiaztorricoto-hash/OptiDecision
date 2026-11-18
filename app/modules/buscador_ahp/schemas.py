@@ -1,4 +1,7 @@
 # app/modules/buscador_ahp/schemas.py
+#Exponemos descripcion, foto_url y metadatos del producto tanto en POST 
+# /api/ahp/buscar como en GET /api/ahp/ferreterias/{id_ferreteria}/catalogo 
+# para alimentar #modalDetalleProducto (RN-11).
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
 
@@ -25,6 +28,12 @@ class AHPMatrizCriteriosInput(BaseModel):
 
 class FerreteriaResultadoAHP(BaseModel):
     id_ferreteria: int
+    id_producto: Optional[int] = None
+    producto_nombre: Optional[str] = None
+    producto_descripcion: Optional[str] = None
+    producto_foto_url: Optional[str] = None
+    producto_categoria: Optional[str] = None
+    producto_marca: Optional[str] = None
     nombre: str
     direccion: str
     latitud: float
@@ -54,6 +63,7 @@ class ProductoCatalogoTiendaOutput(BaseModel):
     nombre: str
     precio_bob: float
     stock_actual: int
+    descripcion: Optional[str] = None
     foto_url: Optional[str] = None
     categoria: Optional[str] = None
     marca: Optional[str] = None

@@ -150,6 +150,9 @@ ACTUALIZACIÓN UI ESPACIAL Y MODELO DE NAVEGACIÓN UWE (V1.1)
 
 4. VISOR DE ZOOM DE IMAGEN DE PRODUCTO (LIGHTBOX):
    - Dentro de #modalDetalleProducto, la fotografía cargada desde Cloudinary permite clic para alternar escala (1x -> 2x con arrastre/desplazamiento) o abrir vista ampliada a pantalla completa (#modalZoomImagen) con controles [fa-magnifying-glass-plus], [fa-magnifying-glass-minus] y [fa-xmark].
+5. MINIATURAS DE CATÁLOGO Y CARGA POR LOTE EN DASHBOARD:
+   - En `#modalDetalleFerreteria` y en la tabla CRUD del Panel Ferretero, cada fila de producto muestra una miniatura cuadrada (`44px x 44px`, `border-radius: 8px`, `object-fit: cover`). Si `foto_url` es nulo, se renderiza un contenedor con fondo `var(--bg-base)` e ícono vectorial FontAwesome según categoría (`fa-screwdriver-wrench`, `fa-paint-roller`, `fa-trowel-bricks`, `fa-bolt`, `fa-box-open`).
+   - En la pestaña Catálogo Ferretero se habilita un botón compacto **"Subir Fotos en Lote"** (`fa-images`) junto a **"Importar CSV"** que dispara un selector múltiple de imágenes y muestra un resumen con las fotos vinculadas y las no emparejadas.
 </REGLAS_ESPACIALES_GOOGLE_MAPS_V1_1>
 
 <designNavegacion_UWE_V1_1>

@@ -7,7 +7,11 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
 from pydantic import BaseModel, Field
 
 from app.modules.inventarios_eoq.schemas import EOQParametrosInput, EOQResultadoOutput
-from app.modules.inventarios_eoq.engine import calcular_modelo_inventario
+from app.modules.inventarios_eoq.engine import (
+    calcular_modelo_inventario,
+    subir_imagen_producto_cloudinary,
+    buscar_producto_coincidente,
+)
 from app.modules.autenticacion.routes import obtener_usuario_actual, obtener_usuario_opcional
 from app.shared.database import obtener_conexion
 
@@ -24,6 +28,8 @@ class ProductoCRUDInput(BaseModel):
     tiempo_entrega_dias_L: int = Field(default=3, ge=0)
     stock_seguridad_SS: int = Field(default=10, ge=0)
     tasa_produccion_p: Optional[int] = Field(default=None)
+    descripcion: Optional[str] = Field(default=None)
+    foto_url: Optional[str] = Field(default=None, max_length=255)
     id_ferreteria: Optional[int] = Field(default=None)
 
 
@@ -82,9 +88,11 @@ async def obtener_productos(
                     SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual,
                            p.demanda_anual_D, p.costo_pedido_K, p.costo_mantenimiento_H,
                            p.tiempo_entrega_dias_L, p.stock_seguridad_SS, p.tasa_produccion_p,
-                           f.nombre AS ferreteria_nombre
+                           p.descripcion, p.foto_url,
+                           f.nombre AS ferreteria_nombre, c.nombre AS categoria
                     FROM productos p
                     JOIN ferreterias f ON f.id_ferreteria = p.id_ferreteria
+                    LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
                     WHERE p.id_ferreteria = %s
                     ORDER BY p.id_producto DESC;
                     """,
@@ -96,9 +104,11 @@ async def obtener_productos(
                     SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual,
                            p.demanda_anual_D, p.costo_pedido_K, p.costo_mantenimiento_H,
                            p.tiempo_entrega_dias_L, p.stock_seguridad_SS, p.tasa_produccion_p,
-                           f.nombre AS ferreteria_nombre
+                           p.descripcion, p.foto_url,
+                           f.nombre AS ferreteria_nombre, c.nombre AS categoria
                     FROM productos p
                     JOIN ferreterias f ON f.id_ferreteria = p.id_ferreteria
+                    LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
                     ORDER BY p.id_producto DESC
                     LIMIT 100;
                     """
@@ -116,6 +126,9 @@ async def obtener_productos(
                     "tiempo_entrega_dias_L": int(f["tiempo_entrega_dias_l"]),
                     "stock_seguridad_SS": int(f["stock_seguridad_ss"]),
                     "tasa_produccion_p": f["tasa_produccion_p"],
+                    "descripcion": f["descripcion"],
+                    "foto_url": f["foto_url"],
+                    "categoria": f["categoria"],
                     "ferreteria_nombre": f["ferreteria_nombre"]
                 }
                 for f in cur.fetchall()
@@ -132,7 +145,7 @@ async def obtener_productos(
 
 
 @router.post(
-    "/api/productos", 
+    "/api/productos",
     status_code=status.HTTP_201_CREATED
 )
 async def crear_producto(datos: ProductoCRUDInput, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
@@ -140,20 +153,24 @@ async def crear_producto(datos: ProductoCRUDInput, usuario: Dict[str, Any] = Dep
     try:
         with conn.cursor() as cur:
             id_ferr = _resolver_ferreteria_destino(cur, usuario, datos.id_ferreteria)
+            descripcion_limpia = (datos.descripcion or "").strip() or None
+            foto_limpia = (datos.foto_url or "").strip() or None
+
             cur.execute(
                 """
                 INSERT INTO productos (
                     id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
                     costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L,
-                    stock_seguridad_SS, tasa_produccion_p
+                    stock_seguridad_SS, tasa_produccion_p, descripcion, foto_url
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id_producto;
                 """,
                 (
                     id_ferr, datos.nombre, datos.precio_bob, datos.stock_actual,
                     datos.demanda_anual_D, datos.costo_pedido_K, datos.costo_mantenimiento_H,
-                    datos.tiempo_entrega_dias_L, datos.stock_seguridad_SS, datos.tasa_produccion_p
+                    datos.tiempo_entrega_dias_L, datos.stock_seguridad_SS, datos.tasa_produccion_p,
+                    descripcion_limpia, foto_limpia
                 )
             )
             nuevo_id = cur.fetchone()["id_producto"]
@@ -182,29 +199,55 @@ async def actualizar_producto(
     datos: ProductoCRUDInput,
     usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
 ):
-    if usuario.get("rol") not in ("ferretero", "admin"):
+    rol = usuario.get("rol")
+    if rol not in ("ferretero", "admin"):
         raise HTTPException(status_code=403, detail="Sin permisos para editar productos.")
 
     conn = obtener_conexion()
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                UPDATE productos
-                SET nombre = %s, precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
-                    costo_pedido_K = %s, costo_mantenimiento_H = %s, tiempo_entrega_dias_L = %s,
-                    stock_seguridad_SS = %s, tasa_produccion_p = %s
-                WHERE id_producto = %s
-                RETURNING id_producto;
-                """,
-                (
-                    datos.nombre, datos.precio_bob, datos.stock_actual, datos.demanda_anual_D,
-                    datos.costo_pedido_K, datos.costo_mantenimiento_H, datos.tiempo_entrega_dias_L,
-                    datos.stock_seguridad_SS, datos.tasa_produccion_p, id_producto
+            descripcion_limpia = (datos.descripcion or "").strip() or None
+            foto_limpia = (datos.foto_url or "").strip() or None
+
+            if rol == "ferretero":
+                cur.execute(
+                    """
+                    UPDATE productos
+                    SET nombre = %s, precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
+                        costo_pedido_K = %s, costo_mantenimiento_H = %s, tiempo_entrega_dias_L = %s,
+                        stock_seguridad_SS = %s, tasa_produccion_p = %s,
+                        descripcion = %s, foto_url = %s
+                    WHERE id_producto = %s AND id_ferreteria = %s
+                    RETURNING id_producto;
+                    """,
+                    (
+                        datos.nombre, datos.precio_bob, datos.stock_actual, datos.demanda_anual_D,
+                        datos.costo_pedido_K, datos.costo_mantenimiento_H, datos.tiempo_entrega_dias_L,
+                        datos.stock_seguridad_SS, datos.tasa_produccion_p,
+                        descripcion_limpia, foto_limpia, id_producto, usuario.get("id_ferreteria")
+                    )
                 )
-            )
+            else:
+                cur.execute(
+                    """
+                    UPDATE productos
+                    SET nombre = %s, precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
+                        costo_pedido_K = %s, costo_mantenimiento_H = %s, tiempo_entrega_dias_L = %s,
+                        stock_seguridad_SS = %s, tasa_produccion_p = %s,
+                        descripcion = %s, foto_url = %s
+                    WHERE id_producto = %s
+                    RETURNING id_producto;
+                    """,
+                    (
+                        datos.nombre, datos.precio_bob, datos.stock_actual, datos.demanda_anual_D,
+                        datos.costo_pedido_K, datos.costo_mantenimiento_H, datos.tiempo_entrega_dias_L,
+                        datos.stock_seguridad_SS, datos.tasa_produccion_p,
+                        descripcion_limpia, foto_limpia, id_producto
+                    )
+                )
+
             if not cur.fetchone():
-                raise HTTPException(status_code=404, detail="Producto no encontrado.")
+                raise HTTPException(status_code=404, detail="Producto no encontrado o fuera de tu sucursal.")
             conn.commit()
             return {"mensaje": "Producto actualizado correctamente."}
     except HTTPException:
@@ -226,15 +269,23 @@ async def actualizar_producto(
     summary="Eliminar un producto del catálogo"
 )
 async def eliminar_producto(id_producto: int, usuario: Dict[str, Any] = Depends(obtener_usuario_actual)):
-    if usuario.get("rol") not in ("ferretero", "admin"):
+    rol = usuario.get("rol")
+    if rol not in ("ferretero", "admin"):
         raise HTTPException(status_code=403, detail="Sin permisos para eliminar productos.")
 
     conn = obtener_conexion()
     try:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM productos WHERE id_producto = %s RETURNING id_producto;", (id_producto,))
+            if rol == "ferretero":
+                cur.execute(
+                    "DELETE FROM productos WHERE id_producto = %s AND id_ferreteria = %s RETURNING id_producto;",
+                    (id_producto, usuario.get("id_ferreteria"))
+                )
+            else:
+                cur.execute("DELETE FROM productos WHERE id_producto = %s RETURNING id_producto;", (id_producto,))
+
             if not cur.fetchone():
-                raise HTTPException(status_code=404, detail="Producto no encontrado.")
+                raise HTTPException(status_code=404, detail="Producto no encontrado o fuera de tu sucursal.")
             conn.commit()
             return {"mensaje": "Producto eliminado del catálogo."}
     except HTTPException:
@@ -251,14 +302,116 @@ async def eliminar_producto(id_producto: int, usuario: Dict[str, Any] = Depends(
 
 
 @router.post(
-    "/api/productos/carga-masiva", 
+    "/api/productos/subir-imagen",
     status_code=status.HTTP_200_OK,
-    summary="Carga masiva CSV de catálogo, precios BOB y stock"
+    summary="Subir fotografía individual de producto a Cloudinary (RN-11)"
 )
+async def subir_imagen_individual(
+    archivo: UploadFile = File(...),
+    usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
+) -> Dict[str, str]:
+    if usuario.get("rol") not in ("ferretero", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo ferreteros o administradores pueden subir fotografías."
+        )
+
+    try:
+        resultado = await subir_imagen_producto_cloudinary(archivo)
+        return {
+            "foto_url": resultado["foto_url"],
+            "public_id": resultado["public_id"],
+            "mensaje": "Imagen subida correctamente a Cloudinary."
+        }
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error al procesar imagen en Cloudinary: {str(err)}"
+        )
+
+
 @router.post(
-    "/api/productos/carga-masiva", 
+    "/api/productos/subir-imagenes-lote",
     status_code=status.HTTP_200_OK,
-    summary="Carga masiva CSV de catálogo, precios BOB y stock (soporta multi-sucursal para Admin)"
+    summary="Subir lote de imágenes a Cloudinary y auto-emparejar por nombre de producto (RN-11)"
+)
+async def subir_imagenes_lote(
+    archivos: List[UploadFile] = File(...),
+    usuario: Dict[str, Any] = Depends(obtener_usuario_actual)
+) -> Dict[str, Any]:
+    if not archivos:
+        raise HTTPException(status_code=400, detail="Debes seleccionar al menos una imagen.")
+
+    conn = obtener_conexion()
+    vinculadas: List[Dict[str, Any]] = []
+    no_emparejadas: List[str] = []
+    errores: List[str] = []
+
+    try:
+        with conn.cursor() as cur:
+            id_ferr = _resolver_ferreteria_destino(cur, usuario, None)
+            cur.execute(
+                "SELECT id_producto, nombre FROM productos WHERE id_ferreteria = %s;",
+                (id_ferr,)
+            )
+            productos_sucursal = [dict(r) for r in cur.fetchall()]
+
+            if not productos_sucursal:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Tu ferretería aún no tiene productos registrados para emparejar fotos."
+                )
+
+            for archivo in archivos:
+                nombre_orig = archivo.filename or "sin_nombre"
+                coincidencia = buscar_producto_coincidente(nombre_orig, productos_sucursal)
+                if not coincidencia:
+                    no_emparejadas.append(nombre_orig)
+                    continue
+
+                try:
+                    subida = await subir_imagen_producto_cloudinary(archivo)
+                    cur.execute(
+                        "UPDATE productos SET foto_url = %s WHERE id_producto = %s;",
+                        (subida["foto_url"], coincidencia["id_producto"])
+                    )
+                    vinculadas.append({
+                        "archivo": nombre_orig,
+                        "id_producto": coincidencia["id_producto"],
+                        "producto": coincidencia["nombre"],
+                        "foto_url": subida["foto_url"]
+                    })
+                except Exception as img_err:
+                    errores.append(f"{nombre_orig}: {str(img_err)}")
+
+            conn.commit()
+            return {
+                "mensaje": f"Lote procesado: {len(vinculadas)} vinculadas, {len(no_emparejadas)} sin coincidencia.",
+                "total_vinculadas": len(vinculadas),
+                "total_no_emparejadas": len(no_emparejadas),
+                "vinculadas": vinculadas,
+                "no_emparejadas": no_emparejadas[:20],
+                "errores": errores[:15]
+            }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error en carga por lote multimedia: {str(e)}"
+        )
+    finally:
+        conn.close()
+
+
+@router.post(
+    "/api/productos/carga-masiva",
+    status_code=status.HTTP_200_OK,
+    summary="Carga masiva CSV de catálogo, precios BOB, stock y descripción (soporta multi-sucursal para Admin)"
 )
 async def carga_masiva_productos(
     archivo: UploadFile = File(...),
@@ -266,10 +419,7 @@ async def carga_masiva_productos(
 ):
     """
     Columnas CSV aceptadas (con encabezado):
-    [ferreteria],nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS
-    - Si 'ferreteria' es 'TODAS' (solo Admin), aplica el producto a todas las ferreterías registradas.
-    - Si 'ferreteria' tiene el nombre de una sucursal (solo Admin), busca esa ferretería.
-    - Si se omite 'ferreteria', asigna a la ferretería del usuario actual.
+    [ferreteria],nombre,precio_bob,stock_actual,demanda_anual_D,costo_pedido_K,costo_mantenimiento_H,tiempo_entrega_dias_L,stock_seguridad_SS,[descripcion],[foto_url]
     """
     contenido = await archivo.read()
     texto = contenido.decode("utf-8-sig", errors="replace")
@@ -307,6 +457,8 @@ async def carga_masiva_productos(
                     costo_h = float(fila.get("costo_mantenimiento_H") or 5.0)
                     lead_l = int(float(fila.get("tiempo_entrega_dias_L") or 3))
                     ss = int(float(fila.get("stock_seguridad_SS") or 10))
+                    descripcion = (fila.get("descripcion") or "").strip() or None
+                    foto_url = (fila.get("foto_url") or "").strip() or None
 
                     ferr_col = (fila.get("ferreteria") or "").strip()
                     destinos: List[int] = []
@@ -338,10 +490,15 @@ async def carga_masiva_productos(
                                 UPDATE productos
                                 SET precio_bob = %s, stock_actual = %s, demanda_anual_D = %s,
                                     costo_pedido_K = %s, costo_mantenimiento_H = %s,
-                                    tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s
+                                    tiempo_entrega_dias_L = %s, stock_seguridad_SS = %s,
+                                    descripcion = COALESCE(%s, descripcion),
+                                    foto_url = COALESCE(%s, foto_url)
                                 WHERE id_producto = %s;
                                 """,
-                                (precio, stock, demanda, costo_k, costo_h, lead_l, ss, existente["id_producto"])
+                                (
+                                    precio, stock, demanda, costo_k, costo_h,
+                                    lead_l, ss, descripcion, foto_url, existente["id_producto"]
+                                )
                             )
                             actualizados += 1
                         else:
@@ -349,11 +506,15 @@ async def carga_masiva_productos(
                                 """
                                 INSERT INTO productos (
                                     id_ferreteria, nombre, precio_bob, stock_actual, demanda_anual_D,
-                                    costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L, stock_seguridad_SS
+                                    costo_pedido_K, costo_mantenimiento_H, tiempo_entrega_dias_L,
+                                    stock_seguridad_SS, descripcion, foto_url
                                 )
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
                                 """,
-                                (id_ferr, nombre, precio, stock, demanda, costo_k, costo_h, lead_l, ss)
+                                (
+                                    id_ferr, nombre, precio, stock, demanda,
+                                    costo_k, costo_h, lead_l, ss, descripcion, foto_url
+                                )
                             )
                             insertados += 1
                 except Exception as row_err:

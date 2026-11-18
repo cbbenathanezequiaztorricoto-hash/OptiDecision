@@ -57,7 +57,9 @@ async def buscar_ferreterias_ahp(
                 sql = """
                     SELECT 
                         f.id_ferreteria, f.nombre, f.direccion, f.latitud, f.longitud,
-                        p.precio_bob, p.stock_actual, f.reputacion,
+                        p.id_producto, p.nombre AS producto_nombre, p.descripcion AS producto_descripcion,
+                        p.foto_url AS producto_foto_url, p.precio_bob, p.stock_actual, f.reputacion,
+                        c.nombre AS producto_categoria, m.nombre AS producto_marca,
                         (ST_DistanceSphere(
                             COALESCE(f.ubicacion, ST_SetSRID(ST_MakePoint(f.longitud, f.latitud), 4326)),
                             ST_SetSRID(ST_MakePoint(%s, %s), 4326)
@@ -66,6 +68,8 @@ async def buscar_ferreterias_ahp(
                         rc.tasa_servicio_mu
                     FROM ferreterias f
                     JOIN productos p ON f.id_ferreteria = p.id_ferreteria
+                    LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
+                    LEFT JOIN marcas m ON m.id_marca = p.id_marca
                     LEFT JOIN LATERAL (
                         SELECT tasa_llegada_lambda, tasa_servicio_mu
                         FROM registro_colas_atencion
@@ -111,6 +115,12 @@ async def buscar_ferreterias_ahp(
 
                         ferreterias_ordenadas.append({
                             "id_ferreteria": f["id_ferreteria"],
+                            "id_producto": f["id_producto"],
+                            "producto_nombre": f["producto_nombre"],
+                            "producto_descripcion": f["producto_descripcion"],
+                            "producto_foto_url": f["producto_foto_url"],
+                            "producto_categoria": f["producto_categoria"],
+                            "producto_marca": f["producto_marca"],
                             "nombre": f["nombre"],
                             "direccion": f["direccion"],
                             "latitud": float(f["latitud"]),
@@ -209,7 +219,8 @@ async def obtener_catalogo_ferreteria(id_ferreteria: int) -> FerreteriaCatalogoO
             # Consultar catálogo completo de la ferretería
             cur.execute(
                 """
-                SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual, p.foto_url,
+                SELECT p.id_producto, p.nombre, p.precio_bob, p.stock_actual,
+                       p.descripcion, p.foto_url,
                        c.nombre AS categoria, m.nombre AS marca
                 FROM productos p
                 LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
@@ -225,6 +236,7 @@ async def obtener_catalogo_ferreteria(id_ferreteria: int) -> FerreteriaCatalogoO
                     "nombre": row["nombre"],
                     "precio_bob": float(row["precio_bob"]),
                     "stock_actual": int(row["stock_actual"]),
+                    "descripcion": row["descripcion"],
                     "foto_url": row["foto_url"],
                     "categoria": row["categoria"],
                     "marca": row["marca"]
